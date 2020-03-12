@@ -54,35 +54,8 @@ def tryLoadingTest(testName):
         return LoadFailed(testName)
 
 def All():
-    # Base system tests
-    tests = [ "UnicodeTests",
-              "Document",
-              "UnitTests",
-              "BaseTests" ]
-
-    # Base system gui test
-    if (FreeCAD.GuiUp == 1):
-        tests += [ "Workbench",
-                   "Menu" ]
-
-    # add the module tests
-    tests += [ "TestFem",
-               "MeshTestsApp",
-               "TestSketcherApp",
-               "TestPartApp",
-               "TestPartDesignApp",
-               "TestSpreadsheet",
-               "TestTechDrawApp",
-               "TestPathApp",
-               "TestPythonSyntax"]
-
-    # gui tests of modules
-    if (FreeCAD.GuiUp == 1):
-        tests += [ "TestSketcherGui",
-                   "TestPartGui",
-                   "TestPartDesignGui",
-                   "TestDraft",
-                   "TestArch" ]
+    # Registered tests
+    tests = FreeCAD.__unit_test__
 
     suite = unittest.TestSuite()
 
@@ -95,7 +68,13 @@ def All():
 def TestText(s):
     s = unittest.defaultTestLoader.loadTestsFromName(s)
     r = unittest.TextTestRunner(stream=sys.stdout, verbosity=2)
-    return r.run(s)
+    retval = r.run(s)
+    # Flushing to make sure the stream is written to the console
+    # before the wrapping process stops executing. Without this line 
+    # executing the tests from command line did not show stats
+    # and proper tarceback in some cases.
+    sys.stdout.flush()
+    return retval
 
 
 def Test(s):

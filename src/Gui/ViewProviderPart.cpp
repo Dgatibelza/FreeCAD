@@ -25,13 +25,16 @@
 
 #ifndef _PreComp_
 # include <QApplication>
+# include <QMenu>
 # include <QPixmap>
+# include <boost/bind.hpp>
 #endif
 
 #include <App/Part.h>
 #include <App/Document.h>
 
 #include "ActiveObjectList.h"
+#include "ActionFunction.h"
 #include "BitmapFactory.h"
 #include "Command.h"
 
@@ -68,28 +71,39 @@ void ViewProviderPart::onChanged(const App::Property* prop) {
     ViewProviderDragger::onChanged(prop);
 }
 
+void ViewProviderPart::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
+{
+    Gui::ActionFunction* func = new Gui::ActionFunction(menu);
+    QAction* act = menu->addAction(QObject::tr("Toggle active part"));
+    func->trigger(act, boost::bind(&ViewProviderPart::doubleClicked, this));
+
+    ViewProviderDragger::setupContextMenu(menu, receiver, member);
+}
+
 bool ViewProviderPart::doubleClicked(void)
 {
     //make the part the active one
 
     //first, check if the part is already active.
     App::DocumentObject* activePart = nullptr;
-    MDIView* activeView = this->getActiveView();
-    if ( activeView ) {
-        activePart = activeView->getActiveObject<App::DocumentObject*> (PARTKEY);
-    }
+    auto activeDoc = Gui::Application::Instance->activeDocument();
+    if(!activeDoc)
+        activeDoc = getDocument();
+    auto activeView = activeDoc->setActiveView(this);
+    if(!activeView) 
+        return false;
+
+    activePart = activeView->getActiveObject<App::DocumentObject*> (PARTKEY);
 
     if (activePart == this->getObject()){
         //active part double-clicked. Deactivate.
         Gui::Command::doCommand(Gui::Command::Gui,
-                "Gui.getDocument('%s').ActiveView.setActiveObject('%s', None)",
-                this->getObject()->getDocument()->getName(),
+                "Gui.ActiveDocument.ActiveView.setActiveObject('%s', None)",
                 PARTKEY);
     } else {
         //set new active part
         Gui::Command::doCommand(Gui::Command::Gui,
-                "Gui.getDocument('%s').ActiveView.setActiveObject('%s', App.getDocument('%s').getObject('%s'))",
-                this->getObject()->getDocument()->getName(),
+                "Gui.ActiveDocument.ActiveView.setActiveObject('%s', App.getDocument('%s').getObject('%s'))",
                 PARTKEY,
                 this->getObject()->getDocument()->getName(),
                 this->getObject()->getNameInDocument());

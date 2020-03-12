@@ -1,6 +1,7 @@
 # ***************************************************************************
+# *   Copyright (c) 2017 Markus Hovorka <m.hovorka@live.de>                 *
 # *                                                                         *
-# *   Copyright (c) 2017 - Markus Hovorka <m.hovorka@live.de>               *
+# *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -20,10 +21,12 @@
 # *                                                                         *
 # ***************************************************************************
 
-
-__title__ = "_Base"
+__title__ = "FreeCAD FEM base constraint object"
 __author__ = "Markus Hovorka"
 __url__ = "http://www.freecadweb.org"
+
+## \addtogroup FEM
+#  @{
 
 
 class Proxy(object):
@@ -31,4 +34,13 @@ class Proxy(object):
     BaseType = "Fem::ConstraintPython"
 
     def __init__(self, obj):
-        obj.Proxy = self
+        # self.Object = obj  # keep a ref to the DocObj for nonGui usage
+        obj.Proxy = self  # link between App::DocumentObject to this object
+
+    # a few objects had this method in their class before the move to this base class
+    # these objects will give a setAttr failed error on document loading without this method
+    def __setstate__(self, state):
+        if state:
+            self.Type = state
+
+##  @}

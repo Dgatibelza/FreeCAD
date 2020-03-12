@@ -1,14 +1,15 @@
-import os
 import FreeCAD
-import Path
-import Part
 import Mesh
+import Part
+import Path
+import PathScripts.PathDressup as PathDressup
+import PathScripts.PathGeom as PathGeom
+import PathScripts.PathLog as PathLog
 import PathSimulator
 import math
+import os
+
 from FreeCAD import Vector, Base
-import PathScripts.PathLog as PathLog
-from PathScripts.PathGeom import PathGeom
-import PathScripts.PathDressup as PathDressup
 
 _filePath = os.path.dirname(os.path.abspath(__file__))
 
@@ -118,13 +119,13 @@ class PathSimulation:
         self.operation = self.activeOps[itool]
         try:
             self.tool = PathDressup.toolController(self.operation).Tool
-        except:
+        except Exception:
             self.tool = None
 
         # if hasattr(self.operation, "ToolController"):
         #     self.tool = self.operation.ToolController.Tool
         if (self.tool is not None):
-            toolProf = self.CreateToolProfile(self.tool, Vector(0, 1, 0), Vector(0, 0, 0), self.tool.Diameter / 2.0)
+            toolProf = self.CreateToolProfile(self.tool, Vector(0, 1, 0), Vector(0, 0, 0), float(self.tool.Diameter) / 2.0)
             self.cutTool.Shape = Part.makeSolid(toolProf.revolve(Vector(0, 0, 0), Vector(0, 0, 1)))
             self.cutTool.ViewObject.show()
             self.voxSim.SetCurrentTool(self.tool)
@@ -132,6 +133,7 @@ class PathSimulation:
         self.curpos = FreeCAD.Placement(self.initialPos, self.stdrot)
         # self.cutTool.Placement = FreeCAD.Placement(self.curpos, self.stdrot)
         self.cutTool.Placement = self.curpos
+        self.opCommands =  self.operation.Path.Commands
 
     def SimulateMill(self):
         self.job = self.jobs[self.taskForm.form.comboJobs.currentIndex()]
@@ -212,7 +214,7 @@ class PathSimulation:
             try:
                 if newStock.isValid():
                     self.stock = newStock.removeSplitter()
-            except:
+            except Exception:
                 if self.debug:
                     print("invalid cut at cmd #{}".format(self.icmd))
         if not self.disableAnim:
@@ -241,7 +243,7 @@ class PathSimulation:
             return
         self.busy = True
 
-        cmd = self.operation.Path.Commands[self.icmd]
+        cmd = self.opCommands[self.icmd]
         # for cmd in job.Path.Commands:
         if cmd.Name in ['G0', 'G1', 'G2', 'G3']:
             self.curpos = self.voxSim.ApplyCommand(self.curpos, cmd)
@@ -264,7 +266,7 @@ class PathSimulation:
         self.icmd += 1
         self.iprogress += 1
         self.UpdateProgress()
-        if self.icmd >= len(self.operation.Path.Commands):
+        if self.icmd >= len(self.opCommands):
             # self.cutMaterial.Shape = self.stock.removeSplitter()
             self.ioperation += 1
             if self.ioperation >= len(self.activeOps):
@@ -296,7 +298,7 @@ class PathSimulation:
     #     except:
     #         return (None, e1.valueAt(e1.LastParameter))
     #     height = self.height
-    #     rad = tool.Diameter / 2.0 - 0.001 * curpos[2]  # hack to overcome occ bug
+    #     rad = float(tool.Diameter) / 2.0 - 0.001 * curpos[2]  # hack to overcome occ bug
     #     if type(e1.Curve) is Part.Circle and e1.Curve.Radius <= rad:  # hack to overcome occ bug
     #         rad = e1.Curve.Radius - 0.001
     #         # return (None, e1.valueAt(e1.LastParameter))
@@ -343,12 +345,12 @@ class PathSimulation:
         try:
             startDir.normalize()
             endDir.normalize()
-        except:
+        except Exception:
             return (None, endPos)
         # height = self.height
 
         # hack to overcome occ bugs
-        rad = tool.Diameter / 2.0 - 0.001 * pos[2]
+        rad = float(tool.Diameter) / 2.0 - 0.001 * pos[2]
         # rad = rad + 0.001 * self.icmd
         if type(toolPath.Curve) is Part.Circle and toolPath.Curve.Radius <= rad:
             rad = toolPath.Curve.Radius - 0.01 * (pos[2] + 1)
@@ -365,7 +367,7 @@ class PathSimulation:
         pathWire = Part.Wire(toolPath)
         try:
             pathShell = pathWire.makePipeShell([fullProf], False, True)
-        except:
+        except Exception:
             if self.debug:
                 Part.show(pathWire)
                 Part.show(fullProf)
@@ -384,7 +386,7 @@ class PathSimulation:
     # create radial profile of the tool (90 degrees to the direction of the path)
     def CreateToolProfile(self, tool, dir, pos, rad):
         type = tool.ToolType
-        # rad = tool.Diameter / 2.0 - 0.001 * pos[2] # hack to overcome occ bug
+        # rad = float(tool.Diameter) / 2.0 - 0.001 * pos[2] # hack to overcome occ bug
         xf = dir[0] * rad
         yf = dir[1] * rad
         xp = pos[0]
@@ -459,7 +461,7 @@ class PathSimulation:
     def onAccuracyBarChange(self):
         form = self.taskForm.form
         self.accuracy = 1.1 - 0.1 * form.sliderAccuracy.value()
-        form.labelAccuracy.setText(str(self.accuracy) + "%")
+        form.labelAccuracy.setText(str(round(self.accuracy, 1)) + "%")
 
     def GuiBusy(self, isBusy):
         form = self.taskForm.form
@@ -484,7 +486,7 @@ class PathSimulation:
     def InvalidOperation(self):
         if len(self.activeOps) == 0:
           return True
-        if (self.tool == None):
+        if (self.tool is None):
           TSError("No tool assigned for the operation")
           return True
         return False

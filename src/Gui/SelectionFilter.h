@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) 2009 Juergen Riegel  (FreeCAD@juergen-riegel.net>       *
+ *   Copyright (c) 2009 Jürgen Riegel <FreeCAD@juergen-riegel.net>         *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -107,6 +107,9 @@ public:
     SelectionFilterGate(SelectionFilter* filter);
     ~SelectionFilterGate();
     virtual bool allow(App::Document*,App::DocumentObject*, const char*);
+
+protected:
+    SelectionFilterGate();
 
 protected:
     SelectionFilter *Filter;

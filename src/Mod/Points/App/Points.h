@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Juergen Riegel         <juergen.riegel@web.de>          *
+ *   Copyright (c) 2011 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -58,6 +58,7 @@ public:
     {
         resize(size);
     }
+    PointKernel(const PointKernel&);
     virtual ~PointKernel()
     {
     }

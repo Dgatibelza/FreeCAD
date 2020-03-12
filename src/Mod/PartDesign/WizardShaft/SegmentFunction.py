@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 #/******************************************************************************
-# *   Copyright (c)2012 Jan Rheinlaender <jrheinlaender@users.sourceforge.net> *
+# *   Copyright (c) 2012 Jan Rheinländer <jrheinlaender@users.sourceforge.net> *
 # *                                                                            *
 # *   This file is part of the FreeCAD CAx development system.                 *
 # *                                                                            *
@@ -120,7 +121,7 @@ class SegmentFunction:
 
     def buildFromDict(self, var, dict):
         self.variable = var
-        for key in sorted(dict.iterkeys()):
+        for key in sorted(dict.keys()):
             #if abs(dict[key]) > 1E-9:
             self.segments.append(SegmentFunctionSegment(key, var, dict[key], 0))
             
@@ -129,7 +130,7 @@ class SegmentFunction:
             self.segments.insert(self.index(st), SegmentFunctionSegment(st, self.variable, coeff, exp))
 
     def addSegments(self, dict):
-        for key in sorted(dict.iterkeys()):
+        for key in sorted(dict.keys()):
             self.addSegment(key,  dict[key])
 
     def setMaxX(self, mx):

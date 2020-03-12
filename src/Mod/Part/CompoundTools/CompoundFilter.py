@@ -1,6 +1,5 @@
 # ***************************************************************************
-# *                                                                         *
-# *   Copyright (c) 2016 - Victor Titov (DeepSOIC) <vv.titov@gmail.com>     *
+# *   Copyright (c) 2016 Victor Titov (DeepSOIC) <vv.titov@gmail.com>       *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -40,9 +39,14 @@ DistConfusion = 1e-7
 ParaConfusion = 1e-8
 
 
-def makeCompoundFilter(name):
+def makeCompoundFilter(name, into_group = None):
     '''makeCompoundFilter(name): makes a CompoundFilter object.'''
-    obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", name)
+    if into_group is None:
+        into_group = FreeCAD.ActiveDocument
+    if into_group.isDerivedFrom('App::Document'):
+        obj = into_group.addObject("Part::FeaturePython", name)
+    else:
+        obj = into_group.newObject("Part::FeaturePython", name)
     _CompoundFilter(obj)
     if obj.ViewObject:    
         _ViewProviderCompoundFilter(obj.ViewObject)
@@ -202,11 +206,18 @@ class _ViewProviderCompoundFilter:
     def onDelete(self, feature, subelements):  # subelements is a tuple of strings
         if not self.ViewObject.DontUnhideOnDelete:
             try:
-                self.Object.Base.ViewObject.show()
+                if self.Object.Base:
+                    # the base object might be deleted be the user
+                    # https://forum.freecadweb.org/viewtopic.php?f=3&t=42242
+                    self.Object.Base.ViewObject.show()
                 if self.Object.Stencil:
                     self.Object.Stencil.ViewObject.show()
             except Exception as err:
-                FreeCAD.Console.PrintError("Error in onDelete: " + err.message)
+                if hasattr(err, "message"):
+                    error_string = err.message
+                else:
+                    error_string = err
+                FreeCAD.Console.PrintError("Error in onDelete: {}\n".format(error_string))
         return True
 
 

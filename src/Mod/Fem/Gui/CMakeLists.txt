@@ -1,3 +1,14 @@
+
+# Many warnings caused by vtk
+if(CMAKE_COMPILER_IS_CLANGXX)
+    add_compile_options(-Wno-pedantic) # needed for vtk headers
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.0)
+        add_compile_options(-Wno-inconsistent-missing-override)
+    endif()
+elseif(CMAKE_COMPILER_IS_GNUCXX)
+    add_compile_options(-Wno-pedantic) # needed for vtk headers
+endif()
+
 if(MSVC)
     add_definitions(-DFCGuiFem -DHAVE_ACOSH -DHAVE_ASINH -DHAVE_ATANH)
 else(MSVC)
@@ -46,12 +57,13 @@ SOURCE_GROUP("Python" FILES ${Python_SRCS})
 
 set(FemGui_MOC_HDRS
     DlgSettingsFemCcxImp.h
+    DlgSettingsFemElmerImp.h
     DlgSettingsFemExportAbaqusImp.h
     DlgSettingsFemGeneralImp.h
     DlgSettingsFemGmshImp.h
     DlgSettingsFemInOutVtkImp.h
+    DlgSettingsFemMaterialImp.h
     DlgSettingsFemZ88Imp.h
-    DlgSettingsFemElmerImp.h
     PropertyFemMeshItem.h
     TaskObjectName.h
     TaskCreateNodeSet.h
@@ -90,12 +102,13 @@ SOURCE_GROUP("Moc" FILES ${FemGui_MOC_SRCS})
 
 set(FemGui_UIC_SRCS
     DlgSettingsFemCcx.ui
+    DlgSettingsFemElmer.ui
     DlgSettingsFemExportAbaqus.ui
     DlgSettingsFemGeneral.ui
     DlgSettingsFemGmsh.ui
     DlgSettingsFemInOutVtk.ui
+    DlgSettingsFemMaterial.ui
     DlgSettingsFemZ88.ui
-    DlgSettingsFemElmer.ui
     TaskCreateNodeSet.ui
     TaskObjectName.ui
     TaskFemConstraint.ui
@@ -143,24 +156,27 @@ SET(FemGui_DLG_SRCS
     DlgSettingsFemCcx.ui
     DlgSettingsFemCcxImp.cpp
     DlgSettingsFemCcxImp.h
-    DlgSettingsFemGeneral.ui
-    DlgSettingsFemGeneralImp.cpp
-    DlgSettingsFemGeneralImp.h
+    DlgSettingsFemElmer.ui
+    DlgSettingsFemElmerImp.cpp
+    DlgSettingsFemElmerImp.h
     DlgSettingsFemExportAbaqus.ui
     DlgSettingsFemExportAbaqusImp.cpp
     DlgSettingsFemExportAbaqusImp.h
+    DlgSettingsFemGeneral.ui
+    DlgSettingsFemGeneralImp.cpp
+    DlgSettingsFemGeneralImp.h
     DlgSettingsFemGmsh.ui
     DlgSettingsFemGmshImp.cpp
     DlgSettingsFemGmshImp.h
     DlgSettingsFemInOutVtk.ui
     DlgSettingsFemInOutVtkImp.cpp
     DlgSettingsFemInOutVtkImp.h
+    DlgSettingsFemMaterial.ui
+    DlgSettingsFemMaterialImp.cpp
+    DlgSettingsFemMaterialImp.h
     DlgSettingsFemZ88.ui
     DlgSettingsFemZ88Imp.cpp
     DlgSettingsFemZ88Imp.h
-    DlgSettingsFemElmer.ui
-    DlgSettingsFemElmerImp.cpp
-    DlgSettingsFemElmerImp.h
     TaskFemConstraint.ui
     TaskFemConstraint.cpp
     TaskFemConstraint.h
@@ -365,20 +381,18 @@ SET(FemGui_SRCS
     ${FemGui_SRCS_Post}
 )
 
-
-add_library(FemGui SHARED ${FemGui_SRCS})
-target_link_libraries(FemGui ${FemGui_LIBS} ${VTK_LIBRARIES})
-
-
-fc_target_copy_resource(FemGui
-    ${CMAKE_SOURCE_DIR}/src/Mod/Fem
-    ${CMAKE_BINARY_DIR}/Mod/Fem
-    )
-
+if(FREECAD_USE_PCH)
+    add_definitions(-D_PreComp_)
+    GET_MSVC_PRECOMPILED_SOURCE("PreCompiled.cpp" PCH_SRCS ${FemGui_SRCS})
+    ADD_MSVC_PRECOMPILED_HEADER(FemGui PreCompiled.h PreCompiled.cpp PCH_SRCS)
+endif(FREECAD_USE_PCH)
 
 SET(FemGuiIcon_SVG
     Resources/icons/FemWorkbench.svg
 )
+
+add_library(FemGui SHARED ${FemGui_SRCS} ${FemGuiIcon_SVG})
+target_link_libraries(FemGui ${FemGui_LIBS} ${VTK_LIBRARIES})
 
 
 fc_copy_sources(FemGui "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_DATADIR}/Mod/Fem" ${FemGuiIcon_SVG})
@@ -390,6 +404,7 @@ INSTALL(FILES ${FemGuiIcon_SVG} DESTINATION "${CMAKE_INSTALL_DATADIR}/Mod/Fem/Re
 # Python modules ui files, they are copied as they are, thus the need not to be added to Fem.qrc
 # see https://forum.freecadweb.org/viewtopic.php?f=10&t=25833
 SET(FemGuiPythonUI_SRCS
+    Resources/ui/ConstraintTie.ui
     Resources/ui/ElectrostaticPotential.ui
     Resources/ui/ElementFluid1D.ui
     Resources/ui/ElementGeometry1D.ui
@@ -398,11 +413,13 @@ SET(FemGuiPythonUI_SRCS
     Resources/ui/FlowVelocity.ui
     Resources/ui/InitialFlowVelocity.ui
     Resources/ui/Material.ui
+    Resources/ui/MaterialReinforcement.ui
     Resources/ui/MeshBoundaryLayer.ui
     Resources/ui/MeshGmsh.ui
     Resources/ui/MeshGroup.ui
     Resources/ui/MeshGroupXDMFExport.ui
     Resources/ui/MeshRegion.ui
+    Resources/ui/ResultHints.ui
     Resources/ui/ResultShow.ui
     Resources/ui/SolverCalculix.ui
 )

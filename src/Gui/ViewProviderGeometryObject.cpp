@@ -74,13 +74,15 @@ PROPERTY_SOURCE(Gui::ViewProviderGeometryObject, Gui::ViewProviderDragger)
 
 const App::PropertyIntegerConstraint::Constraints intPercent = {0,100,1};
 
-ViewProviderGeometryObject::ViewProviderGeometryObject() : pcBoundSwitch(0),pcBoundColor(0)
+ViewProviderGeometryObject::ViewProviderGeometryObject()
+    : pcBoundSwitch(0)
+    , pcBoundColor(0)
 {
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/View");
     bool randomColor = hGrp->GetBool("RandomColor", false);
     float r,g,b;
 
-    if(randomColor){
+    if (randomColor){
         float fMax = (float)RAND_MAX;
         r = (float)rand()/fMax;
         g = (float)rand()/fMax;
@@ -101,10 +103,6 @@ ViewProviderGeometryObject::ViewProviderGeometryObject() : pcBoundSwitch(0),pcBo
     ADD_PROPERTY(BoundingBox,(false));
     ADD_PROPERTY(Selectable,(true));
 
-    ADD_PROPERTY(SelectionStyle,((long)0));
-    static const char *SelectionStyleEnum[] = {"Shape","BoundBox",0};
-    SelectionStyle.setEnums(SelectionStyleEnum);
-
     bool enableSel = hGrp->GetBool("EnableSelection", true);
     Selectable.setValue(enableSel);
 
@@ -115,6 +113,10 @@ ViewProviderGeometryObject::ViewProviderGeometryObject() : pcBoundSwitch(0),pcBo
 
     pcBoundingBox = new Gui::SoFCBoundingBox;
     pcBoundingBox->ref();
+
+    pcBoundColor = new SoBaseColor();
+    pcBoundColor->ref();
+
     sPixmap = "Feature";
 }
 
@@ -122,6 +124,7 @@ ViewProviderGeometryObject::~ViewProviderGeometryObject()
 {
     pcShapeMaterial->unref();
     pcBoundingBox->unref();
+    pcBoundColor->unref();
 }
 
 void ViewProviderGeometryObject::onChanged(const App::Property* prop)
@@ -163,10 +166,8 @@ void ViewProviderGeometryObject::onChanged(const App::Property* prop)
         pcShapeMaterial->shininess.setValue(Mat.shininess);
         pcShapeMaterial->transparency.setValue(Mat.transparency);
     }
-    else if (prop == &BoundingBox || prop == &SelectionStyle) {
-        applyBoundColor();
-        if(SelectionStyle.getValue()==0 || !Selectable.getValue())
-            showBoundingBox( BoundingBox.getValue() );
+    else if (prop == &BoundingBox) {
+        showBoundingBox(BoundingBox.getValue());
     }
 
     ViewProviderDragger::onChanged(prop);
@@ -180,15 +181,23 @@ void ViewProviderGeometryObject::attach(App::DocumentObject *pcObj)
 void ViewProviderGeometryObject::updateData(const App::Property* prop)
 {
     if (prop->isDerivedFrom(App::PropertyComplexGeoData::getClassTypeId())) {
-        // Note: When the placement of non-parametric objects changes there is currently no update
-        // of the bounding box information.
         Base::BoundBox3d box = static_cast<const App::PropertyComplexGeoData*>(prop)->getBoundingBox();
         pcBoundingBox->minBounds.setValue(box.MinX, box.MinY, box.MinZ);
         pcBoundingBox->maxBounds.setValue(box.MaxX, box.MaxY, box.MaxZ);
     }
-    else {
-        ViewProviderDragger::updateData(prop);
+    else if (prop->isDerivedFrom(App::PropertyPlacement::getClassTypeId())) {
+        App::GeoFeature* geometry = dynamic_cast<App::GeoFeature*>(getObject());
+        if (geometry && prop == &geometry->Placement) {
+            const App::PropertyComplexGeoData* data = geometry->getPropertyOfGeometry();
+            if (data) {
+                Base::BoundBox3d box = data->getBoundingBox();
+                pcBoundingBox->minBounds.setValue(box.MinX, box.MinY, box.MinZ);
+                pcBoundingBox->maxBounds.setValue(box.MaxX, box.MaxY, box.MaxZ);
+            }
+        }
     }
+
+    ViewProviderDragger::updateData(prop);
 }
 
 SoPickedPointList ViewProviderGeometryObject::getPickedPoints(const SbVec2s& pos, const View3DInventorViewer& viewer,bool pickAll) const
@@ -230,35 +239,28 @@ SoPickedPoint* ViewProviderGeometryObject::getPickedPoint(const SbVec2s& pos, co
     return (pick ? new SoPickedPoint(*pick) : 0);
 }
 
-unsigned long ViewProviderGeometryObject::getBoundColor() const {
+unsigned long ViewProviderGeometryObject::getBoundColor() const
+{
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/View");
-    if(SelectionStyle.getValue() == 0 || !Selectable.getValue() || !hGrp->GetBool("EnableSelection", true))
-        return hGrp->GetUnsigned("BoundingBoxColor",4294967295UL); // white (255,255,255)
-    else
-        return hGrp->GetUnsigned("SelectionColor",0x00CD00UL); // rgb(0,205,0)
-}
-
-void ViewProviderGeometryObject::applyBoundColor() {
-    if(!pcBoundColor) return;
-
-    unsigned long bbcol = getBoundColor();
-    float r,g,b;
-    r = ((bbcol >> 24) & 0xff) / 255.0; g = ((bbcol >> 16) & 0xff) / 255.0; b = ((bbcol >> 8) & 0xff) / 255.0;
-    pcBoundColor->rgb.setValue(r, g, b);
+    unsigned long bbcol = hGrp->GetUnsigned("BoundingBoxColor",4294967295UL); // white (255,255,255)
+    return bbcol;
 }
 
 void ViewProviderGeometryObject::showBoundingBox(bool show)
 {
     if (!pcBoundSwitch && show) {
+        unsigned long bbcol = getBoundColor();
+        float r,g,b;
+        r = ((bbcol >> 24) & 0xff) / 255.0; g = ((bbcol >> 16) & 0xff) / 255.0; b = ((bbcol >> 8) & 0xff) / 255.0;
+
         pcBoundSwitch = new SoSwitch();
         SoSeparator* pBoundingSep = new SoSeparator();
         SoDrawStyle* lineStyle = new SoDrawStyle;
         lineStyle->lineWidth = 2.0f;
         pBoundingSep->addChild(lineStyle);
 
-        pcBoundColor = new SoBaseColor();
+        pcBoundColor->rgb.setValue(r, g, b);
         pBoundingSep->addChild(pcBoundColor);
-        applyBoundColor();
 
         pBoundingSep->addChild(new SoResetTransform());
         pBoundingSep->addChild(pcBoundingBox);
@@ -267,7 +269,7 @@ void ViewProviderGeometryObject::showBoundingBox(bool show)
 
         // add to the highlight node
         pcBoundSwitch->addChild(pBoundingSep);
-        pcRoot->insertChild(pcBoundSwitch,pcRoot->findChild(pcModeSwitch));
+        pcRoot->addChild(pcBoundSwitch);
     }
 
     if (pcBoundSwitch) {
@@ -277,12 +279,6 @@ void ViewProviderGeometryObject::showBoundingBox(bool show)
 
 void ViewProviderGeometryObject::setSelectable(bool selectable)
 {
-    if(SelectionStyle.getValue()) {
-        applyBoundColor();
-        if(!selectable) 
-            showBoundingBox(false);
-    }
-
     SoSearchAction sa;
     sa.setInterest(SoSearchAction::ALL);
     sa.setSearchingAll(true);
@@ -294,13 +290,17 @@ void ViewProviderGeometryObject::setSelectable(bool selectable)
     for (int i=0;i<pathList.getLength();i++) {
         SoFCSelection *selNode = dynamic_cast<SoFCSelection*>(pathList[i]->getTail());
         if (selectable) {
-            selNode->selectionMode = SoFCSelection::SEL_ON;
-            selNode->highlightMode = SoFCSelection::AUTO;
+            if (selNode) {
+                selNode->selectionMode = SoFCSelection::SEL_ON;
+                selNode->highlightMode = SoFCSelection::AUTO;
+            }
         }
         else {
-            selNode->selectionMode = SoFCSelection::SEL_OFF;
-            selNode->highlightMode = SoFCSelection::OFF;
-            selNode->selected = SoFCSelection::NOTSELECTED;
+            if (selNode) {
+                selNode->selectionMode = SoFCSelection::SEL_OFF;
+                selNode->highlightMode = SoFCSelection::OFF;
+                selNode->selected = SoFCSelection::NOTSELECTED;
+            }
         }
     }
 }

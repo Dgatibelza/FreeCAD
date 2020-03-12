@@ -1,7 +1,5 @@
 #***************************************************************************
-#*                                                                         *
-#*   Copyright (c) 2011                                                    *  
-#*   Yorik van Havre <yorik@uncreated.net>                                 *  
+#*   Copyright (c) 2011 Yorik van Havre <yorik@uncreated.net>              *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -37,7 +35,7 @@ __url__ = "http://www.freecadweb.org"
 
 # config
 subtractiveTypes = ["IfcOpeningElement"] # elements that must be subtracted from their parents
-SCHEMA = "http://www.steptools.com/support/stdev_docs/ifcbim/ifc4.exp" # only for internal prser
+SCHEMA = "http://www.steptools.com/support/stdev_docs/ifcbim/ifc4.exp" # only for internal parser
 MAKETEMPFILES = False # if True, shapes are passed from ifcopenshell to freecad through temp files
 DEBUG = True # this is only for the python console, this value is overridden when importing through the GUI
 SKIP = ["IfcBuildingElementProxy","IfcFlowTerminal","IfcFurnishingElement"] # default. overwritten by the GUI options
@@ -1145,7 +1143,7 @@ def export(exportList,filename):
             if DEBUG: print("Object type ", otype, " is not supported yet.")
 
     # processing groups
-    for name,entities in groups.iteritems():
+    for name,entities in groups.items():
         if entities:
             o = FreeCAD.ActiveDocument.getObject(name)
             if o:
@@ -1681,14 +1679,14 @@ class IfcDocument:
         self.filename = filename
         self.data = f.entById
         self.Entities = {0:f.header}
-        for k,e in self.data.iteritems():
+        for k,e in self.data.items():
             eid = int(e['id'])
             self.Entities[eid] = IfcEntity(e,self)
         if DEBUG: print(len(self.Entities),"entities created. Creating attributes...")
-        for k,ent in self.Entities.iteritems():
+        for k,ent in self.Entities.items():
             if DEBUG: print("attributing entity ",ent)
             if hasattr(ent,"attributes"):
-                for k,v in ent.attributes.iteritems():
+                for k,v in ent.attributes.items():
                     if DEBUG: print("parsing attribute: ",k," value ",v)
                     if isinstance(v,str):
                         val = self.__clean__(v)
@@ -1754,7 +1752,7 @@ class IfcDocument:
         elif isinstance(ref,str):
             l = []
             ref = ref.upper()
-            for k,ob in self.Entities.iteritems():
+            for k,ob in self.Entities.items():
                 if hasattr(ob,"type"):
                     if ob.type == ref:
                         l.append(ob)
@@ -1765,7 +1763,7 @@ class IfcDocument:
         "searches entities types for partial match"
         l = []
         pat = pat.upper()
-        for k,ob in self.Entities.iteritems():
+        for k,ob in self.Entities.items():
             if hasattr(ob,"type"):
                 if pat in ob.type:
                     if not ob.type in l:

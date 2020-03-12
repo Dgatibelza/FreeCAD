@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 #/******************************************************************************
-# *   Copyright (c)2012 Jan Rheinlaender <jrheinlaender@users.sourceforge.net> *
+# *   Copyright (c) 2012 Jan Rheinländer <jrheinlaender@users.sourceforge.net> *
 # *                                                                            *
 # *   This file is part of the FreeCAD CAx development system.                 *
 # *                                                                            *
@@ -22,8 +23,8 @@
 
 import FreeCAD, FreeCADGui
 from PySide import QtCore, QtGui
-from WizardShaftTable import WizardShaftTable
-from Shaft import Shaft
+from .WizardShaftTable import WizardShaftTable
+from .Shaft import Shaft
 
 class TaskWizardShaft:
     "Shaft Wizard"
@@ -39,7 +40,7 @@ class TaskWizardShaft:
         # Get active document or create a new one
         # Important because when setting the default data in WizardShaftTable() the
         # updateSketch() slot will be activated and it relies on finding a valid document
-        if self.doc == None:
+        if self.doc is None:
             self.Gui.activateWorkbench("PartDesignWorkbench")
             self.doc = self.App.newDocument()
             # Grab the newly created feature window
@@ -154,9 +155,9 @@ class TaskWizardShaft:
     def isAllowedAlterDocument(self):
         return False
 
-# Work-around to allow a callback
+# Workaround to allow a callback
 # Problem: From the FemConstraint ViewProvider, we need to tell the Shaft instance that the user finished editing the constraint
-# We can find the Shaft Wizard dialog object from C++, but there is not way to reach the Shaft instance
+# We can find the Shaft Wizard dialog object from C++, but there is no way to reach the Shaft instance
 # Also it seems to be impossible to access the active dialog from Python, so Gui::Command::runCommand() is not an option either
 # Note: Another way would be to create a hidden widget in the Shaft Wizard dialog and write some data to it, triggering a slot 
 # in the python code

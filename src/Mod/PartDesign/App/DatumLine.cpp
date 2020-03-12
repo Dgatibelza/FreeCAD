@@ -1,5 +1,6 @@
 /***************************************************************************
- *   Copyright (c) 2013 Jan Rheinländer <jrheinlaender[at]users.sourceforge.net>     *
+ *   Copyright (c) 2013 Jan Rheinländer                                    *
+ *                                   <jrheinlaender@users.sourceforge.net> *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -44,7 +45,9 @@ Line::Line()
     BRepBuilderAPI_MakeEdge builder(gp_Lin(gp_Pnt(0,0,0), gp_Dir(0,0,1)));
     if (!builder.IsDone())
         return;
-    Shape.setValue(builder.Shape());
+    TopoDS_Shape myShape = builder.Shape();
+    myShape.Infinite(Standard_True);
+    Shape.setValue(myShape);
 
     Support.touch();
 }

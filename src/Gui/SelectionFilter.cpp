@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) 2009 Juergen Riegel (FreeCAD@juergen-riegel.net)        *
+ *   Copyright (c) 2009 Jürgen Riegel <FreeCAD@juergen-riegel.net>         *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -60,6 +60,11 @@ SelectionFilterGate::SelectionFilterGate(const char* filter)
 SelectionFilterGate::SelectionFilterGate(SelectionFilter* filter)
 {
     Filter = filter;
+}
+
+SelectionFilterGate::SelectionFilterGate()
+{
+    Filter = nullptr;
 }
 
 SelectionFilterGate::~SelectionFilterGate()

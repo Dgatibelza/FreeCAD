@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Jürgen Riegel          (juergen.riegel@web.de) 2008     *
+ *   Copyright (c) 2008 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -20,7 +20,7 @@
  *                                                                         *
  ***************************************************************************/
 
- 
+
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <TopoDS_Shape.hxx>
@@ -37,6 +37,7 @@
 # include <Geom2dAPI_ProjectPointOnCurve.hxx>
 # include <GeomAPI.hxx>
 # include <BRepAdaptor_Surface.hxx>
+# include <IntRes2d_IntersectionSegment.hxx>
 #endif
 
 #ifndef M_PI
@@ -121,6 +122,7 @@ bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
     Handle(Geom2d_Curve) primaryCurve;
     Handle(Geom_Geometry) geom = (geomlist[GeoId])->handle();
     Handle(Geom_Curve) curve3d = Handle(Geom_Curve)::DownCast(geom);
+
     if (curve3d.IsNull())
         return false;
     else {
@@ -152,12 +154,51 @@ bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
             if (!curve3d.IsNull()) {
                 secondaryCurve = GeomAPI::To2d(curve3d, plane);
                 // perform the curves intersection
+
+                std::vector<gp_Pnt2d> points;
+
+                // #2463 Check for endpoints of secondarycurve on primary curve
+                // If the OCCT Intersector should detect endpoint tangency when trimming, then
+                // this is just a work-around until that bug is fixed.
+                // https://www.freecadweb.org/tracker/view.php?id=2463
+                // https://tracker.dev.opencascade.org/view.php?id=30217
+                if (geomlist[id]->getTypeId().isDerivedFrom(Part::GeomBoundedCurve::getClassTypeId())) {
+
+                    Part::GeomBoundedCurve * bcurve = static_cast<Part::GeomBoundedCurve *>(geomlist[id]);
+
+                    points.emplace_back(bcurve->getStartPoint().x,bcurve->getStartPoint().y);
+                    points.emplace_back(bcurve->getEndPoint().x,bcurve->getEndPoint().y);
+                }
+
                 Intersector.Init(primaryCurve, secondaryCurve, 1.0e-12);
-                for (int i=1; i <= Intersector.NbPoints(); i++) {
-                    gp_Pnt2d p = Intersector.Point(i);
+
+                for (int i=1; i <= Intersector.NbPoints(); i++)
+                    points.push_back(Intersector.Point(i));
+
+                if (Intersector.NbSegments() > 0) {
+                    const Geom2dInt_GInter& gInter = Intersector.Intersector();
+                    for (int i=1; i <= gInter.NbSegments(); i++) {
+                        const IntRes2d_IntersectionSegment& segm = gInter.Segment(i);
+                        if (segm.HasFirstPoint()) {
+                            const IntRes2d_IntersectionPoint& fp = segm.FirstPoint();
+                            points.push_back(fp.Value());
+                        }
+                        if (segm.HasLastPoint()) {
+                            const IntRes2d_IntersectionPoint& fp = segm.LastPoint();
+                            points.push_back(fp.Value());
+                        }
+                    }
+                }
+
+                for (auto p : points) {
                     // get the parameter of the intersection point on the primary curve
                     Projector.Init(p, primaryCurve);
+
+                    if (Projector.NbPoints()<1 || Projector.LowerDistance() > Precision::Confusion())
+                        continue;
+
                     double param = Projector.LowerDistanceParameter();
+
                     if (periodic) {
                         // transfer param into the interval (pickedParam-period pickedParam]
                         param = param - period * ceil((param-pickedParam) / period);
@@ -262,4 +303,3 @@ namespace App {
 // explicit template instantiation
   template class PartExport FeaturePythonT<Part::Part2DObject>;
 }
-

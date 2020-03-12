@@ -53,6 +53,19 @@ namespace DockWnd {
     class HelpView;
 } //namespace DockWnd
 
+class GuiExport UrlHandler : public QObject
+{
+    Q_OBJECT
+
+public:
+    UrlHandler(QObject* parent = 0)
+        : QObject(parent){
+    }
+    virtual ~UrlHandler() {
+    }
+    virtual void openUrl(App::Document*, const QUrl&) {
+    }
+};
 
 /** 
  * The MainWindow class provides a main window with menu bar, toolbars, dockable windows,
@@ -84,7 +97,7 @@ public:
      * Removes an MDI window from the main window's workspace and its associated tab without
      * deleting the widget. If the main windows does not have such a window nothing happens.
      */
-    void removeWindow(MDIView* view);
+    void removeWindow(MDIView* view, bool close=true);
     /**
      * Returns a list of all MDI windows in the worpspace.
      */
@@ -147,9 +160,29 @@ public:
     /**
      * Load files from the given URLs into the given document. If the document is 0
      * one gets created automatically if needed.
+     *
+     * If a url handler is registered that supports its scheme it will be delegated
+     * to this handler. This mechanism allows to change the default behaviour.
      */
     void loadUrls(App::Document*, const QList<QUrl>&);
+    /**
+     * Sets the \a handler for the given \a scheme.
+     * If setUrlHandler() is used to set a new handler for a scheme which already has a handler,
+     * the existing handler is simply replaced with the new one. Since MainWindow does not take
+     * ownership of handlers, no objects are deleted when a handler is replaced.
+     */
+    void setUrlHandler(const QString &scheme, UrlHandler* handler);
+    /**
+     * Removes a previously set URL handler for the specified \a scheme.
+     */
+    void unsetUrlHandler(const QString &scheme);
     //@}
+
+    void updateActions(bool delay = false);
+
+    enum StatusType {None, Err, Wrn, Pane, Msg, Log, Tmp};
+    void showStatus(int type, const QString & message);
+
 
 public Q_SLOTS:
     /**
@@ -173,11 +206,12 @@ public Q_SLOTS:
      */
     void closeActiveWindow ();
     /**
-     * Closes all child windows. 
-     * The windows are closed in random order. The operation stops
-     * if a window does not accept the close event.
+     * Closes all document window. 
      */
-    void closeAllWindows ();
+    bool closeAllDocuments (bool close=true);
+    /** Pop up a message box asking for saving document
+     */
+    int confirmSave(const char *docName, QWidget *parent=0, bool addCheckBox=false);
     /**
      * Activates the next window in the child window chain.
      */
@@ -196,6 +230,9 @@ public Q_SLOTS:
     void whatsThis();
     void switchToTopLevelMode();
     void switchToDockedMode();
+
+    void statusMessageChanged();
+
     void showMessage (const QString & message, int timeout = 0);
 
 protected:
@@ -251,7 +288,7 @@ private Q_SLOTS:
     /** 
      * This method gets frequently activated and test the commands if they are still active.
      */
-    void updateActions();
+    void _updateActions();
     /**
      * \internal
      */
@@ -264,6 +301,10 @@ private Q_SLOTS:
      * \internal
      */
     void processMessages(const QList<QByteArray> &);
+    /**
+     * \internal
+     */
+    void clearStatus();
 
 Q_SIGNALS:
     void timeEvent();
@@ -289,29 +330,24 @@ inline MainWindow* getMainWindow()
  * error messages are in red. Log messages are completely ignored.
  * The class is implemented to be thread-safe.
  * @see Console
- * @see ConsoleObserver
+ * @see ILogger
  * @author Werner Mayer
  */
-class StatusBarObserver: public WindowParameter, public Base::ConsoleObserver
+class StatusBarObserver: public WindowParameter, public Base::ILogger
 {
 public:
     StatusBarObserver();
     virtual ~StatusBarObserver();
 
     /** Observes its parameter group. */
-    void OnChange(Base::Subject<const char*> &rCaller, const char * sReason);
+    void OnChange(Base::Subject<const char*> &rCaller, const char * sReason) override;
 
-    /// get called when a Warning is issued
-    void Warning(const char *m);
-    /// get called when a Message is issued
-    void Message(const char * m);
-    /// get called when a Error is issued
-    void Error  (const char *m);
-    /// get called when a Log Message is issued
-    void Log    (const char *);
+    void SendLog(const std::string& msg, Base::LogStyle level) override;
+
     /// name of the observer
-    const char *Name(void){return "StatusBar";}
+    const char *Name(void) override {return "StatusBar";}
 
+    friend class MainWindow;
 private:
     QString msg, wrn, err;
 };

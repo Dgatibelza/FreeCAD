@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Jürgen Riegel          (juergen.riegel@web.de) 2010     *
+ *   Copyright (c) 2010 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -262,6 +262,14 @@ public:
     */    
     int addRadiusConstraint(int geoId, double *  value, bool driving = true);
     /** 
+     *   add a radius constraint on a circle or an arc
+     * 
+     *   double * value is a pointer to double allocated in the heap, containing the
+     *   constraint value and already inserted into either the FixParameters or 
+     *   Parameters array, as the case may be.
+     */    
+    int addDiameterConstraint(int geoId, double *  value, bool driving = true);
+    /** 
     *   add an angle constraint on a line or between two lines
     * 
     *   double * value is a pointer to double allocated in the heap, containing the
@@ -357,7 +365,7 @@ public:
         Line    = 2, // 2 Points(start,end), 4 Parameters(x1,y1,x2,y2)
         Arc     = 3, // 3 Points(start,end,mid), (4)+5 Parameters((x1,y1,x2,y2),x,y,r,a1,a2)
         Circle  = 4, // 1 Point(mid), 3 Parameters(x,y,r)
-        Ellipse = 5,  // 1 Point(mid), 5 Parameters(x,y,r1,r2,phi)  phi=angle xaxis of elipse with respect of sketch xaxis
+        Ellipse = 5,  // 1 Point(mid), 5 Parameters(x,y,r1,r2,phi)  phi=angle xaxis of ellipse with respect of sketch xaxis
         ArcOfEllipse = 6,
         ArcOfHyperbola = 7,
         ArcOfParabola = 8,

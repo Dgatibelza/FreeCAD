@@ -28,6 +28,7 @@
 # include <gp_Dir.hxx>
 # include <gp_Vec.hxx>
 # include <gp_Pln.hxx>
+# include <gp_Quaternion.hxx>
 # include <GCPnts_UniformAbscissa.hxx>
 # include <GCPnts_UniformDeflection.hxx>
 # include <GCPnts_TangentialDeflection.hxx>
@@ -53,6 +54,7 @@
 # include <ShapeConstruct_Curve.hxx>
 # include <GeomAPI_IntCS.hxx>
 # include <GeomAPI_ExtremaCurveCurve.hxx>
+# include <IntRes2d_IntersectionSegment.hxx>
 #endif
 
 #include <Base/GeometryPyCXX.h>
@@ -116,7 +118,6 @@ PyObject* GeometryCurvePy::toShape(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -322,7 +323,6 @@ PyObject* GeometryCurvePy::length(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -348,7 +348,6 @@ PyObject* GeometryCurvePy::parameterAtDistance(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -371,7 +370,6 @@ PyObject* GeometryCurvePy::value(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -401,7 +399,6 @@ PyObject* GeometryCurvePy::tangent(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -426,7 +423,6 @@ PyObject* GeometryCurvePy::normal(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -450,7 +446,6 @@ PyObject* GeometryCurvePy::curvature(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -475,7 +470,6 @@ PyObject* GeometryCurvePy::centerOfCurvature(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -486,23 +480,19 @@ PyObject* GeometryCurvePy::centerOfCurvature(PyObject *args)
 
 PyObject* GeometryCurvePy::parameter(PyObject *args)
 {
-    Handle(Geom_Geometry) g = getGeometryPtr()->handle();
-    Handle(Geom_Curve) c = Handle(Geom_Curve)::DownCast(g);
     try {
-        if (!c.IsNull()) {
-            PyObject *p;
-            if (!PyArg_ParseTuple(args, "O!", &(Base::VectorPy::Type), &p))
-                return 0;
-            Base::Vector3d v = Py::Vector(p, false).toVector();
-            gp_Pnt pnt(v.x,v.y,v.z);
-            GeomAPI_ProjectPointOnCurve ppc(pnt, c);
-            double val = ppc.LowerDistanceParameter();
-            return Py::new_reference_to(Py::Float(val));
-        }
-    }
-    catch (Standard_Failure& e) {
+        PyObject *p;
+        if (!PyArg_ParseTuple(args, "O!", &(Base::VectorPy::Type), &p))
+            return 0;
+        Base::Vector3d v = Py::Vector(p, false).toVector();
 
-        PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
+        double u;
+
+        if (static_cast<Part::GeomCurve *>(getGeometryPtr())->closestParameter(v,u))
+            return Py::new_reference_to(Py::Float(u));
+    }
+    catch (Base::CADKernelError& e) {
+        PyErr_SetString(PartExceptionOCCError, e.what());
         return 0;
     }
 
@@ -543,7 +533,6 @@ PyObject* GeometryCurvePy::makeRuledSurface(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -575,10 +564,24 @@ PyObject* GeometryCurvePy::intersect2d(PyObject *args)
             tuple.setItem(1, Py::Float(pt.Y()));
             list.append(tuple);
         }
+        if (intCC.NbSegments() > 0) {
+            // See also Curve2dPy::intersectCC() that uses Geom2dAPI_ExtremaCurveCurve
+            const Geom2dInt_GInter& gInter = intCC.Intersector();
+            for (int i=1; i <= gInter.NbSegments(); i++) {
+                const IntRes2d_IntersectionSegment& segm = gInter.Segment(i);
+                if (segm.HasFirstPoint()) {
+                    const IntRes2d_IntersectionPoint& fp = segm.FirstPoint();
+                    gp_Pnt2d pt = fp.Value();
+                    Py::Tuple tuple(2);
+                    tuple.setItem(0, Py::Float(pt.X()));
+                    tuple.setItem(1, Py::Float(pt.Y()));
+                    list.append(tuple);
+                }
+            }
+        }
         return Py::new_reference_to(list);
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -600,7 +603,6 @@ PyObject* GeometryCurvePy::toBSpline(PyObject * args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -625,7 +627,6 @@ PyObject* GeometryCurvePy::toNurbs(PyObject * args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -649,7 +650,6 @@ PyObject* GeometryCurvePy::trim(PyObject * args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -703,7 +703,6 @@ PyObject* GeometryCurvePy::approximateBSpline(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PartExceptionOCCError, e.GetMessageString());
         return 0;
     }
@@ -786,7 +785,7 @@ PyObject* GeometryCurvePy::intersectCS(PyObject *args)
             Py::List points;
             for (int i = 1; i <= intersector.NbPoints(); i++) {
                 gp_Pnt p = intersector.Point(i);
-                points.append(Py::Object(new PointPy(new GeomPoint(Base::Vector3d(p.X(), p.Y(), p.Z())))));
+                points.append(Py::asObject(new PointPy(new GeomPoint(Base::Vector3d(p.X(), p.Y(), p.Z())))));
             }
             Py::List segments;
             for (int i = 1; i <= intersector.NbSegments(); i++) {
@@ -801,7 +800,6 @@ PyObject* GeometryCurvePy::intersectCS(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PyExc_RuntimeError, e.GetMessageString());
         return 0;
     }
@@ -812,40 +810,32 @@ PyObject* GeometryCurvePy::intersectCS(PyObject *args)
 
 PyObject* GeometryCurvePy::intersectCC(PyObject *args)
 {
-    Handle(Geom_Curve) curve1 = Handle(Geom_Curve)::DownCast(getGeometryPtr()->handle());
+    PyObject *p;
+    double prec = Precision::Confusion();
+    if (!PyArg_ParseTuple(args, "O!|d", &(Part::GeometryCurvePy::Type), &p, &prec))
+        return 0;
+
+    GeomCurve* curve1 = getGeomCurvePtr();
+    GeomCurve* curve2 = static_cast<GeometryCurvePy*>(p)->getGeomCurvePtr();
+
     try {
-        if (!curve1.IsNull()) {
-            PyObject *p;
-            double prec = Precision::Confusion();
-            if (!PyArg_ParseTuple(args, "O!|d", &(Part::GeometryCurvePy::Type), &p, &prec))
-                return 0;
-            Handle(Geom_Curve) curve2 = Handle(Geom_Curve)::DownCast(static_cast<GeometryPy*>(p)->getGeometryPtr()->handle());
-            GeomAPI_ExtremaCurveCurve intersector(curve1, curve2);
-            if (intersector.LowerDistance() > Precision::Confusion()) {
-                // No intersection
-                return Py::new_reference_to(Py::List());
-            }
-
-            Py::List points;
-            for (int i = 1; i <= intersector.NbExtrema(); i++) {
-                if (intersector.Distance(i) > Precision::Confusion())
-                    continue;
-                gp_Pnt p1, p2;
-                intersector.Points(i, p1, p2);
-                points.append(Py::Object(new PointPy(new GeomPoint(Base::Vector3d(p1.X(), p1.Y(), p1.Z())))));
-            }
-
-            return Py::new_reference_to(points);
+        std::vector<std::pair<Base::Vector3d, Base::Vector3d> > pairs;
+        if (!curve1->intersect(curve2, pairs, prec)) {
+            // No intersection
+            return Py::new_reference_to(Py::List());
         }
-    }
-    catch (Standard_Failure& e) {
 
-        PyErr_SetString(PyExc_RuntimeError, e.GetMessageString());
+        Py::List points;
+        for (size_t i = 0; i < pairs.size(); i++) {
+            points.append(Py::asObject(new PointPy(new GeomPoint(pairs[i].first))));
+        }
+
+        return Py::new_reference_to(points);
+    }
+    catch (Base::Exception& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.what());
         return 0;
     }
-
-    PyErr_SetString(PyExc_TypeError, "Geometry is not a curve");
-    return 0;
 }
 
 // General intersection function
@@ -870,11 +860,102 @@ PyObject* GeometryCurvePy::intersect(PyObject *args)
         }
     }
     catch (Standard_Failure& e) {
-
         PyErr_SetString(PyExc_RuntimeError, e.GetMessageString());
         return 0;
     }
 
     PyErr_SetString(PyExc_TypeError, "Geometry is not a curve");
     return 0;
+}
+
+Py::Object GeometryCurvePy::getRotation(void) const
+{
+    Handle(Geom_Conic) s = Handle(Geom_Conic)::DownCast(getGeometryPtr()->handle());
+    if(!s)
+        return Py::Object();
+    gp_Trsf trsf;
+    trsf.SetTransformation(s->Position(),gp_Ax3());
+    auto q = trsf.GetRotation();
+    return Py::Rotation(Base::Rotation(q.X(),q.Y(),q.Z(),q.W()));
+}
+
+PyObject* GeometryCurvePy::reverse(PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return 0;
+    try {
+        Handle(Geom_Geometry) g = getGeometryPtr()->handle();
+        Handle(Geom_Curve) c = Handle(Geom_Curve)::DownCast(g);
+        c->Reverse();
+    }
+    catch (Standard_Failure& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.GetMessageString());
+        return 0;
+    }
+    Py_Return;
+}
+
+PyObject* GeometryCurvePy::reversedParameter(PyObject *args)
+{
+    double p;
+    if (!PyArg_ParseTuple(args, "d", &p))
+        return 0;
+    try {
+        Handle(Geom_Geometry) g = getGeometryPtr()->handle();
+        Handle(Geom_Curve) c = Handle(Geom_Curve)::DownCast(g);
+        Standard_Real val = c->ReversedParameter(p);
+        return PyFloat_FromDouble(val);
+    }
+    catch (Standard_Failure& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.GetMessageString());
+        return 0;
+    }
+}
+
+PyObject* GeometryCurvePy::isPeriodic(PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return 0;
+    try {
+        Handle(Geom_Geometry) g = getGeometryPtr()->handle();
+        Handle(Geom_Curve) c = Handle(Geom_Curve)::DownCast(g);
+        Standard_Boolean val = c->IsPeriodic();
+        return PyBool_FromLong(val ? 1 : 0);
+    }
+    catch (Standard_Failure& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.GetMessageString());
+        return 0;
+    }
+}
+
+PyObject* GeometryCurvePy::period(PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return 0;
+    try {
+        Handle(Geom_Geometry) g = getGeometryPtr()->handle();
+        Handle(Geom_Curve) c = Handle(Geom_Curve)::DownCast(g);
+        Standard_Real val = c->Period();
+        return PyFloat_FromDouble(val);
+    }
+    catch (Standard_Failure& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.GetMessageString());
+        return 0;
+    }
+}
+
+PyObject* GeometryCurvePy::isClosed(PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, ""))
+        return 0;
+    try {
+        Handle(Geom_Geometry) g = getGeometryPtr()->handle();
+        Handle(Geom_Curve) c = Handle(Geom_Curve)::DownCast(g);
+        Standard_Boolean val = c->IsClosed();
+        return PyBool_FromLong(val ? 1 : 0);
+    }
+    catch (Standard_Failure& e) {
+        PyErr_SetString(PyExc_RuntimeError, e.GetMessageString());
+        return 0;
+    }
 }

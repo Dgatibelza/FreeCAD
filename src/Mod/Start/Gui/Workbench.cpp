@@ -44,6 +44,7 @@
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/Interpreter.h>
+#include <Base/Tools.h>
 
 #include <Mod/Start/App/StartConfiguration.h>
 
@@ -61,6 +62,16 @@ StartGui::Workbench::~Workbench()
 
 void StartGui::Workbench::activated()
 {
+    // Automatically display the StartPage only the very first time
+    static bool first = true;
+    if (first) {
+        loadStartPage();
+        first = false;
+    }
+}
+
+void StartGui::Workbench::loadStartPage()
+{
     // Ensure that we don't open the Start page multiple times
     QString title = QCoreApplication::translate("Workbench", "Start page");
     QList<QWidget*> ch = Gui::getMainWindow()->windows();
@@ -71,14 +82,15 @@ void StartGui::Workbench::activated()
 
     try {
         QByteArray utf8Title = title.toUtf8();
+        std::string escapedstr = Base::Tools::escapedUnicodeFromUtf8(utf8Title);
         QByteArray cmd;
         QTextStream str(&cmd);
-        str << "import WebGui" << endl;
+        str << "import WebGui,sys,Start" << endl;
         str << "from StartPage import StartPage" << endl;
         str << endl;
         str << "class WebPage(object):" << endl;
         str << "    def __init__(self):" << endl;
-        str << "        self.browser=WebGui.openBrowserWindow('" << utf8Title << "')" << endl;
+        str << "        self.browser=WebGui.openBrowserWindow(u'" << escapedstr.c_str() << "')" << endl;
 #if defined(FC_OS_WIN32)
         str << "        self.browser.setHtml(StartPage.handle(), App.getResourceDir() + 'Mod/Start/StartPage/')" << endl;
 #else
@@ -101,6 +113,7 @@ void StartGui::Workbench::activated()
         str << "        self.pargrp.Detach(self.webPage)" << endl;
         str << endl;
         str << "webView=WebView()" << endl;
+        str << "StartPage.checkPostOpenStartPage()" << endl;
 
         Base::Interpreter().runString(cmd);
         // Gui::Command::runCommand(Gui::Command::Gui, cmd);
@@ -128,7 +141,10 @@ Gui::ToolBarItem* StartGui::Workbench::setupToolBars() const
     // web navigation toolbar
     Gui::ToolBarItem* navigation = new Gui::ToolBarItem(root);
     navigation->setCommand("Navigation");
-    *navigation << "Web_OpenWebsite" 
+    *navigation << "Web_BrowserSetURL"
+                << "Separator"
+                << "Web_OpenWebsite"
+                << "Start_StartPage"
                 << "Separator" 
                 << "Web_BrowserBack" 
                 << "Web_BrowserNext" 
@@ -152,6 +168,6 @@ Gui::DockWindowItems* StartGui::Workbench::setupDockWindows() const
 {
     Gui::DockWindowItems* root = Gui::StdWorkbench::setupDockWindows();
     root->setVisibility(false); // hide all dock windows by default
-    root->setVisibility("Std_CombiView",true); // except of the combi view
+    root->setVisibility("Std_ComboView",true); // except of the combo view
     return root;
 }

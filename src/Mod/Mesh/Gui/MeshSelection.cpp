@@ -97,6 +97,14 @@ MeshSelection::~MeshSelection()
     }
 }
 
+void MeshSelection::setEnabledViewerSelection(bool on)
+{
+    Gui::View3DInventorViewer* viewer = this->getViewer();
+    if (viewer) {
+        viewer->setSelectionEnabled(on);
+    }
+}
+
 void MeshSelection::setCallback(SoEventCallbackCB *cb)
 {
     selectionCB = cb;
@@ -329,21 +337,7 @@ void MeshSelection::invertSelection()
 {
     std::list<ViewProviderMesh*> views = getViewProviders();
     for (std::list<ViewProviderMesh*>::iterator it = views.begin(); it != views.end(); ++it) {
-        Mesh::Feature* mf = static_cast<Mesh::Feature*>((*it)->getObject());
-        const Mesh::MeshObject* mo = mf->Mesh.getValuePtr();
-        const MeshCore::MeshFacetArray& faces = mo->getKernel().GetFacets();
-        unsigned long num_notsel = std::count_if(faces.begin(), faces.end(),
-            std::bind2nd(MeshCore::MeshIsNotFlag<MeshCore::MeshFacet>(),
-            MeshCore::MeshFacet::SELECTED));
-        std::vector<unsigned long> notselect;
-        notselect.reserve(num_notsel);
-        MeshCore::MeshFacetArray::_TConstIterator beg = faces.begin();
-        MeshCore::MeshFacetArray::_TConstIterator end = faces.end();
-        for (MeshCore::MeshFacetArray::_TConstIterator jt = beg; jt != end; ++jt) {
-            if (!jt->IsFlag(MeshCore::MeshFacet::SELECTED))
-                notselect.push_back(jt-beg);
-        }
-        (*it)->setSelection(notselect);
+        (*it)->invertSelection();
     }
 }
 
@@ -544,7 +538,7 @@ void MeshSelection::pickFaceCallback(void * ud, SoEventCallback * n)
 
             // By specifying the indexed mesh node 'pcFaceSet' we make sure that the picked point is
             // really from the mesh we render and not from any other geometry
-            Gui::ViewProvider* vp = static_cast<Gui::ViewProvider*>(view->getViewProviderByPath(point->getPath()));
+            Gui::ViewProvider* vp = view->getDocument()->getViewProviderByPathFromTail(point->getPath());
             if (!vp || !vp->getTypeId().isDerivedFrom(ViewProviderMesh::getClassTypeId()))
                 return;
             ViewProviderMesh* mesh = static_cast<ViewProviderMesh*>(vp);

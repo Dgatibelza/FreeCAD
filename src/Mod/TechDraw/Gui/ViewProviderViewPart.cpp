@@ -23,6 +23,8 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+#include <QMessageBox>
+#include <QTextStream>
 # ifdef FC_OS_WIN32
 #  include <windows.h>
 # endif
@@ -35,11 +37,16 @@
 #include <App/Application.h>
 #include <App/Document.h>
 #include <App/DocumentObject.h>
+#include <Gui/MainWindow.h>
 
 #include <Mod/TechDraw/App/DrawViewDimension.h>
+#include <Mod/TechDraw/App/DrawViewBalloon.h>
+#include <Mod/TechDraw/App/DrawLeaderLine.h>
+#include <Mod/TechDraw/App/DrawRichAnno.h>
 #include <Mod/TechDraw/App/DrawViewMulti.h>
 #include <Mod/TechDraw/App/DrawHatch.h>
 #include <Mod/TechDraw/App/DrawGeomHatch.h>
+#include <Mod/TechDraw/App/DrawWeldSymbol.h>
 #include <Mod/TechDraw/App/LineGroup.h>
 
 #include<Mod/TechDraw/App/DrawPage.h>
@@ -58,6 +65,7 @@ ViewProviderViewPart::ViewProviderViewPart()
 
     static const char *group = "Lines";
     static const char *dgroup = "Decoration";
+    static const char *hgroup = "Highlight";
 
     //default line weights
     Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter().GetGroup("BaseApp")->
@@ -78,14 +86,25 @@ ViewProviderViewPart::ViewProviderViewPart()
     ADD_PROPERTY_TYPE(ExtraWidth,(weight),group,App::Prop_None,"The thickness of LineGroup Extra lines, if enabled");
     delete lg;                            //Coverity CID 174664
 
+    hGrp = App::GetApplication().GetUserParameter().GetGroup("BaseApp")->
+                                                    GetGroup("Preferences")->GetGroup("Mod/TechDraw/Decorations");
+
+    double defScale = hGrp->GetFloat("CenterMarkScale",2.0);
+    bool   defShowCenters = hGrp->GetBool("ShowCenterMarks", false);
+    
     //decorations
     ADD_PROPERTY_TYPE(HorizCenterLine ,(false),dgroup,App::Prop_None,"Show a horizontal centerline through view");
     ADD_PROPERTY_TYPE(VertCenterLine ,(false),dgroup,App::Prop_None,"Show a vertical centerline through view");
-    ADD_PROPERTY_TYPE(ArcCenterMarks ,(true),dgroup,App::Prop_None,"Center marks on/off");
-    ADD_PROPERTY_TYPE(CenterScale,(2.0),dgroup,App::Prop_None,"Center mark size adjustment, if enabled");
+    ADD_PROPERTY_TYPE(ArcCenterMarks ,(defShowCenters),dgroup,App::Prop_None,"Center marks on/off");
+    ADD_PROPERTY_TYPE(CenterScale,(defScale),dgroup,App::Prop_None,"Center mark size adjustment, if enabled");
 
     //properties that affect Section Line
     ADD_PROPERTY_TYPE(ShowSectionLine ,(true)    ,dgroup,App::Prop_None,"Show/hide section line if applicable");
+    
+    //properties that affect Detail Highlights
+    ADD_PROPERTY_TYPE(HighlightAdjust,(0.0),hgroup,App::Prop_None,"Adjusts the rotation of the Detail highlight");
+
+    ADD_PROPERTY_TYPE(ShowAllEdges ,(false)    ,dgroup,App::Prop_None,"Temporarily show invisible lines");
 }
 
 ViewProviderViewPart::~ViewProviderViewPart()
@@ -104,6 +123,7 @@ void ViewProviderViewPart::onChanged(const App::Property* prop)
         prop == &(HiddenWidth) ||
         prop == &(IsoWidth) ||
         prop == &(ExtraWidth) ||
+        prop == &(HighlightAdjust) ||
         prop == &(ArcCenterMarks) ||
         prop == &(CenterScale) ||
         prop == &(ShowSectionLine)  ||
@@ -132,13 +152,13 @@ void ViewProviderViewPart::attach(App::DocumentObject *pcFeat)
 
 void ViewProviderViewPart::setDisplayMode(const char* ModeName)
 {
-    ViewProviderDocumentObject::setDisplayMode(ModeName);
+    ViewProviderDrawingView::setDisplayMode(ModeName);
 }
 
 std::vector<std::string> ViewProviderViewPart::getDisplayModes(void) const
 {
     // get the modes of the father
-    std::vector<std::string> StrList = ViewProviderDocumentObject::getDisplayModes();
+    std::vector<std::string> StrList = ViewProviderDrawingView::getDisplayModes();
 
     return StrList;
 }
@@ -149,8 +169,10 @@ std::vector<App::DocumentObject*> ViewProviderViewPart::claimChildren(void) cons
     // Collect any child Document Objects and put them in the right place in the Feature tree
     // valid children of a ViewPart are:
     //    - Dimensions
+    //    - Leaders
     //    - Hatches
     //    - GeomHatches
+    //    - Leaders
     std::vector<App::DocumentObject*> temp;
     const std::vector<App::DocumentObject *> &views = getViewPart()->getInList();
     try {
@@ -173,6 +195,12 @@ std::vector<App::DocumentObject*> ViewProviderViewPart::claimChildren(void) cons
               temp.push_back((*it));
           } else if ((*it)->getTypeId().isDerivedFrom(TechDraw::DrawGeomHatch::getClassTypeId())) {
               temp.push_back((*it));
+          } else if ((*it)->getTypeId().isDerivedFrom(TechDraw::DrawViewBalloon::getClassTypeId())) {
+              temp.push_back((*it));
+          } else if ((*it)->getTypeId().isDerivedFrom(TechDraw::DrawRichAnno::getClassTypeId())) {
+              temp.push_back((*it));
+          } else if ((*it)->getTypeId().isDerivedFrom(TechDraw::DrawLeaderLine::getClassTypeId())) {
+              temp.push_back((*it));
           }
       }
       return temp;
@@ -190,4 +218,83 @@ TechDraw::DrawViewPart* ViewProviderViewPart::getViewObject() const
 TechDraw::DrawViewPart* ViewProviderViewPart::getViewPart() const
 {
     return getViewObject();
+}
+
+void ViewProviderViewPart::handleChangedPropertyType(Base::XMLReader &reader, const char *TypeName, App::Property *prop)
+// transforms properties that had been changed
+{
+    // property LineWidth had the App::PropertyFloat and was changed to App::PropertyLength
+    if (prop == &LineWidth && strcmp(TypeName, "App::PropertyFloat") == 0) {
+        App::PropertyFloat LineWidthProperty;
+        // restore the PropertyFloat to be able to set its value
+        LineWidthProperty.Restore(reader);
+        LineWidth.setValue(LineWidthProperty.getValue());
+    }
+    // property HiddenWidth had the App::PropertyFloat and was changed to App::PropertyLength
+    else if (prop == &HiddenWidth && strcmp(TypeName, "App::PropertyFloat") == 0) {
+        App::PropertyFloat HiddenWidthProperty;
+        HiddenWidthProperty.Restore(reader);
+        HiddenWidth.setValue(HiddenWidthProperty.getValue());
+    }
+    // property IsoWidth had the App::PropertyFloat and was changed to App::PropertyLength
+    else if (prop == &IsoWidth && strcmp(TypeName, "App::PropertyFloat") == 0) {
+        App::PropertyFloat IsoWidthProperty;
+        IsoWidthProperty.Restore(reader);
+        IsoWidth.setValue(IsoWidthProperty.getValue());
+    }
+    // property ExtraWidth had the App::PropertyFloat and was changed to App::PropertyLength
+    else if (prop == &ExtraWidth && strcmp(TypeName, "App::PropertyFloat") == 0) {
+        App::PropertyFloat  ExtraWidthProperty;
+        ExtraWidthProperty.Restore(reader);
+        ExtraWidth.setValue(ExtraWidthProperty.getValue());
+    }
+}
+
+bool ViewProviderViewPart::onDelete(const std::vector<std::string> &)
+{
+    // we cannot delete if the view has a section or detail view
+
+    QString bodyMessage;
+    QTextStream bodyMessageStream(&bodyMessage);
+
+    // get child views
+    auto viewSection = getViewObject()->getSectionRefs();
+    auto viewDetail = getViewObject()->getDetailRefs();
+    auto viewLeader = getViewObject()->getLeaders();
+    
+    if (!viewSection.empty()) {
+        bodyMessageStream << qApp->translate("Std_Delete",
+            "You cannot delete this view because it has a section view that would become broken.");
+        QMessageBox::warning(Gui::getMainWindow(),
+            qApp->translate("Std_Delete", "Object dependencies"), bodyMessage,
+            QMessageBox::Ok);
+        return false;
+    }
+    else if (!viewDetail.empty()) {
+        bodyMessageStream << qApp->translate("Std_Delete",
+            "You cannot delete this view because it has a detail view that would become broken.");
+        QMessageBox::warning(Gui::getMainWindow(),
+            qApp->translate("Std_Delete", "Object dependencies"), bodyMessage,
+            QMessageBox::Ok);
+        return false;
+    }
+    else if (!viewLeader.empty()) {
+        bodyMessageStream << qApp->translate("Std_Delete",
+            "You cannot delete this view because it has a leader line that would become broken.");
+        QMessageBox::warning(Gui::getMainWindow(),
+            qApp->translate("Std_Delete", "Object dependencies"), bodyMessage,
+            QMessageBox::Ok);
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+bool ViewProviderViewPart::canDelete(App::DocumentObject *obj) const
+{
+    // deletions of part objects (detail view, View etc.) are valid
+    // that it cannot be deleted if it has a child view is handled in the onDelete() function
+    Q_UNUSED(obj)
+    return true;
 }

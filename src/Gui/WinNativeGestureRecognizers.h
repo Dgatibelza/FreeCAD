@@ -1,6 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Victor Titov (DeepSOIC)                                 *
- *                                           (vv.titov@gmail.com) 2015     *
+ *   Copyright (c) 2015 Victor Titov (DeepSOIC) <vv.titov@gmail.com>       *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -50,10 +49,12 @@
 class QPinchGestureN: public QPinchGesture
 {
 public:
-    int lastFingerDistance;//distance between fingers, in pixels
-    int fingerDistance;    
-    double myRotationAngle;
-    double myLastRotationAngle;
+    int myFingerDistance = 0; //distance between fingers, in pixels
+    int myLastFingerDistance = 0;
+    int myStartFingerDistance = 0; //finger distance at gesture start
+    double myRotationAngle = 0.0;
+    double myLastRotationAngle = 0.0;
+    double myStartAngle = 0.0;
 };
 
 class WinNativeGestureRecognizerPinch : public QGestureRecognizer
@@ -64,7 +65,6 @@ public:
     virtual Result recognize ( QGesture* gesture, QObject* watched, QEvent* event );
     virtual void reset ( QGesture* gesture );
     static void TuneWindowsGestures(QWidget* target);
-    static double unbranchAngle(double ang);
 };
 
 #endif //GESTUREMESS

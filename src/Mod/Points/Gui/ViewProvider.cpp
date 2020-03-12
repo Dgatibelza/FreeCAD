@@ -81,6 +81,9 @@ ViewProviderPoints::ViewProviderPoints()
     if (pcHighlight->selectionMode.getValue() == Gui::SoFCSelection::SEL_OFF)
         Selectable.setValue(false);
 
+    // BBOX
+    SelectionStyle.setValue(1);
+
     pcPointsCoord = new SoCoordinate3();
     pcPointsCoord->ref();
     pcPointsNormal = new SoNormal();
@@ -107,6 +110,10 @@ void ViewProviderPoints::onChanged(const App::Property* prop)
 {
     if (prop == &PointSize) {
         pcPointStyle->pointSize = PointSize.getValue();
+    }
+    else if (prop == &SelectionStyle) {
+        pcHighlight->style = SelectionStyle.getValue() ? Gui::SoFCSelection::BOX
+                                                       : Gui::SoFCSelection::EMISSIVE;
     }
     else {
         ViewProviderGeometryObject::onChanged(prop);
@@ -243,6 +250,16 @@ std::vector<std::string> ViewProviderPoints::getDisplayModes(void) const
     std::vector<std::string> StrList;
     StrList.push_back("Points");
 
+    // FIXME: This way all display modes are added even if the points feature
+    // doesn't support it.
+    // For the future a more flexible way is needed to add new display modes
+    // at a later time
+#if 1
+    StrList.push_back("Color");
+    StrList.push_back("Shaded");
+    StrList.push_back("Intensity");
+
+#else
     if (pcObject) {
         std::map<std::string,App::Property*> Map;
         pcObject->getPropertyMap(Map);
@@ -257,6 +274,7 @@ std::vector<std::string> ViewProviderPoints::getDisplayModes(void) const
                 StrList.push_back("Color");
         }
     }
+#endif
 
     return StrList;
 }
@@ -293,6 +311,8 @@ bool ViewProviderPoints::setEdit(int ModNum)
 {
     if (ModNum == ViewProvider::Transform)
         return ViewProviderGeometryObject::setEdit(ModNum);
+    else if (ModNum == ViewProvider::Cutting)
+        return true;
     return false;
 }
 
@@ -316,7 +336,7 @@ void ViewProviderPoints::clipPointsCallback(void *, SoEventCallback * n)
     if (clPoly.front() != clPoly.back())
         clPoly.push_back(clPoly.front());
 
-    std::vector<Gui::ViewProvider*> views = view->getViewProvidersOfType(ViewProviderPoints::getClassTypeId());
+    std::vector<Gui::ViewProvider*> views = view->getDocument()->getViewProvidersOfType(ViewProviderPoints::getClassTypeId());
     for (std::vector<Gui::ViewProvider*>::iterator it = views.begin(); it != views.end(); ++it) {
         ViewProviderPoints* that = static_cast<ViewProviderPoints*>(*it);
         if (that->getEditingMode() > -1) {

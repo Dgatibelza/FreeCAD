@@ -26,7 +26,7 @@
 #ifndef _PreComp_
 # include <QApplication>
 # include <algorithm>
-# include <boost/signals.hpp>
+# include <boost/signals2.hpp>
 # include <boost/bind.hpp>
 #endif
 
@@ -337,10 +337,10 @@ namespace Gui {
 
     // ------------------------------------------------------------------------
 
-    TYPESYSTEM_SOURCE_ABSTRACT(Gui::DocumentModelIndex, Base::BaseClass);
-    TYPESYSTEM_SOURCE_ABSTRACT(Gui::ApplicationIndex,Gui::DocumentModelIndex);
-    TYPESYSTEM_SOURCE_ABSTRACT(Gui::DocumentIndex, Gui::DocumentModelIndex);
-    TYPESYSTEM_SOURCE_ABSTRACT(Gui::ViewProviderIndex, Gui::DocumentModelIndex);
+    TYPESYSTEM_SOURCE_ABSTRACT(Gui::DocumentModelIndex, Base::BaseClass)
+    TYPESYSTEM_SOURCE_ABSTRACT(Gui::ApplicationIndex,Gui::DocumentModelIndex)
+    TYPESYSTEM_SOURCE_ABSTRACT(Gui::DocumentIndex, Gui::DocumentModelIndex)
+    TYPESYSTEM_SOURCE_ABSTRACT(Gui::ViewProviderIndex, Gui::DocumentModelIndex)
 
     struct DocumentModelP
     {

@@ -1,5 +1,4 @@
-function git_commits_no {
-	commits_since_0_16=$(git rev-list master 0.16 --count)
-	total_commits=$((11532 + $commits_since_0_16))
-	echo $total_commits
+function git_commit_no {
+	commits=$(curl -s 'https://api.github.com/repos/FreeCAD/FreeCAD/compare/120ca87015...master' | grep "ahead_by" | sed -s 's/ //g' | sed -s 's/"ahead_by"://' | sed -s 's/,//')
+	echo $((commits + 1))
 }

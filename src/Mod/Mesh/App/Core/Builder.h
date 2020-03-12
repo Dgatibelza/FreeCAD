@@ -105,7 +105,7 @@ private:
     // keep an array of iterators pointing to the vertex inside the set to save memory
     typedef std::pair<std::set<MeshPoint>::iterator, bool> MeshPointIterator;
     std::vector<MeshPointIterator> _pointsIterator;
-    unsigned long _ptIdx;
+    size_t _ptIdx;
 
     void SetNeighbourhood  ();
     // As it's forbidden to insert a degenerated facet but insert its vertices anyway we must remove them 
@@ -128,7 +128,7 @@ public:
      * AddFacet(), otherwise you'll possibly run into wastage of memory
      * and performance problems.
      */
-    void Initialize (unsigned long ctFacets, bool deletion = true);
+    void Initialize (size_t ctFacets, bool deletion = true);
 
     /** adding facets */
     /** Add new facet
@@ -162,6 +162,53 @@ public:
 
 private:
     float _fSaveTolerance;
+};
+
+/**
+ * Class for creating the mesh structure by adding facets. Building the structure needs 3 steps:
+ * 1. initializing  
+ * 2. adding the facets
+ * 3. finishing
+ * \code
+ * // Sample Code for building a mesh structure
+ * MeshFastBuilder builder(someMeshReference);
+ * builder.Initialize(numberOfFacets);
+ * ...
+ * for (...)
+ *   builder.AddFacet(...);
+ * ...
+ * builder.Finish();
+ * \endcode
+ * @author Werner Mayer
+ */
+class MeshExport MeshFastBuilder
+{
+private:
+    MeshKernel& _meshKernel;
+
+public:
+    typedef int size_type;
+    MeshFastBuilder(MeshKernel &rclM);
+    ~MeshFastBuilder(void);
+
+    /** Initializes the class. Must be done before adding facets 
+     * @param ctFacets count of facets.
+     */
+    void Initialize (size_type ctFacets);
+    /** Add new facet
+     */
+    void AddFacet (const Base::Vector3f* facetPoints);
+    /** Add new facet
+     */
+    void AddFacet (const MeshGeomFacet& facetPoints);
+
+    /** Finishes building up the mesh structure. Must be done after adding facets.
+     */
+    void Finish ();
+
+private:
+    struct Private;
+    Private* p;
 };
 
 } // namespace MeshCore

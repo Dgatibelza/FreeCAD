@@ -58,7 +58,9 @@
 
 void PrintInitHelp(void);
 
-const char sBanner[] = "\xc2\xa9 Juergen Riegel, Werner Mayer, Yorik van Havre 2001-2018\n"\
+const char sBanner[] = "\xc2\xa9 Juergen Riegel, Werner Mayer, Yorik van Havre and others 2001-2020\n"\
+"FreeCAD is free and open-source software licensed under the terms of LGPL2+ license.\n"\
+"FreeCAD wouldn't be possible without FreeCAD community.\n"\
 "  #####                 ####  ###   ####  \n" \
 "  #                    #      # #   #   # \n" \
 "  #     ##  #### ####  #     #   #  #   # \n" \
@@ -78,10 +80,13 @@ public:
         : fi(Base::FileInfo::getTempFileName()), file(f)
     {
 #ifdef WIN32
-        _wfreopen(fi.toStdWString().c_str(),L"w",file);
+        FILE* ptr = _wfreopen(fi.toStdWString().c_str(),L"w",file);
 #else
-        freopen(fi.filePath().c_str(),"w",file);
+        FILE* ptr = freopen(fi.filePath().c_str(),"w",file);
 #endif
+        if (!ptr) {
+            std::cerr << "Failed to reopen file" << std::endl;
+        }
     }
     ~Redirection()
     {
@@ -179,11 +184,16 @@ int main( int argc, char ** argv )
     App::Application::Config()["SplashTextColor" ] = "#ffffff"; // white
     App::Application::Config()["SplashInfoColor" ] = "#c8c8c8"; // light grey
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0))
+    QGuiApplication::setDesktopFileName(QStringLiteral("org.freecadweb.FreeCAD.desktop"));
+#endif
+
     try {
         // Init phase ===========================================================
         // sets the default run mode for FC, starts with gui if not overridden in InitConfig...
         App::Application::Config()["RunMode"] = "Gui";
         App::Application::Config()["Console"] = "0";
+        App::Application::Config()["LoggingConsole"] = "1";
 
         // Inits the Application 
 #if defined (FC_OS_WIN32)
@@ -241,15 +251,15 @@ int main( int argc, char ** argv )
         msg = QObject::tr("While initializing %1 the following exception occurred: '%2'\n\n"
                           "Python is searching for its files in the following directories:\n%3\n\n"
                           "Python version information:\n%4\n")
-                          .arg(appName).arg(QString::fromUtf8(e.what()))
+                          .arg(appName, QString::fromUtf8(e.what()),
 #if PY_MAJOR_VERSION >= 3
 #if PY_MINOR_VERSION >= 5
-                          .arg(QString::fromUtf8(Py_EncodeLocale(Py_GetPath(),NULL))).arg(QString::fromLatin1(Py_GetVersion()));
+                          QString::fromUtf8(Py_EncodeLocale(Py_GetPath(),NULL)), QString::fromLatin1(Py_GetVersion()));
 #else
-                          .arg(QString::fromUtf8(_Py_wchar2char(Py_GetPath(),NULL))).arg(QString::fromLatin1(Py_GetVersion()));
+                          QString::fromUtf8(_Py_wchar2char(Py_GetPath(),NULL)), QString::fromLatin1(Py_GetVersion()));
 #endif
 #else
-                          .arg(QString::fromUtf8(Py_GetPath())).arg(QString::fromLatin1(Py_GetVersion()));
+                          QString::fromUtf8(Py_GetPath()), QString::fromLatin1(Py_GetVersion()));
 #endif
         const char* pythonhome = getenv("PYTHONHOME");
         if (pythonhome) {
@@ -336,7 +346,7 @@ typedef BOOL (__stdcall *tMDWD)(
 static tMDWD s_pMDWD;
 static HMODULE s_hDbgHelpMod;
 static MINIDUMP_TYPE s_dumpTyp = MiniDumpNormal;
-static std::string s_szMiniDumpFileName;  // initialize with whatever appropriate...
+static std::wstring s_szMiniDumpFileName;  // initialize with whatever appropriate...
 
 #include <Base/StackWalker.h>
 class MyStackWalker : public StackWalker
@@ -380,7 +390,7 @@ static LONG __stdcall MyCrashHandlerExceptionFilter(EXCEPTION_POINTERS* pEx)
 
   bool bFailed = true; 
   HANDLE hFile; 
-  hFile = CreateFile(s_szMiniDumpFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL); 
+  hFile = CreateFileW(s_szMiniDumpFileName.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
   if (hFile != INVALID_HANDLE_VALUE) 
   { 
     MINIDUMP_EXCEPTION_INFORMATION stMDEI; 
@@ -423,11 +433,12 @@ void InitMiniDumpWriter(const std::string& filename)
 {
   if (s_hDbgHelpMod != NULL)
     return;
-  s_szMiniDumpFileName = filename;
+  Base::FileInfo fi(filename);
+  s_szMiniDumpFileName = fi.toStdWString();
 
   // Initialize the member, so we do not load the dll after the exception has occurred
   // which might be not possible anymore...
-  s_hDbgHelpMod = LoadLibrary(("dbghelp.dll"));
+  s_hDbgHelpMod = LoadLibraryA(("dbghelp.dll"));
   if (s_hDbgHelpMod != NULL)
     s_pMDWD = (tMDWD) GetProcAddress(s_hDbgHelpMod, "MiniDumpWriteDump");
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) 2017 Ian Rees                  <ian.rees@gmail.com>     *
+ *   Copyright (c) 2017 Ian Rees <ian.rees@gmail.com>                      *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -51,6 +51,11 @@ class Exporter
 {
     public:
         Exporter();
+
+        /*!
+         * \return true if \a is an object that can be exported as mesh.
+         */
+        static bool isSupported(App::DocumentObject *obj);
 
         virtual bool addMeshFeat(App::DocumentObject *obj) = 0;
         virtual bool addPartFeat(App::DocumentObject *obj, float tol) = 0;

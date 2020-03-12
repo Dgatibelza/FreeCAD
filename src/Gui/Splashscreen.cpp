@@ -26,12 +26,14 @@
 # include <cstdlib>
 # include <QApplication>
 # include <QClipboard>
+# include <QDesktopWidget>
 # include <QDesktopServices>
 # include <QDialogButtonBox>
 # include <QLocale>
 # include <QMutex>
 # include <QTextBrowser>
 # include <QProcess>
+# include <QProcessEnvironment>
 # include <QSysInfo>
 # include <QTextStream>
 # include <QWaitCondition>
@@ -61,7 +63,7 @@ namespace Gui {
 /** Displays all messages at startup inside the splash screen.
  * \author Werner Mayer
  */
-class SplashObserver : public Base::ConsoleObserver
+class SplashObserver : public Base::ILogger
 {
 public:
     SplashObserver(QSplashScreen* splasher=0)
@@ -104,32 +106,19 @@ public:
     {
         Base::Console().DetachObserver(this);
     }
-    const char* Name()
+    const char* Name() override
     {
         return "SplashObserver";
     }
-    void Warning(const char * s)
+    void SendLog(const std::string& msg, Base::LogStyle level) override
     {
 #ifdef FC_DEBUG
-        Log(s);
+        Log(msg.c_str());
+        Q_UNUSED(level)
 #else
-        Q_UNUSED(s);
-#endif
-    }
-    void Message(const char * s)
-    {
-#ifdef FC_DEBUG
-        Log(s);
-#else
-        Q_UNUSED(s);
-#endif
-    }
-    void Error  (const char * s)
-    {
-#ifdef FC_DEBUG
-        Log(s);
-#else
-        Q_UNUSED(s);
+        if (level == Base::LogStyle::Log) {
+            Log(msg.c_str());
+        }
 #endif
     }
     void Log (const char * s)
@@ -187,8 +176,8 @@ SplashScreen::~SplashScreen()
     delete messages;
 }
 
-/** 
- * Draws the contents of the splash screen using painter \a painter. The default 
+/**
+ * Draws the contents of the splash screen using painter \a painter. The default
  * implementation draws the message passed by message().
  */
 void SplashScreen::drawContents ( QPainter * painter )
@@ -245,11 +234,24 @@ AboutDialog::AboutDialog(bool showLic, QWidget* parent)
 
     setModal(true);
     ui->setupUi(this);
-    ui->labelSplashPicture->setPixmap(getMainWindow()->splashImage());
+    QRect rect = QApplication::desktop()->availableGeometry();
+    QPixmap image = getMainWindow()->splashImage();
+
+    // Make sure the image is not too big
+    if (image.height() > rect.height()/2 || image.width() > rect.width()/2) {
+        float scale = static_cast<float>(image.width()) / static_cast<float>(image.height());
+        int width = std::min(image.width(), rect.width()/2);
+        int height = std::min(image.height(), rect.height()/2);
+        height = std::min(height, static_cast<int>(width / scale));
+        width = static_cast<int>(scale * height);
+
+        image = image.scaled(width, height);
+    }
+    ui->labelSplashPicture->setPixmap(image);
 //    if (showLic) { // currently disabled. Additional license blocks are always shown.
         QString info(QLatin1String("SUCH DAMAGES.<hr/>"));
         // any additional piece of text to be added after the main license text goes below.
-        // Please set title in <h2> tags, license text in <p> tags 
+        // Please set title in <h2> tags, license text in <p> tags
         // and add an <hr/> tag at the end to nicely separate license blocks
 #ifdef _USE_3DCONNEXION_SDK
         info += QString::fromLatin1(
@@ -266,6 +268,7 @@ AboutDialog::AboutDialog(bool showLic, QWidget* parent)
     ui->tabWidget->setCurrentIndex(0); // always start on the About tab
     setupLabels();
     showLicenseInformation();
+    showCollectionInformation();
 }
 
 /**
@@ -281,6 +284,10 @@ class SystemInfo {
 public:
 static QString getOperatingSystem()
 {
+#if QT_VERSION >= 0x050400
+    return QSysInfo::prettyProductName();
+#endif
+
 #if defined (Q_OS_WIN32)
     switch(QSysInfo::windowsVersion())
     {
@@ -449,7 +456,7 @@ void AboutDialog::setupLabels()
     if (qApp->styleSheet().isEmpty()) {
         setStyleSheet(QString::fromLatin1("Gui--Dialog--AboutDialog QLabel {font-size: %1pt;}").arg(fontSize));
     }
-    
+
     QString exeName = qApp->applicationName();
     std::map<std::string, std::string>& config = App::Application::Config();
     std::map<std::string,std::string>::iterator it;
@@ -461,6 +468,9 @@ void AboutDialog::setupLabels()
     QString disda  = QString::fromLatin1(config["BuildRevisionDate"].c_str());
     QString mturl  = QString::fromLatin1(config["MaintainerUrl"].c_str());
 
+    // we use replace() to keep label formatting, so a label with text "<b>Unknown</b>"
+    // gets replaced to "<b>FreeCAD</b>", for example
+
     QString author = ui->labelAuthor->text();
     author.replace(QString::fromLatin1("Unknown Application"), exeName);
     author.replace(QString::fromLatin1("(c) Unknown Author"), banner);
@@ -468,7 +478,7 @@ void AboutDialog::setupLabels()
     ui->labelAuthor->setUrl(mturl);
 
     QString version = ui->labelBuildVersion->text();
-    version.replace(QString::fromLatin1("Unknown"), QString::fromLatin1("%1.%2").arg(major).arg(minor));
+    version.replace(QString::fromLatin1("Unknown"), QString::fromLatin1("%1.%2").arg(major, minor));
     ui->labelBuildVersion->setText(version);
 
     QString revision = ui->labelBuildRevision->text();
@@ -487,7 +497,7 @@ void AboutDialog::setupLabels()
     platform.replace(QString::fromLatin1("Unknown"),
         QString::fromLatin1("%1-bit").arg(QSysInfo::WordSize));
     ui->labelBuildPlatform->setText(platform);
-    
+
     // branch name
     it = config.find("BuildRevisionBranch");
     if (it != config.end()) {
@@ -583,11 +593,13 @@ void AboutDialog::showLicenseInformation()
     libInfo << li;
 
     // OCCT
+#if defined(HAVE_OCC_VERSION)
     li.name = QLatin1String("Open CASCADE Technology");
     li.href = baseurl + QLatin1String("#_TocOCCT");
     li.url = QLatin1String("http://www.opencascade.com");
     li.version = QLatin1String(OCC_VERSION_STRING_EXT);
     libInfo << li;
+#endif
 
     // pcl
     li.name = QLatin1String("Point Cloud Library");
@@ -684,6 +696,23 @@ void AboutDialog::showLicenseInformation()
     connect(textField, SIGNAL(anchorClicked(QUrl)), this, SLOT(linkActivated(QUrl)));
 }
 
+void AboutDialog::showCollectionInformation()
+{
+    QString doc = QString::fromUtf8(App::Application::getHelpDir().c_str());
+    QString path = doc + QLatin1String("Collection.html");
+    if (!QFile::exists(path))
+        return;
+
+    QWidget *tab_collection = new QWidget();
+    tab_collection->setObjectName(QString::fromLatin1("tab_collection"));
+    ui->tabWidget->addTab(tab_collection, tr("Collection"));
+    QVBoxLayout* hlayout = new QVBoxLayout(tab_collection);
+    QTextBrowser* textField = new QTextBrowser(tab_collection);
+    textField->setOpenExternalLinks(true);
+    hlayout->addWidget(textField);
+    textField->setSource(path);
+}
+
 void AboutDialog::linkActivated(const QUrl& link)
 {
 //#if defined(Q_OS_WIN) && QT_VERSION < 0x050602
@@ -694,7 +723,7 @@ void AboutDialog::linkActivated(const QUrl& link)
     QString fragment = link.fragment();
     if (fragment.startsWith(QLatin1String("_Toc"))) {
         QString prefix = fragment.mid(4);
-        title = QString::fromLatin1("%1 %2").arg(prefix).arg(title);
+        title = QString::fromLatin1("%1 %2").arg(prefix, title);
     }
     licenseView->setWindowTitle(title);
     getMainWindow()->addWindow(licenseView);
@@ -715,7 +744,26 @@ void AboutDialog::on_copyButton_clicked()
     QString major  = QString::fromLatin1(config["BuildVersionMajor"].c_str());
     QString minor  = QString::fromLatin1(config["BuildVersionMinor"].c_str());
     QString build  = QString::fromLatin1(config["BuildRevision"].c_str());
-    str << "OS: " << SystemInfo::getOperatingSystem() << endl;
+    
+    QString deskEnv = QProcessEnvironment::systemEnvironment().value(QString::fromLatin1("XDG_CURRENT_DESKTOP"),QString::fromLatin1(""));
+    QString deskSess = QProcessEnvironment::systemEnvironment().value(QString::fromLatin1("DESKTOP_SESSION"),QString::fromLatin1(""));
+    QString deskInfo = QString::fromLatin1("");
+    
+    if (!(deskEnv == QString::fromLatin1("") && deskSess == QString::fromLatin1("")))
+    {
+        if (deskEnv == QString::fromLatin1("") || deskSess == QString::fromLatin1(""))
+        {
+            deskInfo = QString::fromLatin1(" (") + deskEnv + deskSess + QString::fromLatin1(")");
+
+        }
+        else
+        {
+            deskInfo = QString::fromLatin1(" (") + deskEnv + QString::fromLatin1("/") + deskSess + QString::fromLatin1(")");
+        }
+    }
+    
+    str << "OS: " << SystemInfo::getOperatingSystem() << deskInfo << endl;
+    
     int wordSize = SystemInfo::getWordSizeOfOS();
     if (wordSize > 0) {
         str << "Word size of OS: " << wordSize << "-bit" << endl;

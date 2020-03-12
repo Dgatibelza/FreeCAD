@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Jürgen Riegel          (juergen.riegel@web.de) 2008     *
+ *   Copyright (c) 2008 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -131,17 +131,6 @@ int TopoShapeVertexPy::PyInit(PyObject* args, PyObject* /*kwd*/)
     ptr->setShape(s);
 
     return 0;
-}
-
-PyObject* TopoShapeVertexPy::setTolerance(PyObject *args)
-{
-    double tol;
-    if (!PyArg_ParseTuple(args, "d", &tol))
-        return 0;
-    BRep_Builder aBuilder;
-    const TopoDS_Vertex& v = TopoDS::Vertex(getTopoShapePtr()->getShape());
-    aBuilder.UpdateVertex(v, tol);
-    Py_Return;
 }
 
 Py::Float TopoShapeVertexPy::getTolerance(void) const

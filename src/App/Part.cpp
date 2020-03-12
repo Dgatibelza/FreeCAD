@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Juergen Riegel          (juergen.riegel@web.de) 2014    *
+ *   Copyright (c) 2014 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -54,9 +54,9 @@ Part::Part(void)
     ADD_PROPERTY_TYPE(Id, (""), 0, App::Prop_None, "ID (Part-Number) of the Item");
     ADD_PROPERTY_TYPE(Uid, (id), 0, App::Prop_None, "UUID of the Item");
 
-    // license stuff
-    ADD_PROPERTY_TYPE(License, ("CC BY 3.0"), 0, App::Prop_None, "License string of the Item");
-    ADD_PROPERTY_TYPE(LicenseURL, ("http://creativecommons.org/licenses/by/3.0/"), 0, App::Prop_None, "URL to the license text/contract");
+    // license stuff (leave them empty to avoid confusion with imported 3rd party STEP/IGES files)
+    ADD_PROPERTY_TYPE(License, (""), 0, App::Prop_None, "License string of the Item");
+    ADD_PROPERTY_TYPE(LicenseURL, (""), 0, App::Prop_None, "URL to the license text/contract");
     // color and appearance
     ADD_PROPERTY(Color, (1.0, 1.0, 1.0, 1.0)); // set transparent -> not used
 

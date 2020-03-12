@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Jürgen Riegel          (juergen.riegel@web.de) 2002     *
+ *   Copyright (c) 2002 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -59,7 +59,7 @@ App::DocumentObjectExecReturn *ImportIges::execute(void)
     }
 
     TopoShape aShape;
-    aShape.importIges((const Standard_CString)FileName.getValue());
+    aShape.importIges(FileName.getValue());
     this->Shape.setValue(aShape);
 
     return App::DocumentObject::StdReturn;

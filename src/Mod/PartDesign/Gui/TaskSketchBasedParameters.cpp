@@ -1,5 +1,6 @@
 /***************************************************************************
- *   Copyright (c) 2013 Jan Rheinländer <jrheinlaender@users.sourceforge.net>*
+ *   Copyright (c) 2013 Jan Rheinländer                                    *
+ *                                   <jrheinlaender@users.sourceforge.net> *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -236,14 +237,12 @@ bool TaskDlgSketchBasedParameters::accept() {
     // Make sure the feature is what we are expecting
     // Should be fine but you never know...
     if ( !feature->getTypeId().isDerivedFrom(PartDesign::ProfileBased::getClassTypeId()) ) {
-        throw Base::Exception("Bad object processed in the sketch based dialog.");
+        throw Base::TypeError("Bad object processed in the sketch based dialog.");
     }
 
     App::DocumentObject* sketch = static_cast<PartDesign::ProfileBased*>(feature)->Profile.getValue();
 
-    if (sketch) {
-        Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().hide(\"%s\")", sketch->getNameInDocument());
-    }
+    FCMD_OBJ_HIDE(sketch);
 
     return TaskDlgFeatureParameters::accept();
 }

@@ -39,6 +39,10 @@
 #if defined(__clang__)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Woverloaded-virtual"
+# pragma clang diagnostic ignored "-Wextra-semi"
+#elif defined (__GNUC__)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpedantic"
 #endif
 
 #include <SMESH_Gen.hxx>
@@ -70,14 +74,14 @@
 #endif // HAVE_NETGEN
 #if defined(__clang__)
 # pragma clang diagnostic pop
+#elif defined (__GNUC__)
+# pragma GCC diagnostic pop
 #endif
 #endif // HAVE_SMESH
 
 using namespace MeshPart;
 
-#if SMESH_VERSION_MAJOR >= 7
-    SMESH_Gen* Mesher::_mesh_gen = 0;
-#endif
+SMESH_Gen* Mesher::_mesh_gen = 0;
 
 
 MeshingOutput::MeshingOutput() 
@@ -307,6 +311,9 @@ Mesh::MeshObject* Mesher::createMesh() const
                 std::stringstream str;
                 str << "patch" << index++;
                 segm.setName(str.str());
+                App::Color col;
+                col.setPackedValue(it.first);
+                segm.setColor(col.asHexString());
                 meshdata->addSegment(segm);
             }
         }
@@ -319,17 +326,13 @@ Mesh::MeshObject* Mesher::createMesh() const
     }
 
 #ifndef HAVE_SMESH
-    throw Base::Exception("SMESH is not available on this platform");
+    throw Base::RuntimeError("SMESH is not available on this platform");
 #else
     std::list<SMESH_Hypothesis*> hypoth;
 
-#if SMESH_VERSION_MAJOR < 7
-    SMESH_Gen* meshgen = SMESH_Gen::get();
-#else
-    if (! Mesher::_mesh_gen)
+    if (!Mesher::_mesh_gen)
         Mesher::_mesh_gen = new SMESH_Gen();
     SMESH_Gen* meshgen = Mesher::_mesh_gen;
-#endif
 
     SMESH_Mesh* mesh = meshgen->CreateMesh(0, true);
 

@@ -1,6 +1,7 @@
 # ***************************************************************************
+# *   Copyright (c) 2017 Markus Hovorka <m.hovorka@live.de>                 *
 # *                                                                         *
-# *   Copyright (c) 2017 - Markus Hovorka <m.hovorka@live.de>               *
+# *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -20,19 +21,24 @@
 # *                                                                         *
 # ***************************************************************************
 
-
-__title__ = "FemElmerTasks"
+__title__ = "FreeCAD FEM solver Elmer tasks"
 __author__ = "Markus Hovorka"
 __url__ = "http://www.freecadweb.org"
 
+## \addtogroup FEM
+#  @{
 
-import subprocess
 import os.path
-import femtools.femutils as FemUtils
+import subprocess
+import sys
 
+import FreeCAD
+
+from . import writer
 from .. import run
 from .. import settings
-from . import writer
+from femtools import femutils
+from femtools import membertools
 
 
 class Check(run.Check):
@@ -45,8 +51,8 @@ class Check(run.Check):
         self.checkEquations()
 
     def checkMeshType(self):
-        mesh = FemUtils.getSingleMember(self.analysis, "Fem::FemMeshObject")
-        if not FemUtils.isOfType(mesh, "Fem::FemMeshGmsh"):
+        mesh = membertools.get_single_member(self.analysis, "Fem::FemMeshObject")
+        if not femutils.is_of_type(mesh, "Fem::FemMeshGmsh"):
             self.report.error(
                 "Unsupported type of mesh. "
                 "Mesh must be created with gmsh.")
@@ -67,7 +73,7 @@ class Prepare(run.Prepare):
 
     def run(self):
         self.pushStatus("Preparing input files...\n")
-        print("Prepare testmode: " + str(self.testmode))
+        FreeCAD.Console.PrintMessage("Machine testmode: {}\n".format(self.testmode))
         if self.testmode:
             w = writer.Writer(self.solver, self.directory, True)  # test mode
         else:
@@ -78,13 +84,13 @@ class Prepare(run.Prepare):
         except writer.WriteError as e:
             self.report.error(str(e))
             self.fail()
-        except IOError as e:
+        except IOError:
             self.report.error("Can't access working directory.")
             self.fail()
 
     def checkHandled(self, w):
         handled = w.getHandledConstraints()
-        allConstraints = FemUtils.getMember(self.analysis, "Fem::Constraint")
+        allConstraints = membertools.get_member(self.analysis, "Fem::Constraint")
         for obj in set(allConstraints) - handled:
             self.report.warning("Ignored constraint %s." % obj.Label)
 
@@ -93,7 +99,7 @@ class Solve(run.Solve):
 
     def run(self):
         self.pushStatus("Executing solver...\n")
-        binary = settings.getBinary("ElmerSolver")
+        binary = settings.get_binary("ElmerSolver")
         if binary is not None:
             self._process = subprocess.Popen(
                 [binary], cwd=self.directory,
@@ -109,23 +115,13 @@ class Solve(run.Solve):
             self.report.error("ElmerSolver executable not found.")
             self.fail()
 
-    def _observeSolver(self, process):
-        output = ""
-        line = process.stdout.readline()
-        self.pushStatus(line)
-        output += line
-        line = process.stdout.readline()
-        while line:
-            line = "\n%s" % line.rstrip()
-            self.pushStatus(line)
-            output += line
-            line = process.stdout.readline()
-        return output
-
     def _updateOutput(self, output):
         if self.solver.ElmerOutput is None:
             self._createOutput()
-        self.solver.ElmerOutput.Text = output
+        if sys.version_info.major >= 3:
+            self.solver.ElmerOutput.Text = output
+        else:
+            self.solver.ElmerOutput.Text = output.decode("utf-8")
 
     def _createOutput(self):
         self.solver.ElmerOutput = self.analysis.Document.addObject(
@@ -140,7 +136,7 @@ class Results(run.Results):
     def run(self):
         if self.solver.ElmerResult is None:
             self._createResults()
-        postPath = os.path.join(self.directory, "case0001.vtu")
+        postPath = self._getResultFile()
         self.solver.ElmerResult.read(postPath)
         self.solver.ElmerResult.getLastPostObject().touch()
         self.solver.Document.recompute()
@@ -150,3 +146,21 @@ class Results(run.Results):
             "Fem::FemPostPipeline", self.solver.Name + "Result")
         self.solver.ElmerResult.Label = self.solver.Label + "Result"
         self.analysis.addObject(self.solver.ElmerResult)
+
+    def _getResultFile(self):
+        postPath = None
+        # elmer post file path changed with version x.x
+        # see https://forum.freecadweb.org/viewtopic.php?f=18&t=42732
+        # workaround
+        possible_post_file_0 = os.path.join(self.directory, "case0001.vtu")
+        possible_post_file_t = os.path.join(self.directory, "case_t0001.vtu")
+        if os.path.isfile(possible_post_file_0):
+            postPath = possible_post_file_0
+        elif os.path.isfile(possible_post_file_t):
+            postPath = possible_post_file_t
+        else:
+            self.report.error("Result file not found.")
+            self.fail()
+        return postPath
+
+##  @}

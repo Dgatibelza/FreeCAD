@@ -56,7 +56,8 @@ namespace MeshIO {
         PLY,
         APLY,
         PY,
-        AMF
+        AMF,
+        SMF
     };
     enum Binding {
         OVERALL,
@@ -109,6 +110,10 @@ public:
     bool LoadBinarySTL (std::istream &rstrIn);
     /** Loads an OBJ Mesh file. */
     bool LoadOBJ (std::istream &rstrIn);
+    /** Loads the materials of an OBJ file. */
+    bool LoadMTL (std::istream &rstrIn);
+    /** Loads an SMF Mesh file. */
+    bool LoadSMF (std::istream &rstrIn);
     /** Loads an OFF Mesh file. */
     bool LoadOFF (std::istream &rstrIn);
     /** Loads a PLY Mesh file. */
@@ -124,10 +129,13 @@ public:
     /** Loads a Cadmould FE file. */
     bool LoadCadmouldFE (std::ifstream &rstrIn);
 
+    static std::vector<std::string> supportedMeshFormats();
+
 protected:
     MeshKernel &_rclMesh;   /**< reference to mesh data structure */
     Material* _material;
     std::vector<std::string> _groupNames;
+    std::vector<std::pair<std::string, unsigned long> > _materialNames;
 };
 
 /**
@@ -170,6 +178,8 @@ public:
     bool SaveOBJ (std::ostream &rstrOut) const;
     /** Saves the materials of an OBJ file. */
     bool SaveMTL(std::ostream &rstrOut) const;
+    /** Saves the mesh object into an SMF file. */
+    bool SaveSMF (std::ostream &rstrOut) const;
     /** Saves the mesh object into an OFF file. */
     bool SaveOFF (std::ostream &rstrOut) const;
     /** Saves the mesh object into a binary PLY file. */
@@ -196,6 +206,8 @@ public:
     bool SaveCadmouldFE (std::ostream &rstrOut) const;
     /** Writes a python module which creates a mesh */
     bool SavePython (std::ostream &rstrOut) const;
+
+    static std::vector<std::string> supportedMeshFormats();
 
 protected:
     const MeshKernel &_rclMesh;   /**< reference to mesh data structure */

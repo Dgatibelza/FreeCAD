@@ -4,27 +4,99 @@
 // modified 2018 wandererfan
 
 #include "PreCompiled.h"
-#include <src/Build/Version.h>
+
+//required by windows for M_PI definition
+#define _USE_MATH_DEFINES
+#include <cmath>
+
+#include <iomanip>
+
+#include <Build/Version.h>
+#include <Base/Console.h>
+#include <Base/FileInfo.h>
+#include <Base/Parameter.h>
+#include <Base/Vector3D.h>
 #include "dxf.h"
 
 using namespace std;
-static const double Pi = 3.14159265358979323846264338327950288419716939937511;
 
-CDxfWrite::CDxfWrite(const char* filepath)
+Base::Vector3d toVector3d(const double* a)
+{
+    Base::Vector3d result;
+    result.x = a[0];
+    result.y = a[1];
+    result.z = a[2];
+    return result;
+}
+
+CDxfWrite::CDxfWrite(const char* filepath) :
+//TODO: these should probably be parms in config file
+//handles:
+//boilerplate 0 - A00
+//used by dxf.cpp A01 - FFFE
+//ACAD HANDSEED  FFFF
+
+m_handle(0xA00),                       //room for 2560 handles in boilerplate files
+//m_entityHandle(0x300),               //don't need special ranges for handles
+//m_layerHandle(0x30),
+//m_blockHandle(0x210),
+//m_blkRecordHandle(0x110),
+m_polyOverride(false),
+m_layerName("none")
 {
     // start the file
     m_fail = false;
-#ifdef __WXMSW__
+    m_version = 12;
     m_ofs = new ofstream(filepath, ios::out);
-#else
-    m_ofs = new ofstream(filepath, ios::out);
-#endif
+    m_ssBlock     = new std::ostringstream();
+    m_ssBlkRecord = new std::ostringstream();
+    m_ssEntity    = new std::ostringstream();
+    m_ssLayer     = new std::ostringstream();
+
     if(!(*m_ofs)){
         m_fail = true;
         return;
     }
     m_ofs->imbue(std::locale("C"));
+}
+
+CDxfWrite::~CDxfWrite()
+{
+    delete m_ofs;
+    delete m_ssBlock;
+    delete m_ssBlkRecord;
+    delete m_ssEntity;
+    delete m_ssLayer;
+}
+
+void CDxfWrite::init(void)
+{
+    writeHeaderSection();
+    makeBlockRecordTableHead();
+    makeBlockSectionHead();
+}
+
+//! assemble pieces into output file
+void CDxfWrite::endRun(void)
+{
+    makeLayerTable();
+    makeBlockRecordTableBody();
     
+    writeClassesSection();
+    writeTablesSection();
+    writeBlocksSection();
+    writeEntitiesSection();
+    writeObjectsSection();
+
+    (*m_ofs) << "  0"         << endl;
+    (*m_ofs) << "EOF";
+}
+
+//***************************
+//writeHeaderSection
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeHeaderSection(void)
+{
     std::stringstream ss;
     ss << "FreeCAD v" << FCVersionMajor << "." << FCVersionMinor << " " << FCRevision; 
 
@@ -32,301 +104,664 @@ CDxfWrite::CDxfWrite(const char* filepath)
     (*m_ofs) << "999"      << endl;
     (*m_ofs) << ss.str()   << endl;
 
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "SECTION"  << endl;
-    (*m_ofs) << "  2"      << endl;
-    (*m_ofs) << "HEADER"   << endl;
-    (*m_ofs) << "  9"      << endl;
-    (*m_ofs) << "$ACADVER"  << endl;
-    (*m_ofs) << "  1"      << endl;
-    (*m_ofs) << "AC1009"   << endl;
-    (*m_ofs) << "  9"      << endl;
-    (*m_ofs) << "$INSBASE"  << endl;
-    (*m_ofs) << " 10"       << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << " 20"       << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << " 30"       << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$EXTMIN"  << endl;
-    (*m_ofs) << " 10"      << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << " 20"       << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << " 30"       << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$EXTMAX"  << endl;
-    (*m_ofs) << " 10"       << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << " 20"       << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << " 30"       << endl;
-    (*m_ofs) << 0.0         << endl;
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$DIMSTYLE" << endl;
-    (*m_ofs) << "  2"       << endl;
-    (*m_ofs) << "STANDARD"  << endl;
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$MEASUREMENT" << endl;
-    (*m_ofs) << " 70"       << endl;
-    (*m_ofs) << "1"         << endl;
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$LIMMAX" << endl;
-    (*m_ofs) << " 10"       << endl;
-    (*m_ofs) << "0"         << endl;
-    (*m_ofs) << " 20"       << endl;
-    (*m_ofs) << "0"         << endl;
-
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$TEXTSIZE"   << endl;
-    (*m_ofs) << " 40"       << endl;
-    (*m_ofs) << "3.5"       << endl;
-
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$TEXTSTYLE"   << endl;
-    (*m_ofs) << "  7"       << endl;
-    (*m_ofs) << "STANDARD"  << endl;
-
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$DIMTXT"   << endl;
-    (*m_ofs) << " 40"       << endl;
-    (*m_ofs) << "3.5"       << endl;
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$DIMTAD"   << endl;
-    (*m_ofs) << " 70"       << endl;
-    (*m_ofs) << "1"         << endl;
-    
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$DIMASZ"   << endl;
-    (*m_ofs) << " 40"       << endl;
-    (*m_ofs) << "3.5"       << endl;
-
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$HANDLING"   << endl;
-    (*m_ofs) << " 70"         << endl;
-    (*m_ofs) << "0"           << endl;
-
-    (*m_ofs) << "  9"       << endl;
-    (*m_ofs) << "$DWGCODEPAGE"   << endl;
-    (*m_ofs) << "  3"       << endl;
-    (*m_ofs) << "UTF-8"         << endl;
-    (*m_ofs) << "  0"       << endl;
-    (*m_ofs) << "ENDSEC"    << endl;
-
-    (*m_ofs) << "  0"       << endl;
-    (*m_ofs) << "SECTION"   << endl;
-    (*m_ofs) << "  2"       << endl;
-    (*m_ofs) << "CLASSES"   << endl;
-    (*m_ofs) << "  0"       << endl;
-    (*m_ofs) << "ENDSEC"    << endl;
-
-    writeTablesSection();
-
-    // start
-    (*m_ofs) << "  0"         << endl;
-    (*m_ofs) << "SECTION"  << endl;
-    (*m_ofs) << "  2"         << endl;
-    (*m_ofs) << "ENTITIES" << endl;
-}
-
-CDxfWrite::~CDxfWrite()
-{
-    (*m_ofs) << "  0"         << endl;
-    (*m_ofs) << "ENDSEC"   << endl;   //end of entities section
-
-    // write dimension blocks if exist
-    if (!m_ssBlock.str().empty()) {
-        (*m_ofs) << "  0"         << endl;
-        (*m_ofs) << "SECTION"  << endl;
-        (*m_ofs) << "  2"         << endl;
-        (*m_ofs) << "BLOCKS"   << endl;
-        (*m_ofs) << m_ssBlock.str();
-        (*m_ofs) << "  0"         << endl;
-        (*m_ofs) << "ENDSEC"   << endl;
-    }
-
-    // end
-    (*m_ofs) << "  0"         << endl;
-    (*m_ofs) << "EOF";
-
-    delete m_ofs;
-}
-
-void CDxfWrite::WriteLine(const double* s, const double* e, const char* layer_name)
-{
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "LINE"      << endl;
-    (*m_ofs) << "  8"         << endl;    // Group code for layer name
-    (*m_ofs) << layer_name  << endl;    // Layer number
-    (*m_ofs) << " 10"        << endl;    // Start point of line
-    (*m_ofs) << s[0]        << endl;    // X in WCS coordinates
-    (*m_ofs) << " 20"          << endl;
-    (*m_ofs) << s[1]        << endl;    // Y in WCS coordinates
-    (*m_ofs) << " 30"          << endl;
-    (*m_ofs) << s[2]        << endl;    // Z in WCS coordinates
-    (*m_ofs) << " 11"        << endl;    // End point of line
-    (*m_ofs) << e[0]        << endl;    // X in WCS coordinates
-    (*m_ofs) << " 21"        << endl;
-    (*m_ofs) << e[1]        << endl;    // Y in WCS coordinates
-    (*m_ofs) << " 31"        << endl;
-    (*m_ofs) << e[2]        << endl;    // Z in WCS coordinates
+    //static header content
+    ss.str("");
+    ss.clear();
+    ss << "header" << m_version << ".rub";
+    std::string fileSpec = m_dataDir + ss.str();
+    (*m_ofs) << getPlateFile(fileSpec);
 }
 
 //***************************
-//WriteLWPolyLine  (Note: LWPolyline might not be supported in R12
+//writeClassesSection
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WriteLWPolyLine(LWPolyDataOut pd, const char* layer_name)
+void CDxfWrite::writeClassesSection(void)
 {
-    (*m_ofs) << "  0"               << endl;
-    (*m_ofs) << "LWPOLYLINE"     << endl;
-    (*m_ofs) << "  8"              << endl;    // Group code for layer name
-    (*m_ofs) << layer_name       << endl;    // Layer name
-//    (*m_ofs) << "100"            << endl;    //100 groups are not part of R12
-//    (*m_ofs) << "AcDbPolyline"   << endl;
-    (*m_ofs) << " 90"            << endl;
-    (*m_ofs) << pd.nVert         << endl;    // number of vertices
-    (*m_ofs) << " 70"            << endl;
-    (*m_ofs) << pd.Flag          << endl;
-    (*m_ofs) << " 43"            << endl;
-    (*m_ofs) << pd.Width         << endl;    //Constant width opt
-    (*m_ofs) << " 38"            << endl;
-    (*m_ofs) << pd.Elev          << endl;    // Elevation
-    (*m_ofs) << " 39"            << endl;
-    (*m_ofs) << pd.Thick         << endl;    // Thickness
+    if (m_version < 14) {
+        return;
+    }
+    
+    //static classes section content
+    std::stringstream ss;
+    ss << "classes" << m_version << ".rub";
+    std::string fileSpec = m_dataDir + ss.str();
+    (*m_ofs) << getPlateFile(fileSpec);
+}
+
+//***************************
+//writeTablesSection
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeTablesSection(void)
+{
+    //static tables section head end content
+    std::stringstream ss;
+    ss << "tables1" << m_version << ".rub";
+    std::string fileSpec = m_dataDir + ss.str();
+    (*m_ofs) << getPlateFile(fileSpec);
+
+    (*m_ofs) << (*m_ssLayer).str();
+
+    //static tables section tail end content
+    ss.str("");
+    ss.clear();
+    ss << "tables2" << m_version << ".rub";
+    fileSpec = m_dataDir + ss.str();
+    (*m_ofs) << getPlateFile(fileSpec);
+
+    if (m_version > 12) {
+        (*m_ofs) << (*m_ssBlkRecord).str();
+        (*m_ofs) << "  0"      << endl;
+        (*m_ofs) << "ENDTAB"   << endl;
+    }
+    (*m_ofs) << "  0"      << endl;
+    (*m_ofs) << "ENDSEC"   << endl;
+}
+
+//***************************
+//makeLayerTable
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::makeLayerTable(void)
+{
+    std::string tablehash = getLayerHandle();
+    (*m_ssLayer) << "  0"      << endl;
+    (*m_ssLayer) << "TABLE"    << endl;
+    (*m_ssLayer) << "  2"      << endl;
+    (*m_ssLayer) << "LAYER"    << endl;
+    (*m_ssLayer) << "  5"      << endl;
+    (*m_ssLayer) << tablehash  << endl;
+    if (m_version > 12) {
+        (*m_ssLayer) << "330"      << endl;
+        (*m_ssLayer) << 0          << endl;
+        (*m_ssLayer) << "100"      << endl;
+        (*m_ssLayer) << "AcDbSymbolTable"   << endl;
+    }
+    (*m_ssLayer) << " 70"      << endl;
+    (*m_ssLayer) << m_layerList.size() + 1 << endl;
+
+    (*m_ssLayer) << "  0"      << endl;
+    (*m_ssLayer) << "LAYER"    << endl;
+    (*m_ssLayer) << "  5"      << endl;
+    (*m_ssLayer) << getLayerHandle()  << endl;
+    if (m_version > 12) {
+        (*m_ssLayer) << "330"      << endl;
+        (*m_ssLayer) << tablehash  << endl;
+        (*m_ssLayer) << "100"      << endl;
+        (*m_ssLayer) << "AcDbSymbolTableRecord"      << endl;
+        (*m_ssLayer) << "100"      << endl;
+        (*m_ssLayer) << "AcDbLayerTableRecord"      << endl;
+    }
+    (*m_ssLayer) << "  2"      << endl;
+    (*m_ssLayer) << "0"        << endl;
+    (*m_ssLayer) << " 70"      << endl;
+    (*m_ssLayer) << "   0"     << endl;
+    (*m_ssLayer) << " 62"      << endl;
+    (*m_ssLayer) << "   7"     << endl;
+    (*m_ssLayer) << "  6"      << endl;
+    (*m_ssLayer) << "CONTINUOUS" << endl;
+
+    for (auto& l: m_layerList) {
+        (*m_ssLayer) << "  0"      << endl;
+        (*m_ssLayer) << "LAYER"      << endl;
+        (*m_ssLayer) << "  5"      << endl;
+        (*m_ssLayer) << getLayerHandle() << endl;
+        if (m_version > 12) {
+            (*m_ssLayer) << "330"      << endl;
+            (*m_ssLayer) << tablehash  << endl;
+            (*m_ssLayer) << "100"      << endl;
+            (*m_ssLayer) << "AcDbSymbolTableRecord"      << endl;
+            (*m_ssLayer) << "100"      << endl;
+            (*m_ssLayer) << "AcDbLayerTableRecord"      << endl;
+        }
+        (*m_ssLayer) << "  2"      << endl;
+        (*m_ssLayer) << l << endl;
+        (*m_ssLayer) << " 70"      << endl;
+        (*m_ssLayer) << "    0"      << endl;
+        (*m_ssLayer) << " 62"      << endl;
+        (*m_ssLayer) << "    7"      << endl;
+        (*m_ssLayer) << "  6"      << endl;
+        (*m_ssLayer) << "CONTINUOUS"      << endl;
+    }
+    (*m_ssLayer) << "  0"      << endl;
+    (*m_ssLayer) << "ENDTAB"   << endl;
+}
+
+//***************************
+//makeBlockRecordTableHead
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::makeBlockRecordTableHead(void)
+{
+    if (m_version < 14) {
+        return;
+    }
+        std::string tablehash = getBlkRecordHandle();
+        m_saveBlockRecordTableHandle = tablehash;
+        (*m_ssBlkRecord) << "  0"      << endl;
+        (*m_ssBlkRecord) << "TABLE"      << endl;
+        (*m_ssBlkRecord) << "  2"      << endl;
+        (*m_ssBlkRecord) << "BLOCK_RECORD"      << endl;
+        (*m_ssBlkRecord) << "  5"      << endl;
+        (*m_ssBlkRecord) << tablehash  << endl;
+        (*m_ssBlkRecord) << "330"      << endl;
+        (*m_ssBlkRecord) << "0"        << endl;
+        (*m_ssBlkRecord) << "100"      << endl;
+        (*m_ssBlkRecord) << "AcDbSymbolTable"      << endl;
+        (*m_ssBlkRecord) << "  70"      << endl;
+        (*m_ssBlkRecord) << (m_blockList.size() + 5)   << endl;
+        
+        m_saveModelSpaceHandle = getBlkRecordHandle();
+        (*m_ssBlkRecord) << "  0"      << endl;
+        (*m_ssBlkRecord) << "BLOCK_RECORD"      << endl;
+        (*m_ssBlkRecord) << "  5"      << endl;
+        (*m_ssBlkRecord) << m_saveModelSpaceHandle  << endl;
+        (*m_ssBlkRecord) << "330"      << endl;
+        (*m_ssBlkRecord) << tablehash  << endl;
+        (*m_ssBlkRecord) << "100"      << endl;
+        (*m_ssBlkRecord) << "AcDbSymbolTableRecord"      << endl;
+        (*m_ssBlkRecord) << "100"      << endl;
+        (*m_ssBlkRecord) << "AcDbBlockTableRecord"      << endl;
+        (*m_ssBlkRecord) << "  2"      << endl;
+        (*m_ssBlkRecord) << "*MODEL_SPACE"   << endl;
+//        (*m_ssBlkRecord) << "  1"      << endl;
+//        (*m_ssBlkRecord) << " "        << endl;
+
+        m_savePaperSpaceHandle = getBlkRecordHandle();
+        (*m_ssBlkRecord) << "  0"      << endl;
+        (*m_ssBlkRecord) << "BLOCK_RECORD"  << endl;
+        (*m_ssBlkRecord) << "  5"      << endl;
+        (*m_ssBlkRecord) << m_savePaperSpaceHandle  << endl;
+        (*m_ssBlkRecord) << "330"      << endl;
+        (*m_ssBlkRecord) << tablehash  << endl;
+        (*m_ssBlkRecord) << "100"      << endl;
+        (*m_ssBlkRecord) << "AcDbSymbolTableRecord"      << endl;
+        (*m_ssBlkRecord) << "100"      << endl;
+        (*m_ssBlkRecord) << "AcDbBlockTableRecord"      << endl;
+        (*m_ssBlkRecord) << "  2"      << endl;
+        (*m_ssBlkRecord) << "*PAPER_SPACE"   << endl;
+//        (*m_ssBlkRecord) << "  1"      << endl;
+//        (*m_ssBlkRecord) << " "        << endl;
+}
+ 
+//***************************
+//makeBlockRecordTableBody
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::makeBlockRecordTableBody(void)
+{
+    if (m_version < 14) {
+        return;
+    }
+    
+    int iBlkRecord = 0;
+    for (auto& b: m_blockList) {
+        (*m_ssBlkRecord) << "  0"      << endl;
+        (*m_ssBlkRecord) << "BLOCK_RECORD"      << endl;
+        (*m_ssBlkRecord) << "  5"      << endl;
+        (*m_ssBlkRecord) << m_blkRecordList.at(iBlkRecord)      << endl;
+        (*m_ssBlkRecord) << "330"      << endl;
+        (*m_ssBlkRecord) << m_saveBlockRecordTableHandle  << endl;
+        (*m_ssBlkRecord) << "100"      << endl;
+        (*m_ssBlkRecord) << "AcDbSymbolTableRecord"      << endl;
+        (*m_ssBlkRecord) << "100"      << endl;
+        (*m_ssBlkRecord) << "AcDbBlockTableRecord"      << endl;
+        (*m_ssBlkRecord) << "  2"      << endl;
+        (*m_ssBlkRecord) << b          << endl;
+//        (*m_ssBlkRecord) << " 70"      << endl;
+//        (*m_ssBlkRecord) << "    0"      << endl;
+        iBlkRecord++;
+    }
+}
+
+//***************************
+//makeBlockSectionHead
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::makeBlockSectionHead(void)
+{
+    (*m_ssBlock) << "  0"          << endl;
+    (*m_ssBlock) << "SECTION"      << endl;
+    (*m_ssBlock) << "  2"          << endl;
+    (*m_ssBlock) << "BLOCKS"       << endl;
+    (*m_ssBlock) << "  0"          << endl;
+    (*m_ssBlock) << "BLOCK"        << endl;
+    (*m_ssBlock) << "  5"          << endl;
+    m_currentBlock = getBlockHandle();
+    (*m_ssBlock) << m_currentBlock << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "330"      << endl;
+        (*m_ssBlock) << m_saveModelSpaceHandle << endl;
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbEntity"      << endl;
+    }
+    (*m_ssBlock) << "  8"          << endl;
+    (*m_ssBlock) << "0"            << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbBlockBegin"  << endl;
+    }
+    (*m_ssBlock) << "  2"          << endl;
+    (*m_ssBlock) << "*MODEL_SPACE" << endl;
+    (*m_ssBlock) << " 70"          << endl;
+    (*m_ssBlock) << "   0"         << endl;
+    (*m_ssBlock) << " 10"          << endl;
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << " 20"          << endl; 
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << " 30"          << endl;
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << "  3"          << endl;
+    (*m_ssBlock) << "*MODEL_SPACE" << endl;
+    (*m_ssBlock) << "  1"          << endl;
+    (*m_ssBlock) << " "            << endl;
+    (*m_ssBlock) << "  0"          << endl;
+    (*m_ssBlock) << "ENDBLK"       << endl;
+    (*m_ssBlock) << "  5"          << endl;
+    (*m_ssBlock) << getBlockHandle()   << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "330"      << endl;
+        (*m_ssBlock) << m_saveModelSpaceHandle << endl;
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbEntity"  << endl;
+    }
+    (*m_ssBlock) << "  8"          << endl;
+    (*m_ssBlock) << "0"            << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbBlockEnd"      << endl;
+    }
+
+    (*m_ssBlock) << "  0"          << endl;
+    (*m_ssBlock) << "BLOCK"        << endl;
+    (*m_ssBlock) << "  5"          << endl;
+    m_currentBlock = getBlockHandle();
+    (*m_ssBlock) << m_currentBlock << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "330"      << endl;
+        (*m_ssBlock) << m_savePaperSpaceHandle << endl;
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbEntity"      << endl;
+        (*m_ssBlock) << " 67"          << endl;
+        (*m_ssBlock) << "1"            << endl;
+    }
+    (*m_ssBlock) << "  8"          << endl;
+    (*m_ssBlock) << "0"            << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbBlockBegin"  << endl;
+    }
+    (*m_ssBlock) << "  2"          << endl;
+    (*m_ssBlock) << "*PAPER_SPACE" << endl;
+    (*m_ssBlock) << " 70"          << endl;
+    (*m_ssBlock) << "   0"         << endl;
+    (*m_ssBlock) << " 10"          << endl;
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << " 20"          << endl; 
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << " 30"          << endl;
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << "  3"          << endl;
+    (*m_ssBlock) << "*PAPER_SPACE" << endl;
+    (*m_ssBlock) << "  1"          << endl;
+    (*m_ssBlock) << " "            << endl;
+    (*m_ssBlock) << "  0"          << endl;
+    (*m_ssBlock) << "ENDBLK"       << endl;
+    (*m_ssBlock) << "  5"          << endl;
+    (*m_ssBlock) << getBlockHandle()   << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "330"      << endl;
+        (*m_ssBlock) << m_savePaperSpaceHandle << endl;
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbEntity"      << endl;
+        (*m_ssBlock) << " 67"      << endl;      //paper_space flag
+        (*m_ssBlock) << "    1"    << endl;
+    }
+    (*m_ssBlock) << "  8"          << endl;
+    (*m_ssBlock) << "0"            << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbBlockEnd" << endl;
+    }
+}
+
+std::string CDxfWrite::getPlateFile(std::string fileSpec)
+{
+    std::stringstream outString;
+    Base::FileInfo fi(fileSpec);
+    if (!fi.isReadable()) {
+        Base::Console().Message("dxf unable to open %s!\n",fileSpec.c_str());
+    } else {
+        string line;
+        ifstream inFile (fi.filePath().c_str());
+
+        while (!inFile.eof())
+        {
+            getline(inFile,line);
+            if (!inFile.eof()) {
+                outString << line << '\n';
+            }
+        }
+    }
+    return outString.str();
+}
+
+std::string CDxfWrite::getHandle(void)
+{
+    m_handle++;
+    std::stringstream ss;
+    ss << std::uppercase << std::hex << std::setfill('0') << std::setw(2);
+    ss << m_handle;
+    return ss.str();
+}
+
+std::string CDxfWrite::getEntityHandle(void)
+{
+    return getHandle();
+//    m_entityHandle++;
+//    std::stringstream ss;
+//    ss << std::uppercase << std::hex << std::setfill('0') << std::setw(2);
+//    ss << m_entityHandle;
+//    return ss.str();
+}
+
+std::string CDxfWrite::getLayerHandle(void)
+{
+    return getHandle();
+//    m_layerHandle++;
+//    std::stringstream ss;
+//    ss << std::uppercase << std::hex << std::setfill('0') << std::setw(2);
+//    ss << m_layerHandle;
+//    return ss.str();
+}
+
+std::string CDxfWrite::getBlockHandle(void)
+{
+    return getHandle();
+//    m_blockHandle++;
+//    std::stringstream ss;
+//    ss << std::uppercase << std::hex << std::setfill('0') << std::setw(2);
+//    ss << m_blockHandle;
+//    return ss.str();
+}
+
+std::string CDxfWrite::getBlkRecordHandle(void)
+{
+    return getHandle();
+//    m_blkRecordHandle++;
+//    std::stringstream ss;
+//    ss << std::uppercase << std::hex << std::setfill('0') << std::setw(2);
+//    ss << m_blkRecordHandle;
+//    return ss.str();
+}
+
+void CDxfWrite::addBlockName(std::string b, std::string h) 
+{
+    m_blockList.push_back(b);
+    m_blkRecordList.push_back(h);
+}
+
+void CDxfWrite::setLayerName(std::string s)
+{
+   m_layerName = s;
+   m_layerList.push_back(s);
+}
+
+void CDxfWrite::writeLine(const double* s, const double* e)
+{
+    putLine(toVector3d(s),toVector3d(e),m_ssEntity, getEntityHandle(), m_saveModelSpaceHandle);
+}
+
+void CDxfWrite::putLine(const Base::Vector3d s, const Base::Vector3d e,
+                          std::ostringstream* outStream, const std::string handle,
+                          const std::string ownerHandle)
+{
+    (*outStream) << "  0"       << endl;
+    (*outStream) << "LINE"      << endl;
+    (*outStream) << "  5"       << endl;
+    (*outStream) << handle      << endl;
+    if (m_version > 12) {
+        (*outStream) << "330"      << endl;
+        (*outStream) << ownerHandle  << endl;
+        (*outStream) << "100"      << endl;
+        (*outStream) << "AcDbEntity"      << endl;
+    }
+    (*outStream) << "  8"       << endl;    // Group code for layer name
+    (*outStream) << getLayerName()  << endl;    // Layer number
+    if (m_version > 12) {
+        (*outStream) << "100"      << endl;
+        (*outStream) << "AcDbLine" << endl;
+    }
+    (*outStream) << " 10"       << endl;    // Start point of line
+    (*outStream) << s.x         << endl;    // X in WCS coordinates
+    (*outStream) << " 20"       << endl;
+    (*outStream) << s.y         << endl;    // Y in WCS coordinates
+    (*outStream) << " 30"       << endl;
+    (*outStream) << s.z         << endl;    // Z in WCS coordinates
+    (*outStream) << " 11"       << endl;    // End point of line
+    (*outStream) << e.x         << endl;    // X in WCS coordinates
+    (*outStream) << " 21"       << endl;
+    (*outStream) << e.y         << endl;    // Y in WCS coordinates
+    (*outStream) << " 31"       << endl;
+    (*outStream) << e.z         << endl;    // Z in WCS coordinates
+}
+
+
+//***************************
+//writeLWPolyLine  (Note: LWPolyline might not be supported in R12
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeLWPolyLine(const LWPolyDataOut &pd)
+{
+    (*m_ssEntity) << "  0"               << endl;
+    (*m_ssEntity) << "LWPOLYLINE"     << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"            << endl;    //100 groups are not part of R12
+        (*m_ssEntity) << "AcDbPolyline"   << endl;
+    }
+    (*m_ssEntity) << "  8"            << endl;    // Group code for layer name
+    (*m_ssEntity) << getLayerName()   << endl;    // Layer name
+    (*m_ssEntity) << " 90"            << endl;
+    (*m_ssEntity) << pd.nVert         << endl;    // number of vertices
+    (*m_ssEntity) << " 70"            << endl;
+    (*m_ssEntity) << pd.Flag          << endl;
+    (*m_ssEntity) << " 43"            << endl;
+    (*m_ssEntity) << "0"              << endl;    //Constant width opt
+//    (*m_ssEntity) << pd.Width         << endl;    //Constant width opt
+//    (*m_ssEntity) << " 38"            << endl;
+//    (*m_ssEntity) << pd.Elev          << endl;    // Elevation
+//    (*m_ssEntity) << " 39"            << endl;
+//    (*m_ssEntity) << pd.Thick         << endl;    // Thickness
     for (auto& p: pd.Verts) {
-        (*m_ofs) << " 10"         << endl;    // Vertices
-        (*m_ofs) << p.x          << endl;
-        (*m_ofs) << " 20"           << endl;
-        (*m_ofs) << p.y          << endl;
+        (*m_ssEntity) << " 10"        << endl;    // Vertices
+        (*m_ssEntity) << p.x          << endl;
+        (*m_ssEntity) << " 20"        << endl;
+        (*m_ssEntity) << p.y          << endl;
     } 
     for (auto& s: pd.StartWidth) {
-        (*m_ofs) << " 40"            << endl;
-        (*m_ofs) << s                << endl;    // Start Width
+        (*m_ssEntity) << " 40"        << endl;
+        (*m_ssEntity) << s            << endl;    // Start Width
     }
     for (auto& e: pd.EndWidth) {
-        (*m_ofs) << " 41"            << endl;
-        (*m_ofs) << e                << endl;    // End Width
+        (*m_ssEntity) << " 41"        << endl;
+        (*m_ssEntity) << e            << endl;    // End Width
     }
     for (auto& b: pd.Bulge) {                // Bulge
-        (*m_ofs) << " 42"        << endl;
-        (*m_ofs) << b            << endl;
+        (*m_ssEntity) << " 42"        << endl;
+        (*m_ssEntity) << b            << endl;
     }
-    (*m_ofs) << "210"           << endl;    //Extrusion dir
-    (*m_ofs) << pd.Extr.x        << endl;
-    (*m_ofs) << "220"              << endl;
-    (*m_ofs) << pd.Extr.y        << endl;
-    (*m_ofs) << "230"              << endl;
-    (*m_ofs) << pd.Extr.z        << endl;
+//    (*m_ssEntity) << "210"            << endl;    //Extrusion dir
+//    (*m_ssEntity) << pd.Extr.x        << endl;
+//    (*m_ssEntity) << "220"            << endl;
+//    (*m_ssEntity) << pd.Extr.y        << endl;
+//    (*m_ssEntity) << "230"            << endl;
+//    (*m_ssEntity) << pd.Extr.z        << endl;
 }
 
 //***************************
-//WritePolyline
+//writePolyline
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WritePolyline(LWPolyDataOut pd, const char* layer_name)
+void CDxfWrite::writePolyline(const LWPolyDataOut &pd)
 {
-    (*m_ofs) << "  0"              << endl;
-    (*m_ofs) << "POLYLINE"         << endl;
-    (*m_ofs) << "  8"              << endl;
-    (*m_ofs) << layer_name       << endl;    // Layer name
-    (*m_ofs) << " 66"            << endl;
-    (*m_ofs) << "     1"         << endl;    // vertices follow
-//    (*m_ofs) << "100"            << endl;    //100 groups are not part of R12
-//    (*m_ofs) << "AcDbPolyline"   << endl;
-
-    (*m_ofs) << " 10"            << endl;
-    (*m_ofs) << "0.0"              << endl;
-    (*m_ofs) << " 20"            << endl;
-    (*m_ofs) << "0.0"              << endl;
-    (*m_ofs) << " 30"            << endl;
-    (*m_ofs) << "0.0"              << endl;
-    (*m_ofs) << " 70"            << endl;
-    (*m_ofs) << "0"              << endl;
+    (*m_ssEntity) << "  0"            << endl;
+    (*m_ssEntity) << "POLYLINE"       << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"            << endl;
+    (*m_ssEntity) << getLayerName()       << endl;    // Layer name
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"            << endl;    //100 groups are not part of R12
+        (*m_ssEntity) << "AcDbPolyline"   << endl;
+    }
+    (*m_ssEntity) << " 66"            << endl;
+    (*m_ssEntity) << "     1"         << endl;    // vertices follow
+    (*m_ssEntity) << " 10"            << endl;
+    (*m_ssEntity) << "0.0"            << endl;
+    (*m_ssEntity) << " 20"            << endl;
+    (*m_ssEntity) << "0.0"            << endl;
+    (*m_ssEntity) << " 30"            << endl;
+    (*m_ssEntity) << "0.0"            << endl;
+    (*m_ssEntity) << " 70"            << endl;
+    (*m_ssEntity) << "0"              << endl;
     for (auto& p: pd.Verts) {
-        (*m_ofs) << "  0"        << endl;
-        (*m_ofs) << "VERTEX"     << endl;
-        (*m_ofs) << "  8"        << endl;
-        (*m_ofs) << layer_name   << endl;    // Layer name
-        (*m_ofs) << " 10"        << endl;    // Vertices
-        (*m_ofs) << p.x          << endl;
-        (*m_ofs) << " 20"        << endl;
-        (*m_ofs) << p.y          << endl;
-        (*m_ofs) << " 30"        << endl;
-        (*m_ofs) << "0.0"          << endl;
+        (*m_ssEntity) << "  0"        << endl;
+        (*m_ssEntity) << "VERTEX"     << endl;
+        (*m_ssEntity) << "  5"      << endl;
+        (*m_ssEntity) << getEntityHandle() << endl;
+        (*m_ssEntity) << "  8"        << endl;
+        (*m_ssEntity) << getLayerName()   << endl;
+        (*m_ssEntity) << " 10"        << endl;
+        (*m_ssEntity) << p.x          << endl;
+        (*m_ssEntity) << " 20"        << endl;
+        (*m_ssEntity) << p.y          << endl;
+        (*m_ssEntity) << " 30"        << endl;
+        (*m_ssEntity) << "0.0"        << endl;
     } 
-    (*m_ofs) << "  0"        << endl;
-    (*m_ofs) << "SEQEND"     << endl;
-    (*m_ofs) << "  8"        << endl;
-    (*m_ofs) << layer_name   << endl;
+    (*m_ssEntity) << "  0"            << endl;
+    (*m_ssEntity) << "SEQEND"         << endl;
+    (*m_ssEntity) << "  5"            << endl;
+    (*m_ssEntity) << getEntityHandle()      << endl;
+    (*m_ssEntity) << "  8"            << endl;
+    (*m_ssEntity) << getLayerName()       << endl;
 }
 
-void CDxfWrite::WritePoint(const double* s, const char* layer_name)
+void CDxfWrite::writePoint(const double* s)
 {
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "POINT"     << endl;
-    (*m_ofs) << "  8"         << endl;    // Group code for layer name
-    (*m_ofs) << layer_name  << endl;    // Layer name
-//    (*m_ofs) << "100"       << endl;
-//    (*m_ofs) << "AcDbPoint" << endl;
-    (*m_ofs) << " 10"        << endl;
-    (*m_ofs) << s[0]        << endl;    // X in WCS coordinates
-    (*m_ofs) << " 20"          << endl;
-    (*m_ofs) << s[1]        << endl;    // Y in WCS coordinates
-    (*m_ofs) << " 30"          << endl;
-    (*m_ofs) << s[2]        << endl;    // Z in WCS coordinates
+    (*m_ssEntity) << "  0"            << endl;
+    (*m_ssEntity) << "POINT"          << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"            << endl;    // Group code for layer name
+    (*m_ssEntity) << getLayerName()       << endl;    // Layer name
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"       << endl;
+        (*m_ssEntity) << "AcDbPoint" << endl;
+    }
+    (*m_ssEntity) << " 10"            << endl;
+    (*m_ssEntity) << s[0]             << endl;    // X in WCS coordinates
+    (*m_ssEntity) << " 20"            << endl;
+    (*m_ssEntity) << s[1]             << endl;    // Y in WCS coordinates
+    (*m_ssEntity) << " 30"            << endl;
+    (*m_ssEntity) << s[2]             << endl;    // Z in WCS coordinates
 }
 
-void CDxfWrite::WriteArc(const double* s, const double* e, const double* c, bool dir, const char* layer_name)
+void CDxfWrite::writeArc(const double* s, const double* e, const double* c, bool dir)
 {
     double ax = s[0] - c[0];
     double ay = s[1] - c[1];
     double bx = e[0] - c[0];
     double by = e[1] - c[1];
 
-    double start_angle = atan2(ay, ax) * 180/Pi;
-    double end_angle = atan2(by, bx) * 180/Pi;
+    double start_angle = atan2(ay, ax) * 180/M_PI;
+    double end_angle = atan2(by, bx) * 180/M_PI;
     double radius = sqrt(ax*ax + ay*ay);
     if(!dir){
         double temp = start_angle;
         start_angle = end_angle;
         end_angle = temp;
     }
-    (*m_ofs) << "  0"       << endl;
-    (*m_ofs) << "ARC"       << endl;
-    (*m_ofs) << "  8"       << endl;    // Group code for layer name
-    (*m_ofs) << layer_name  << endl;    // Layer number
-    (*m_ofs) << " 10"       << endl;    // Centre X
-    (*m_ofs) << c[0]        << endl;    // X in WCS coordinates
-    (*m_ofs) << " 20"       << endl;
-    (*m_ofs) << c[1]        << endl;    // Y in WCS coordinates
-    (*m_ofs) << " 30"       << endl;
-    (*m_ofs) << c[2]        << endl;    // Z in WCS coordinates
-    (*m_ofs) << " 40"       << endl;    //
-    (*m_ofs) << radius      << endl;    // Radius
-    (*m_ofs) << " 50"       << endl;
-    (*m_ofs) << start_angle << endl;    // Start angle
-    (*m_ofs) << " 51"       << endl;
-    (*m_ofs) << end_angle   << endl;    // End angle
+    (*m_ssEntity) << "  0"       << endl;
+    (*m_ssEntity) << "ARC"       << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"       << endl;    // Group code for layer name
+    (*m_ssEntity) << getLayerName()  << endl;    // Layer number
+//    (*m_ssEntity) << " 62"          << endl;
+//    (*m_ssEntity) << "     0"       << endl;
+     if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbCircle"   << endl;
+    }
+    (*m_ssEntity) << " 10"       << endl;    // Centre X
+    (*m_ssEntity) << c[0]        << endl;    // X in WCS coordinates
+    (*m_ssEntity) << " 20"       << endl;
+    (*m_ssEntity) << c[1]        << endl;    // Y in WCS coordinates
+    (*m_ssEntity) << " 30"       << endl;
+    (*m_ssEntity) << c[2]        << endl;    // Z in WCS coordinates
+    (*m_ssEntity) << " 40"       << endl;    //
+    (*m_ssEntity) << radius      << endl;    // Radius
+
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbArc" << endl;
+    }
+    (*m_ssEntity) << " 50"       << endl;
+    (*m_ssEntity) << start_angle << endl;    // Start angle
+    (*m_ssEntity) << " 51"       << endl;
+    (*m_ssEntity) << end_angle   << endl;    // End angle
 }
 
-void CDxfWrite::WriteCircle(const double* c, double radius, const char* layer_name)
+void CDxfWrite::writeCircle(const double* c, double radius)
 {
-    (*m_ofs) << "  0"       << endl;
-    (*m_ofs) << "CIRCLE"    << endl;
-    (*m_ofs) << "  8"       << endl;    // Group code for layer name
-    (*m_ofs) << layer_name  << endl;    // Layer number
-    (*m_ofs) << " 10"       << endl;    // Centre X
-    (*m_ofs) << c[0]        << endl;    // X in WCS coordinates
-    (*m_ofs) << " 20"       << endl;
-    (*m_ofs) << c[1]        << endl;    // Y in WCS coordinates
-    (*m_ofs) << " 30"       << endl;
-    (*m_ofs) << c[2]        << endl;    // Z in WCS coordinates
-    (*m_ofs) << " 40"       << endl;    //
-    (*m_ofs) << radius      << endl;    // Radius
+    (*m_ssEntity) << "  0"       << endl;
+    (*m_ssEntity) << "CIRCLE"    << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"       << endl;    // Group code for layer name
+    (*m_ssEntity) << getLayerName()  << endl;    // Layer number
+     if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbCircle"   << endl;
+    }
+    (*m_ssEntity) << " 10"       << endl;    // Centre X
+    (*m_ssEntity) << c[0]        << endl;    // X in WCS coordinates
+    (*m_ssEntity) << " 20"       << endl;
+    (*m_ssEntity) << c[1]        << endl;    // Y in WCS coordinates
+//    (*m_ssEntity) << " 30"       << endl;
+//    (*m_ssEntity) << c[2]        << endl;    // Z in WCS coordinates
+    (*m_ssEntity) << " 40"       << endl;    //
+    (*m_ssEntity) << radius      << endl;    // Radius
 }
 
-void CDxfWrite::WriteEllipse(const double* c, double major_radius, double minor_radius, double rotation, double start_angle, double end_angle, bool endIsCW, const char* layer_name )
+void CDxfWrite::writeEllipse(const double* c, double major_radius, double minor_radius, 
+                             double rotation, double start_angle, double end_angle,
+                             bool endIsCW)
 {
     double m[3];
     m[2]=0;
@@ -340,565 +775,977 @@ void CDxfWrite::WriteEllipse(const double* c, double major_radius, double minor_
         start_angle = end_angle;
         end_angle = temp;
     }
-    (*m_ofs) << "  0"       << endl;
-    (*m_ofs) << "ELLIPSE"   << endl;
-    (*m_ofs) << "  8"       << endl;    // Group code for layer name
-    (*m_ofs) << layer_name  << endl;    // Layer number
-    (*m_ofs) << " 10"       << endl;    // Centre X
-    (*m_ofs) << c[0]        << endl;    // X in WCS coordinates
-    (*m_ofs) << " 20"       << endl;
-    (*m_ofs) << c[1]        << endl;    // Y in WCS coordinates
-    (*m_ofs) << " 30"       << endl;
-    (*m_ofs) << c[2]        << endl;    // Z in WCS coordinates
-    (*m_ofs) << " 40"       << endl;    //
-    (*m_ofs) << ratio       << endl;    // Ratio
-    (*m_ofs) << " 11"       << endl;    //
-    (*m_ofs) << m[0]        << endl;    // Major X
-    (*m_ofs) << " 21"       << endl;
-    (*m_ofs) << m[1]        << endl;    // Major Y
-    (*m_ofs) << " 31"       << endl;
-    (*m_ofs) << m[2]        << endl;    // Major Z
-    // 210,220,230 extrusion direction X,Y,Z
-    (*m_ofs) << " 41"       << endl;
-    (*m_ofs) << start_angle << endl;    // Start angle (radians [0..2pi])
-    (*m_ofs) << " 42"       << endl;
-    (*m_ofs) << end_angle   << endl;    // End angle
+    (*m_ssEntity) << "  0"       << endl;
+    (*m_ssEntity) << "ELLIPSE"   << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"       << endl;    // Group code for layer name
+    (*m_ssEntity) << getLayerName()  << endl;    // Layer number
+     if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbEllipse"   << endl;
+    }
+    (*m_ssEntity) << " 10"       << endl;    // Centre X
+    (*m_ssEntity) << c[0]        << endl;    // X in WCS coordinates
+    (*m_ssEntity) << " 20"       << endl;
+    (*m_ssEntity) << c[1]        << endl;    // Y in WCS coordinates
+    (*m_ssEntity) << " 30"       << endl;
+    (*m_ssEntity) << c[2]        << endl;    // Z in WCS coordinates
+    (*m_ssEntity) << " 11"       << endl;    //
+    (*m_ssEntity) << m[0]        << endl;    // Major X
+    (*m_ssEntity) << " 21"       << endl;
+    (*m_ssEntity) << m[1]        << endl;    // Major Y
+    (*m_ssEntity) << " 31"       << endl;
+    (*m_ssEntity) << m[2]        << endl;    // Major Z
+    (*m_ssEntity) << " 40"       << endl;    //
+    (*m_ssEntity) << ratio       << endl;    // Ratio
+//    (*m_ssEntity) << "210"       << endl;    //extrusion dir??
+//    (*m_ssEntity) << "0"         << endl;
+//    (*m_ssEntity) << "220"       << endl;
+//    (*m_ssEntity) << "0"         << endl;
+//    (*m_ssEntity) << "230"       << endl;
+//    (*m_ssEntity) << "1"         << endl;
+    (*m_ssEntity) << " 41"       << endl;
+    (*m_ssEntity) << start_angle << endl;    // Start angle (radians [0..2pi])
+    (*m_ssEntity) << " 42"       << endl;
+    (*m_ssEntity) << end_angle   << endl;    // End angle
 }
 
 //***************************
-//WriteSpline
+//writeSpline
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WriteSpline(SplineDataOut sd, const char* layer_name)
+void CDxfWrite::writeSpline(const SplineDataOut &sd)
 {
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "SPLINE"       << endl;
-    (*m_ofs) << "  8"          << endl;    // Group code for layer name
-    (*m_ofs) << layer_name     << endl;    // Layer name
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbEntity"   << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbSpline"   << endl;
-    //normal 210,220,230
-    (*m_ofs) << " 70"          << endl;
-    (*m_ofs) << sd.flag        << endl;      //flags
-    (*m_ofs) << " 71"          << endl; 
-    (*m_ofs) << sd.degree      << endl;
-    (*m_ofs) << " 72"          << endl;
-    (*m_ofs) << sd.knots       << endl;
-    (*m_ofs) << " 73"          << endl;
-    (*m_ofs) << sd.control_points   << endl;
-    (*m_ofs) << " 74"          << endl; 
-    (*m_ofs) << 0              << endl;
+    (*m_ssEntity) << "  0"          << endl;
+    (*m_ssEntity) << "SPLINE"       << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"          << endl;    // Group code for layer name
+    (*m_ssEntity) << getLayerName()     << endl;    // Layer name
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbSpline"   << endl;
+    }
+    (*m_ssEntity) << "210"          << endl;
+    (*m_ssEntity) << "0"            << endl;
+    (*m_ssEntity) << "220"          << endl;
+    (*m_ssEntity) << "0"            << endl;
+    (*m_ssEntity) << "230"          << endl;
+    (*m_ssEntity) << "1"            << endl;
 
-    (*m_ofs) << " 12"          << endl;
-    (*m_ofs) << sd.starttan.x  << endl;
-    (*m_ofs) << " 22"          << endl;
-    (*m_ofs) << sd.starttan.y  << endl;
-    (*m_ofs) << " 32"          << endl;
-    (*m_ofs) << sd.starttan.z  << endl;
-    (*m_ofs) << " 13"          << endl;
-    (*m_ofs) << sd.endtan.x    << endl;
-    (*m_ofs) << " 23"          << endl;
-    (*m_ofs) << sd.endtan.y    << endl;
-    (*m_ofs) << " 33"          << endl;
-    (*m_ofs) << sd.endtan.z    << endl;
+    (*m_ssEntity) << " 70"          << endl;
+    (*m_ssEntity) << sd.flag        << endl;      //flags
+    (*m_ssEntity) << " 71"          << endl; 
+    (*m_ssEntity) << sd.degree      << endl;
+    (*m_ssEntity) << " 72"          << endl;
+    (*m_ssEntity) << sd.knots       << endl;
+    (*m_ssEntity) << " 73"          << endl;
+    (*m_ssEntity) << sd.control_points   << endl;
+    (*m_ssEntity) << " 74"          << endl; 
+    (*m_ssEntity) << 0              << endl;
+
+//    (*m_ssEntity) << " 12"          << endl;
+//    (*m_ssEntity) << sd.starttan.x  << endl;
+//    (*m_ssEntity) << " 22"          << endl;
+//    (*m_ssEntity) << sd.starttan.y  << endl;
+//    (*m_ssEntity) << " 32"          << endl;
+//    (*m_ssEntity) << sd.starttan.z  << endl;
+//    (*m_ssEntity) << " 13"          << endl;
+//    (*m_ssEntity) << sd.endtan.x    << endl;
+//    (*m_ssEntity) << " 23"          << endl;
+//    (*m_ssEntity) << sd.endtan.y    << endl;
+//    (*m_ssEntity) << " 33"          << endl;
+//    (*m_ssEntity) << sd.endtan.z    << endl;
 
     for (auto& k: sd.knot) {
-        (*m_ofs) << " 40"      << endl;  
-        (*m_ofs) << k          << endl;  
+        (*m_ssEntity) << " 40"      << endl;  
+        (*m_ssEntity) << k          << endl;  
     }
 
     for (auto& w : sd.weight) {
-        (*m_ofs) << " 41"      << endl;  
-        (*m_ofs) << w          << endl;  
+        (*m_ssEntity) << " 41"      << endl;  
+        (*m_ssEntity) << w          << endl;  
     }
 
     for (auto& c: sd.control) {
-        (*m_ofs) << " 10"      << endl;
-        (*m_ofs) << c.x        << endl;    // X in WCS coordinates
-        (*m_ofs) << " 20"      << endl;
-        (*m_ofs) << c.y        << endl;    // Y in WCS coordinates
-        (*m_ofs) << " 30"      << endl;
-        (*m_ofs) << c.z        << endl;    // Z in WCS coordinates
+        (*m_ssEntity) << " 10"      << endl;
+        (*m_ssEntity) << c.x        << endl;    // X in WCS coordinates
+        (*m_ssEntity) << " 20"      << endl;
+        (*m_ssEntity) << c.y        << endl;    // Y in WCS coordinates
+        (*m_ssEntity) << " 30"      << endl;
+        (*m_ssEntity) << c.z        << endl;    // Z in WCS coordinates
     }
     for (auto& f: sd.fit) {
-        (*m_ofs) << " 11"      << endl;
-        (*m_ofs) << f.x        << endl;    // X in WCS coordinates
-        (*m_ofs) << " 21"      << endl;
-        (*m_ofs) << f.y        << endl;    // Y in WCS coordinates
-        (*m_ofs) << " 31"      << endl;
-        (*m_ofs) << f.z        << endl;    // Z in WCS coordinates
+        (*m_ssEntity) << " 11"      << endl;
+        (*m_ssEntity) << f.x        << endl;    // X in WCS coordinates
+        (*m_ssEntity) << " 21"      << endl;
+        (*m_ssEntity) << f.y        << endl;    // Y in WCS coordinates
+        (*m_ssEntity) << " 31"      << endl;
+        (*m_ssEntity) << f.z        << endl;    // Z in WCS coordinates
     }
 }
 
 //***************************
-//WriteVertex
+//writeVertex
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WriteVertex(double x, double y, double z, const char* layer_name)
+void CDxfWrite::writeVertex(double x, double y, double z)
 {
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "VERTEX"       << endl;
-    (*m_ofs) << "  8"          << endl;
-    (*m_ofs) << layer_name     << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbEntity"   << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbVertex"   << endl;
-    (*m_ofs) << " 10"          << endl;
-    (*m_ofs) << x              << endl;
-    (*m_ofs) << " 20"          << endl; 
-    (*m_ofs) << y              << endl;
-    (*m_ofs) << " 30"          << endl;
-    (*m_ofs) << z              << endl;
-    (*m_ofs) << " 70"          << endl;      //flag
-    (*m_ofs) << 0              << endl;
+    (*m_ssEntity) << "  0"          << endl;
+    (*m_ssEntity) << "VERTEX"       << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"          << endl;
+    (*m_ssEntity) << getLayerName()     << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbVertex"   << endl;
+    }
+    (*m_ssEntity) << " 10"          << endl;
+    (*m_ssEntity) << x              << endl;
+    (*m_ssEntity) << " 20"          << endl; 
+    (*m_ssEntity) << y              << endl;
+    (*m_ssEntity) << " 30"          << endl;
+    (*m_ssEntity) << z              << endl;
+    (*m_ssEntity) << " 70"          << endl;
+    (*m_ssEntity) << 0              << endl;
+}
+
+void CDxfWrite::writeText(const char* text, const double* location1, const double* location2,
+                          const double height, const int horizJust)
+{
+    putText(text, toVector3d(location1), toVector3d(location2),
+            height, horizJust, 
+            m_ssEntity, getEntityHandle(), m_saveModelSpaceHandle);
+}                                     
+
+//***************************
+//putText
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::putText(const char* text, const Base::Vector3d location1, const Base::Vector3d location2,
+                          const double height, const int horizJust,
+                          std::ostringstream* outStream, const std::string handle,
+                          const std::string ownerHandle)
+{
+    (void) location2;
+
+    (*outStream) << "  0"          << endl;
+    (*outStream) << "TEXT"         << endl;
+    (*outStream) << "  5"      << endl;
+    (*outStream) << handle << endl;
+    if (m_version > 12) {
+        (*outStream) << "330"      << endl;
+        (*outStream) << ownerHandle  << endl;
+        (*outStream) << "100"      << endl;
+        (*outStream) << "AcDbEntity"      << endl;
+    }
+    (*outStream) << "  8"          << endl;
+    (*outStream) << getLayerName()     << endl;
+    if (m_version > 12) {
+        (*outStream) << "100"          << endl;
+        (*outStream) << "AcDbText"     << endl;
+    }
+//    (*outStream) << " 39"          << endl;
+//    (*outStream) << 0              << endl;     //thickness
+    (*outStream) << " 10"          << endl;     //first alignment point
+    (*outStream) << location1.x    << endl;
+    (*outStream) << " 20"          << endl; 
+    (*outStream) << location1.y    << endl;
+    (*outStream) << " 30"          << endl;
+    (*outStream) << location1.z    << endl;
+    (*outStream) << " 40"          << endl;
+    (*outStream) << height         << endl;
+    (*outStream) << "  1"          << endl;
+    (*outStream) << text           << endl;
+//    (*outStream) << " 50"          << endl;
+//    (*outStream) << 0              << endl;    //rotation
+//    (*outStream) << " 41"          << endl;
+//    (*outStream) << 1              << endl;
+//    (*outStream) << " 51"          << endl;
+//    (*outStream) << 0              << endl;
+
+    (*outStream) << "  7"          << endl;
+    (*outStream) << "STANDARD"     << endl;    //style
+//    (*outStream) << " 71"          << endl;  //default
+//    (*outStream) << "0"            << endl;
+    (*outStream) << " 72"          << endl;
+    (*outStream) << horizJust      << endl;
+////    (*outStream) << " 73"          << endl;
+////    (*outStream) << "0"            << endl;
+    (*outStream) << " 11"          << endl;    //second alignment point
+    (*outStream) << location2.x    << endl;
+    (*outStream) << " 21"          << endl; 
+    (*outStream) << location2.y    << endl;
+    (*outStream) << " 31"          << endl;
+    (*outStream) << location2.z    << endl;
+//    (*outStream) << "210"          << endl;
+//    (*outStream) << "0"            << endl;
+//    (*outStream) << "220"          << endl;
+//    (*outStream) << "0"            << endl;
+//    (*outStream) << "230"          << endl;
+//    (*outStream) << "1"            << endl;
+    if (m_version > 12) {
+        (*outStream) << "100"          << endl;
+        (*outStream) << "AcDbText"     << endl;
+    }
+    
+}
+
+void CDxfWrite::putArrow(Base::Vector3d arrowPos, Base::Vector3d barb1Pos, Base::Vector3d barb2Pos,
+                         std::ostringstream* outStream, const std::string handle,
+                         const std::string ownerHandle)
+{
+    (*outStream) << "  0"          << endl;
+    (*outStream) << "SOLID"        << endl;
+    (*outStream) << "  5"          << endl;
+    (*outStream) << handle         << endl;
+    if (m_version > 12) {
+        (*outStream) << "330"      << endl;
+        (*outStream) << ownerHandle << endl;
+        (*outStream) << "100"      << endl;
+        (*outStream) << "AcDbEntity"      << endl;
+    }
+    (*outStream) << "  8"          << endl;
+    (*outStream) << "0"            << endl;
+    (*outStream) << " 62"          << endl;
+    (*outStream) << "     0"       << endl;
+    if (m_version > 12) {
+        (*outStream) << "100"      << endl;
+        (*outStream) << "AcDbTrace" << endl;
+    }
+    (*outStream) << " 10"          << endl;
+    (*outStream) << barb1Pos.x     << endl;
+    (*outStream) << " 20"          << endl;
+    (*outStream) << barb1Pos.y     << endl;
+    (*outStream) << " 30"          << endl;
+    (*outStream) << barb1Pos.z     << endl;
+    (*outStream) << " 11"          << endl;
+    (*outStream) << barb2Pos.x     << endl;
+    (*outStream) << " 21"          << endl;
+    (*outStream) << barb2Pos.y     << endl;
+    (*outStream) << " 31"          << endl;
+    (*outStream) << barb2Pos.z     << endl;
+    (*outStream) << " 12"          << endl;
+    (*outStream) << arrowPos.x     << endl;
+    (*outStream) << " 22"          << endl;
+    (*outStream) << arrowPos.y     << endl;
+    (*outStream) << " 32"          << endl;
+    (*outStream) << arrowPos.z     << endl;
+    (*outStream) << " 13"          << endl;
+    (*outStream) << arrowPos.x     << endl;
+    (*outStream) << " 23"          << endl;
+    (*outStream) << arrowPos.y     << endl;
+    (*outStream) << " 33"          << endl;
+    (*outStream) << arrowPos.z     << endl;
 }
 
 //***************************
-//WriteText
+//writeLinearDim
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WriteText(const char* text, const double* location1, const double* location2,
-                          const double height, const int horizJust, const char* layer_name)
-{
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "TEXT"         << endl;
-    (*m_ofs) << "  8"          << endl;
-    (*m_ofs) << layer_name     << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbEntity"   << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbText"     << endl;
-    (*m_ofs) << " 39"          << endl;
-    (*m_ofs) << 0              << endl;     //thickness
-    (*m_ofs) << " 10"          << endl;     //first alignment point
-    (*m_ofs) << location1[0]   << endl;
-    (*m_ofs) << " 20"          << endl; 
-    (*m_ofs) << location1[1]   << endl;
-    (*m_ofs) << " 30"          << endl;
-    (*m_ofs) << location1[2]   << endl;
-    (*m_ofs) << " 40"          << endl;
-    (*m_ofs) << height         << endl;
-    (*m_ofs) << 1              << endl;
-    (*m_ofs) << text           << endl;
-    (*m_ofs) << " 50"          << endl;
-    (*m_ofs) << 0              << endl;    //rotation
-    (*m_ofs) << "  7"          << endl;
-    (*m_ofs) << "STANDARD"     << endl;    //style
-    (*m_ofs) << " 71"          << endl;
-    (*m_ofs) << "0"            << endl;
-    (*m_ofs) << " 72"          << endl;
-    (*m_ofs) << horizJust      << endl;
-    (*m_ofs) << " 73"          << endl;
-    (*m_ofs) << "0"            << endl;
-    (*m_ofs) << " 11"          << endl;    //second alignment point
-    (*m_ofs) << location2[0]   << endl;
-    (*m_ofs) << " 21"          << endl; 
-    (*m_ofs) << location2[1]   << endl;
-    (*m_ofs) << " 31"          << endl;
-    (*m_ofs) << location2[2]   << endl;
-}
-
-//***************************
-//WriteLinearDim
-//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WriteLinearDim(const double* textMidPoint, const double* lineDefPoint,
+#define ALIGNED 0
+#define HORIZONTAL 1
+#define VERTICAL 2
+void CDxfWrite::writeLinearDim(const double* textMidPoint, const double* lineDefPoint,
                          const double* extLine1, const double* extLine2,
-                         const char* dimText,
-                         const char* layer_name)
-//const char* blockName, const int dimType, const int attachPoint,
+                         const char* dimText, int type)
 {
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "DIMENSION"    << endl;
-    (*m_ofs) << "  8"          << endl;
-    (*m_ofs) << layer_name     << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbEntity"   << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbDimension"     << endl;
-    (*m_ofs) << "  2"          << endl;
-    (*m_ofs) << "*" << layer_name     << endl;     // blockName
-    (*m_ofs) << " 10"          << endl;     //dimension line definition point
-    (*m_ofs) << lineDefPoint[0]    << endl;
-    (*m_ofs) << " 20"          << endl; 
-    (*m_ofs) << lineDefPoint[1]    << endl;
-    (*m_ofs) << " 30"          << endl;
-    (*m_ofs) << lineDefPoint[2]    << endl;
-    (*m_ofs) << " 11"          << endl;     //text mid point
-    (*m_ofs) << textMidPoint[0]    << endl;
-    (*m_ofs) << " 21"          << endl; 
-    (*m_ofs) << textMidPoint[1]    << endl;
-    (*m_ofs) << " 31"          << endl;
-    (*m_ofs) << textMidPoint[2]    << endl;
-    (*m_ofs) << " 70"          << endl;
-    (*m_ofs) << 1              << endl;    // dimType1 = Aligned
-    (*m_ofs) << " 71"          << endl;
-    (*m_ofs) << 1              << endl;    // attachPoint ??1 = topleft
-    (*m_ofs) << "  1"          << endl;
-    (*m_ofs) << dimText        << endl;    
-    (*m_ofs) << "  3"          << endl;
-    (*m_ofs) << "STANDARD"     << endl;    //style
+    (*m_ssEntity) << "  0"          << endl;
+    (*m_ssEntity) << "DIMENSION"    << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"          << endl;
+    (*m_ssEntity) << getLayerName()     << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbDimension"     << endl;
+    }
+    (*m_ssEntity) << "  2"          << endl;
+    (*m_ssEntity) << "*" << getLayerName()     << endl;     // blockName
+    (*m_ssEntity) << " 10"          << endl;     //dimension line definition point
+    (*m_ssEntity) << lineDefPoint[0]    << endl;
+    (*m_ssEntity) << " 20"          << endl; 
+    (*m_ssEntity) << lineDefPoint[1]    << endl;
+    (*m_ssEntity) << " 30"          << endl;
+    (*m_ssEntity) << lineDefPoint[2]    << endl;
+    (*m_ssEntity) << " 11"          << endl;     //text mid point
+    (*m_ssEntity) << textMidPoint[0]    << endl;
+    (*m_ssEntity) << " 21"          << endl; 
+    (*m_ssEntity) << textMidPoint[1]    << endl;
+    (*m_ssEntity) << " 31"          << endl;
+    (*m_ssEntity) << textMidPoint[2]    << endl;
+    if (type == ALIGNED) {
+        (*m_ssEntity) << " 70"          << endl;
+        (*m_ssEntity) << 1              << endl;    // dimType1 = Aligned
+    }
+    if ( (type == HORIZONTAL) ||
+         (type == VERTICAL) ) {
+        (*m_ssEntity) << " 70"          << endl;
+        (*m_ssEntity) << 32             << endl;  // dimType0 = Aligned + 32 (bit for unique block)?
+    }
+//    (*m_ssEntity) << " 71"          << endl;    // not R12
+//    (*m_ssEntity) << 1              << endl;    // attachPoint ??1 = topleft
+    (*m_ssEntity) << "  1"          << endl;
+    (*m_ssEntity) << dimText        << endl;    
+    (*m_ssEntity) << "  3"          << endl;
+    (*m_ssEntity) << "STANDARD"     << endl;    //style
 //linear dims
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbAlignedDimension"     << endl;
-    (*m_ofs) << " 13"          << endl;
-    (*m_ofs) << extLine1[0]    << endl;
-    (*m_ofs) << " 23"          << endl; 
-    (*m_ofs) << extLine1[1]    << endl;
-    (*m_ofs) << " 33"          << endl;
-    (*m_ofs) << extLine1[2]    << endl;
-    (*m_ofs) << " 14"          << endl;
-    (*m_ofs) << extLine2[0]    << endl;
-    (*m_ofs) << " 24"          << endl; 
-    (*m_ofs) << extLine2[1]    << endl;
-    (*m_ofs) << " 34"          << endl;
-    (*m_ofs) << extLine2[2]    << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbAlignedDimension"     << endl;
+    }
+    (*m_ssEntity) << " 13"          << endl;
+    (*m_ssEntity) << extLine1[0]    << endl;
+    (*m_ssEntity) << " 23"          << endl; 
+    (*m_ssEntity) << extLine1[1]    << endl;
+    (*m_ssEntity) << " 33"          << endl;
+    (*m_ssEntity) << extLine1[2]    << endl;
+    (*m_ssEntity) << " 14"          << endl;
+    (*m_ssEntity) << extLine2[0]    << endl;
+    (*m_ssEntity) << " 24"          << endl; 
+    (*m_ssEntity) << extLine2[1]    << endl;
+    (*m_ssEntity) << " 34"          << endl;
+    (*m_ssEntity) << extLine2[2]    << endl;
+    if (m_version > 12) {
+        if (type == VERTICAL) {
+            (*m_ssEntity) << " 50"          << endl;
+            (*m_ssEntity) << "90"     << endl;
+        }
+        if ( (type == HORIZONTAL) ||
+             (type == VERTICAL) ) {
+            (*m_ssEntity) << "100"          << endl;
+            (*m_ssEntity) << "AcDbRotatedDimension"     << endl;
+        }
+    }
 
-    writeDimBlock(layer_name);
-    //three Lines 
-    // extLine2 -> lineDefPoint
-    // extLine1 -> (extLine1 + (lineDefPoint - extLine2)))
-    //lineDefPoint -> (extLine1 + (lineDefPoint - extLine2)))
+    writeDimBlockPreamble();
+    writeLinearDimBlock(textMidPoint,lineDefPoint,
+                                        extLine1, extLine2,
+                                        dimText, type);
+    writeBlockTrailer();
 }
 
 //***************************
-//WriteAngularDim
+//writeAngularDim
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WriteAngularDim(const double* textMidPoint, const double* lineDefPoint,
+void CDxfWrite::writeAngularDim(const double* textMidPoint, const double* lineDefPoint,
                          const double* startExt1, const double* endExt1,
                          const double* startExt2, const double* endExt2,
-                         const char* dimText,
-                         const char* layer_name)
+                         const char* dimText)
 {
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "DIMENSION"    << endl;
-    (*m_ofs) << "  8"          << endl;
-    (*m_ofs) << layer_name     << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbEntity"   << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbDimension"     << endl;
-    (*m_ofs) << "  2"          << endl;
-    (*m_ofs) << "*" << layer_name     << endl;     // blockName
+    (*m_ssEntity) << "  0"          << endl;
+    (*m_ssEntity) << "DIMENSION"    << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"          << endl;
+    (*m_ssEntity) << getLayerName()     << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbDimension"     << endl;
+    }
+    (*m_ssEntity) << "  2"          << endl;
+    (*m_ssEntity) << "*" << getLayerName()     << endl;     // blockName
 
-    (*m_ofs) << " 10"          << endl;
-    (*m_ofs) << endExt2[0]     << endl;
-    (*m_ofs) << " 20"          << endl; 
-    (*m_ofs) << endExt2[1]     << endl;
-    (*m_ofs) << " 30"          << endl;
-    (*m_ofs) << endExt2[2]     << endl;
+    (*m_ssEntity) << " 10"          << endl;
+    (*m_ssEntity) << endExt2[0]     << endl;
+    (*m_ssEntity) << " 20"          << endl; 
+    (*m_ssEntity) << endExt2[1]     << endl;
+    (*m_ssEntity) << " 30"          << endl;
+    (*m_ssEntity) << endExt2[2]     << endl;
 
-    (*m_ofs) << " 11"          << endl;
-    (*m_ofs) << textMidPoint[0]  << endl;
-    (*m_ofs) << " 21"          << endl; 
-    (*m_ofs) << textMidPoint[1]  << endl;
-    (*m_ofs) << " 31"          << endl;
-    (*m_ofs) << textMidPoint[2]  << endl;
+    (*m_ssEntity) << " 11"          << endl;
+    (*m_ssEntity) << textMidPoint[0]  << endl;
+    (*m_ssEntity) << " 21"          << endl; 
+    (*m_ssEntity) << textMidPoint[1]  << endl;
+    (*m_ssEntity) << " 31"          << endl;
+    (*m_ssEntity) << textMidPoint[2]  << endl;
 
-    (*m_ofs) << " 70"          << endl;
-    (*m_ofs) << 34             << endl;    // dimType 2 = Angular  5 = Angular 3 point
-                                           // +32 for block??
-    (*m_ofs) << " 71"          << endl;
-    (*m_ofs) << 5              << endl;    // attachPoint 5 = middle
-    (*m_ofs) << "  1"          << endl;
-    (*m_ofs) << dimText        << endl;    
-    (*m_ofs) << "  3"          << endl;
-    (*m_ofs) << "STANDARD"     << endl;    //style
+    (*m_ssEntity) << " 70"          << endl;
+    (*m_ssEntity) << 2             << endl;    // dimType 2 = Angular  5 = Angular 3 point
+                                           // +32 for block?? (not R12)
+//    (*m_ssEntity) << " 71"          << endl;    // not R12?  not required?
+//    (*m_ssEntity) << 5              << endl;    // attachPoint 5 = middle
+    (*m_ssEntity) << "  1"          << endl;
+    (*m_ssEntity) << dimText        << endl;    
+    (*m_ssEntity) << "  3"          << endl;
+    (*m_ssEntity) << "STANDARD"     << endl;    //style
 //angular dims
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDb2LineAngularDimension"     << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDb2LineAngularDimension"     << endl;
+    }
+    (*m_ssEntity) << " 13"           << endl;
+    (*m_ssEntity) << startExt1[0]    << endl;
+    (*m_ssEntity) << " 23"           << endl; 
+    (*m_ssEntity) << startExt1[1]    << endl;
+    (*m_ssEntity) << " 33"           << endl;
+    (*m_ssEntity) << startExt1[2]    << endl;
 
-    (*m_ofs) << " 13"           << endl;
-    (*m_ofs) << startExt1[0]    << endl;
-    (*m_ofs) << " 23"           << endl; 
-    (*m_ofs) << startExt1[1]    << endl;
-    (*m_ofs) << " 33"           << endl;
-    (*m_ofs) << startExt1[2]    << endl;
+    (*m_ssEntity) << " 14"           << endl;
+    (*m_ssEntity) << endExt1[0]      << endl;
+    (*m_ssEntity) << " 24"           << endl; 
+    (*m_ssEntity) << endExt1[1]      << endl;
+    (*m_ssEntity) << " 34"           << endl;
+    (*m_ssEntity) << endExt1[2]      << endl;
 
-    (*m_ofs) << " 14"           << endl;
-    (*m_ofs) << endExt1[0]      << endl;
-    (*m_ofs) << " 24"           << endl; 
-    (*m_ofs) << endExt1[1]      << endl;
-    (*m_ofs) << " 34"           << endl;
-    (*m_ofs) << endExt1[2]      << endl;
+    (*m_ssEntity) << " 15"           << endl;
+    (*m_ssEntity) << startExt2[0]    << endl;
+    (*m_ssEntity) << " 25"           << endl; 
+    (*m_ssEntity) << startExt2[1]    << endl;
+    (*m_ssEntity) << " 35"           << endl;
+    (*m_ssEntity) << startExt2[2]    << endl;
 
-    (*m_ofs) << " 15"           << endl;
-    (*m_ofs) << startExt2[0]    << endl;
-    (*m_ofs) << " 25"           << endl; 
-    (*m_ofs) << startExt2[1]    << endl;
-    (*m_ofs) << " 35"           << endl;
-    (*m_ofs) << startExt2[2]    << endl;
-
-    (*m_ofs) << " 16"           << endl;
-    (*m_ofs) << lineDefPoint[0] << endl;
-    (*m_ofs) << " 26"           << endl; 
-    (*m_ofs) << lineDefPoint[1] << endl;
-    (*m_ofs) << " 36"           << endl;
-    (*m_ofs) << lineDefPoint[2] << endl;
-
-    writeDimBlock(layer_name);
+    (*m_ssEntity) << " 16"           << endl;
+    (*m_ssEntity) << lineDefPoint[0] << endl;
+    (*m_ssEntity) << " 26"           << endl; 
+    (*m_ssEntity) << lineDefPoint[1] << endl;
+    (*m_ssEntity) << " 36"           << endl;
+    (*m_ssEntity) << lineDefPoint[2] << endl;
+    writeDimBlockPreamble();
+    writeAngularDimBlock(textMidPoint, lineDefPoint,
+                         startExt1, endExt1,
+                         startExt2, endExt2,
+                         dimText);
+    writeBlockTrailer();
 }
+
 //***************************
-//WriteRadialDim
+//writeRadialDim
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WriteRadialDim(const double* centerPoint, const double* textMidPoint, 
+void CDxfWrite::writeRadialDim(const double* centerPoint, const double* textMidPoint, 
                          const double* arcPoint,
-                         const char* dimText,
-                         const char* layer_name)
+                         const char* dimText)
 {
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "DIMENSION"    << endl;
-    (*m_ofs) << "  8"          << endl;
-    (*m_ofs) << layer_name     << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbEntity"   << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbDimension"     << endl;
-    (*m_ofs) << "  2"          << endl;
-    (*m_ofs) << "*" << layer_name     << endl;     // blockName
-    (*m_ofs) << " 10"          << endl;     // arc center point
-    (*m_ofs) << centerPoint[0] << endl;
-    (*m_ofs) << " 20"          << endl; 
-    (*m_ofs) << centerPoint[1] << endl;
-    (*m_ofs) << " 30"          << endl;
-    (*m_ofs) << centerPoint[2] << endl;
-    (*m_ofs) << " 11"          << endl;     //text mid point
-    (*m_ofs) << textMidPoint[0]   << endl;
-    (*m_ofs) << " 21"          << endl; 
-    (*m_ofs) << textMidPoint[1]   << endl;
-    (*m_ofs) << " 31"          << endl;
-    (*m_ofs) << textMidPoint[2]   << endl;
-    (*m_ofs) << " 70"          << endl;
-    (*m_ofs) << 4              << endl;    // dimType 4 = Radius
-    (*m_ofs) << " 71"          << endl;
-    (*m_ofs) << 1              << endl;    // attachPoint 5 = middle center
-    (*m_ofs) << "  1"          << endl;
-    (*m_ofs) << dimText        << endl;    
-    (*m_ofs) << "  3"          << endl;
-    (*m_ofs) << "STANDARD"     << endl;    //style
+    (*m_ssEntity) << "  0"          << endl;
+    (*m_ssEntity) << "DIMENSION"    << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"          << endl;
+    (*m_ssEntity) << getLayerName()     << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbDimension"     << endl;
+    }
+    (*m_ssEntity) << "  2"          << endl;
+    (*m_ssEntity) << "*" << getLayerName()     << endl;     // blockName
+    (*m_ssEntity) << " 10"          << endl;     // arc center point
+    (*m_ssEntity) << centerPoint[0] << endl;
+    (*m_ssEntity) << " 20"          << endl; 
+    (*m_ssEntity) << centerPoint[1] << endl;
+    (*m_ssEntity) << " 30"          << endl;
+    (*m_ssEntity) << centerPoint[2] << endl;
+    (*m_ssEntity) << " 11"          << endl;     //text mid point
+    (*m_ssEntity) << textMidPoint[0]   << endl;
+    (*m_ssEntity) << " 21"          << endl; 
+    (*m_ssEntity) << textMidPoint[1]   << endl;
+    (*m_ssEntity) << " 31"          << endl;
+    (*m_ssEntity) << textMidPoint[2]   << endl;
+    (*m_ssEntity) << " 70"          << endl;
+    (*m_ssEntity) << 4              << endl;    // dimType 4 = Radius
+//    (*m_ssEntity) << " 71"          << endl;    // not R12
+//    (*m_ssEntity) << 1              << endl;    // attachPoint 5 = middle center
+    (*m_ssEntity) << "  1"          << endl;
+    (*m_ssEntity) << dimText        << endl;    
+    (*m_ssEntity) << "  3"          << endl;
+    (*m_ssEntity) << "STANDARD"     << endl;    //style
 //radial dims
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbRadialDimension"     << endl;
-    (*m_ofs) << " 15"          << endl;
-    (*m_ofs) << arcPoint[0]    << endl;
-    (*m_ofs) << " 25"          << endl; 
-    (*m_ofs) << arcPoint[1]    << endl;
-    (*m_ofs) << " 35"          << endl;
-    (*m_ofs) << arcPoint[2]    << endl;
-    (*m_ofs) << " 40"          << endl;   // leader length????
-    (*m_ofs) << 0              << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbRadialDimension"     << endl;
+    }
+    (*m_ssEntity) << " 15"          << endl;
+    (*m_ssEntity) << arcPoint[0]    << endl;
+    (*m_ssEntity) << " 25"          << endl; 
+    (*m_ssEntity) << arcPoint[1]    << endl;
+    (*m_ssEntity) << " 35"          << endl;
+    (*m_ssEntity) << arcPoint[2]    << endl;
+    (*m_ssEntity) << " 40"          << endl;   // leader length????
+    (*m_ssEntity) << 0              << endl;
 
-    writeDimBlock(layer_name);
+    writeDimBlockPreamble();
+    writeRadialDimBlock(centerPoint, textMidPoint, arcPoint, dimText);
+    writeBlockTrailer();
 }
 
 //***************************
-//WriteDiametricDim
+//writeDiametricDim
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::WriteDiametricDim(const double* textMidPoint, 
+void CDxfWrite::writeDiametricDim(const double* textMidPoint, 
                          const double* arcPoint1, const double* arcPoint2,
-                         const char* dimText,
-                         const char* layer_name)
+                         const char* dimText)
 {
-    (*m_ofs) << "  0"          << endl;
-    (*m_ofs) << "DIMENSION"    << endl;
-    (*m_ofs) << "  8"          << endl;
-    (*m_ofs) << layer_name     << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbEntity"   << endl;
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbDimension"     << endl;
-    (*m_ofs) << "  2"          << endl;
-    (*m_ofs) << "*" << layer_name     << endl;     // blockName
-    (*m_ofs) << " 10"          << endl;
-    (*m_ofs) << arcPoint1[0]   << endl;
-    (*m_ofs) << " 20"          << endl; 
-    (*m_ofs) << arcPoint1[1]   << endl;
-    (*m_ofs) << " 30"          << endl;
-    (*m_ofs) << arcPoint1[2]   << endl;
-    (*m_ofs) << " 11"          << endl;     //text mid point
-    (*m_ofs) << textMidPoint[0]   << endl;
-    (*m_ofs) << " 21"          << endl; 
-    (*m_ofs) << textMidPoint[1]   << endl;
-    (*m_ofs) << " 31"          << endl;
-    (*m_ofs) << textMidPoint[2]   << endl;
-    (*m_ofs) << " 70"          << endl;
-    (*m_ofs) << 3              << endl;    // dimType 3 = Diameter
-    (*m_ofs) << " 71"          << endl;
-    (*m_ofs) << 5              << endl;    // attachPoint 5 = middle center
-    (*m_ofs) << "  1"          << endl;
-    (*m_ofs) << dimText        << endl;    
-    (*m_ofs) << "  3"          << endl;
-    (*m_ofs) << "STANDARD"     << endl;    //style
+    (*m_ssEntity) << "  0"          << endl;
+    (*m_ssEntity) << "DIMENSION"    << endl;
+    (*m_ssEntity) << "  5"      << endl;
+    (*m_ssEntity) << getEntityHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "330"      << endl;
+        (*m_ssEntity) << m_saveModelSpaceHandle  << endl;
+        (*m_ssEntity) << "100"      << endl;
+        (*m_ssEntity) << "AcDbEntity"      << endl;
+    }
+    (*m_ssEntity) << "  8"          << endl;
+    (*m_ssEntity) << getLayerName()     << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbDimension"     << endl;
+    }
+    (*m_ssEntity) << "  2"          << endl;
+    (*m_ssEntity) << "*" << getLayerName()     << endl;     // blockName
+    (*m_ssEntity) << " 10"          << endl;
+    (*m_ssEntity) << arcPoint1[0]   << endl;
+    (*m_ssEntity) << " 20"          << endl; 
+    (*m_ssEntity) << arcPoint1[1]   << endl;
+    (*m_ssEntity) << " 30"          << endl;
+    (*m_ssEntity) << arcPoint1[2]   << endl;
+    (*m_ssEntity) << " 11"          << endl;     //text mid point
+    (*m_ssEntity) << textMidPoint[0]   << endl;
+    (*m_ssEntity) << " 21"          << endl; 
+    (*m_ssEntity) << textMidPoint[1]   << endl;
+    (*m_ssEntity) << " 31"          << endl;
+    (*m_ssEntity) << textMidPoint[2]   << endl;
+    (*m_ssEntity) << " 70"          << endl;
+    (*m_ssEntity) << 3              << endl;    // dimType 3 = Diameter
+//    (*m_ssEntity) << " 71"          << endl;    // not R12
+//    (*m_ssEntity) << 5              << endl;    // attachPoint 5 = middle center
+    (*m_ssEntity) << "  1"          << endl;
+    (*m_ssEntity) << dimText        << endl;    
+    (*m_ssEntity) << "  3"          << endl;
+    (*m_ssEntity) << "STANDARD"     << endl;    //style
 //diametric dims
-//    (*m_ofs) << "100"          << endl;
-//    (*m_ofs) << "AcDbDiametricDimension"     << endl;
-    (*m_ofs) << " 15"          << endl;
-    (*m_ofs) << arcPoint2[0]   << endl;
-    (*m_ofs) << " 25"          << endl; 
-    (*m_ofs) << arcPoint2[1]   << endl;
-    (*m_ofs) << " 35"          << endl;
-    (*m_ofs) << arcPoint2[2]   << endl;
-    (*m_ofs) << " 40"          << endl;   // leader length????
-    (*m_ofs) << 0              << endl;
+    if (m_version > 12) {
+        (*m_ssEntity) << "100"          << endl;
+        (*m_ssEntity) << "AcDbDiametricDimension"     << endl;
+    }
+    (*m_ssEntity) << " 15"          << endl;
+    (*m_ssEntity) << arcPoint2[0]   << endl;
+    (*m_ssEntity) << " 25"          << endl; 
+    (*m_ssEntity) << arcPoint2[1]   << endl;
+    (*m_ssEntity) << " 35"          << endl;
+    (*m_ssEntity) << arcPoint2[2]   << endl;
+    (*m_ssEntity) << " 40"          << endl;   // leader length????
+    (*m_ssEntity) << 0              << endl;
 
-    writeDimBlock(layer_name);
+    writeDimBlockPreamble();
+    writeDiametricDimBlock(textMidPoint, arcPoint1, arcPoint2, dimText);
+    writeBlockTrailer();
 }
 
 //***************************
-//WriteDimBlock
+//writeDimBlockPreamble
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::writeDimBlock(const char* layer_name)
+void CDxfWrite::writeDimBlockPreamble(void)
 {
-    m_ssBlock << "  0"          << endl;
-    m_ssBlock << "BLOCK"        << endl;
-    m_ssBlock << "  8"          << endl;
-    m_ssBlock << layer_name     << endl;
-    m_ssBlock << "  2"          << endl;
-    m_ssBlock << "*" << layer_name     << endl;     // blockName
-    m_ssBlock << " 10"          << endl;
-    m_ssBlock << 0.0            << endl;
-    m_ssBlock << " 20"          << endl; 
-    m_ssBlock << 0.0            << endl;
-    m_ssBlock << " 30"          << endl;
-    m_ssBlock << 0.0            << endl;
-    m_ssBlock << "  3"          << endl;
-    m_ssBlock << "*" << layer_name     << endl;     // blockName
-    m_ssBlock << "  1"          << endl;
-    m_ssBlock << ""             << endl;
-    m_ssBlock << "  0"          << endl;
-    m_ssBlock << "ENDBLK"       << endl;
-    //TODO: add extension, dimension line endpoints
+    if (m_version > 12) {
+        std::string blockName("*");
+        blockName += getLayerName();
+        m_saveBlkRecordHandle = getBlkRecordHandle();
+        addBlockName(blockName,m_saveBlkRecordHandle);
+    }
+
+    m_currentBlock = getBlockHandle();
+    (*m_ssBlock) << "  0"          << endl;
+    (*m_ssBlock) << "BLOCK"        << endl;
+    (*m_ssBlock) << "  5"      << endl;
+    (*m_ssBlock) << m_currentBlock << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "330"      << endl;
+        (*m_ssBlock) << m_saveBlkRecordHandle << endl;
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbEntity"      << endl;
+    }
+    (*m_ssBlock) << "  8"          << endl;
+    (*m_ssBlock) << getLayerName() << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "100"          << endl;
+        (*m_ssBlock) << "AcDbBlockBegin"  << endl;
+    }
+    (*m_ssBlock) << "  2"          << endl;
+    (*m_ssBlock) << "*" << getLayerName()     << endl;     // blockName
+    (*m_ssBlock) << " 70"          << endl;
+    (*m_ssBlock) << "   1"         << endl;
+    (*m_ssBlock) << " 10"          << endl;
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << " 20"          << endl; 
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << " 30"          << endl;
+    (*m_ssBlock) << 0.0            << endl;
+    (*m_ssBlock) << "  3"          << endl;
+    (*m_ssBlock) << "*" << getLayerName()     << endl;     // blockName
+    (*m_ssBlock) << "  1"          << endl;
+    (*m_ssBlock) << " "            << endl;
 }
 
 //***************************
-//WriteTablesSection
+//writeBlockTrailer
 //added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
-void CDxfWrite::writeTablesSection(void)
+void CDxfWrite::writeBlockTrailer(void)
 {
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "SECTION"  << endl;
-    (*m_ofs) << "  2"      << endl;
-    (*m_ofs) << "TABLES"   << endl;
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "TABLE"    << endl;
-    (*m_ofs) << "  2"      << endl;
-    (*m_ofs) << "VPORT"    << endl;
-    (*m_ofs) << " 70"      << endl;
-    (*m_ofs) << "    1"    << endl;
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "VPORT"    << endl;
+    (*m_ssBlock) << "  0"    << endl;
+    (*m_ssBlock) << "ENDBLK" << endl;
+    (*m_ssBlock) << "  5"      << endl;
+    (*m_ssBlock) << getBlockHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "330"    << endl;
+        (*m_ssBlock) << m_saveBlkRecordHandle    << endl;
+        (*m_ssBlock) << "100"    << endl;
+        (*m_ssBlock) << "AcDbEntity"    << endl;
+    }
+//    (*m_ssBlock) << " 67"    << endl;
+//    (*m_ssBlock) << "1"    << endl;
+    (*m_ssBlock) << "  8"    << endl;
+    (*m_ssBlock) << getLayerName() << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "100"    << endl;
+        (*m_ssBlock) << "AcDbBlockEnd"    << endl;
+    }
+}
 
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbSymbolTableRecord"    << endl;
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbViewportTableRecord"    << endl;
+//***************************
+//writeLinearDimBlock
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeLinearDimBlock(const double* textMidPoint, const double* dimLine,
+                         const double* e1Start, const double* e2Start,
+                         const char* dimText, int type)
+{
+    Base::Vector3d e1S(e1Start[0],e1Start[1],e1Start[2]);
+    Base::Vector3d e2S(e2Start[0],e2Start[1],e2Start[2]);
+    Base::Vector3d dl(dimLine[0],dimLine[1],dimLine[2]);      //point on DimLine (somewhere!)
+    Base::Vector3d perp = dl.DistanceToLineSegment(e2S,e1S);
+    Base::Vector3d e1E = e1S - perp;
+    Base::Vector3d e2E = e2S - perp;
+    Base::Vector3d para = e1E - e2E;
+    Base::Vector3d X(1.0,0.0,0.0);
+    double angle = para.GetAngle(X);
+    angle = angle * 180.0 / M_PI;
+    if (type == ALIGNED) {
+        //NOP
+    } else if (type == HORIZONTAL) { 
+        double x = e1Start[0];
+        double y = dimLine[1];
+        e1E = Base::Vector3d(x, y, 0.0);
+        x = e2Start[0];
+        e2E = Base::Vector3d(x, y, 0.0);
+        perp = Base::Vector3d(0, -1, 0);     //down
+        para = Base::Vector3d(1, 0, 0);      //right
+        if (dimLine[1] > e1Start[1]) {
+            perp = Base::Vector3d(0, 1, 0);   //up 
+        }
+        if (e1Start[0] > e2Start[0]) {
+            para = Base::Vector3d(-1, 0, 0);  //left
+        }
+        angle = 0;
+    } else if (type == VERTICAL) {
+        double x = dimLine[0];
+        double y = e1Start[1];
+        e1E = Base::Vector3d(x, y, 0.0);
+        y = e2Start[1];
+        e2E = Base::Vector3d(x, y, 0.0);
+        perp = Base::Vector3d(1, 0, 0);
+        para = Base::Vector3d(0, 1, 0);
+        if (dimLine[0] < e1Start[0]) {
+            perp = Base::Vector3d(-1, 0, 0);
+        }
+        if (e1Start[1] > e2Start[1]) {
+            para = Base::Vector3d(0, -1, 0);
+        }
+        angle = 90;
+    }
 
-    (*m_ofs) << "  2"      << endl;
-    (*m_ofs) << "*ACTIVE"  << endl;
-    (*m_ofs) << " 70"      << endl;
-    (*m_ofs) << "    0"    << endl;
-    (*m_ofs) << " 10"      << endl;
-    (*m_ofs) << 0          << endl;
-    (*m_ofs) << " 20"      << endl;
-    (*m_ofs) << 0          << endl;
-    (*m_ofs) << " 11"      << endl;
-    (*m_ofs) << 1          << endl;
-    (*m_ofs) << " 21"      << endl;
-    (*m_ofs) << 1          << endl;
-//    (*m_ofs) << " 12"      << endl;  //center of vport in WCS
-//    (*m_ofs) << 153.1      << endl;  //doesn't seem to work in LC
-//    (*m_ofs) << " 22"      << endl;  // 132.5x98.44
-//    (*m_ofs) << 104.9      << endl;
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "ENDTAB"   << endl;
+    double arrowLen = 5.0;             //magic number
+    double arrowWidth = arrowLen/6.0/2.0;   //magic number calc!
 
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "TABLE"    << endl;
-    (*m_ofs) << "  2"      << endl;
-    (*m_ofs) << "STYLE"    << endl;
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbSymbolTable"    << endl;
-    (*m_ofs) << " 70"      << endl;
-    (*m_ofs) << "    3"    << endl;
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "STYLE"    << endl;
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbSymbolTableRecord"    << endl;
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbTextStyleTableRecord"    << endl;
-    (*m_ofs) << "  2"      << endl;
-    (*m_ofs) << "STANDARD" << endl;
-    (*m_ofs) << " 70"      << endl;
-    (*m_ofs) << "    0"    << endl;
-    (*m_ofs) << " 40"      << endl;
-    (*m_ofs) << "0"        << endl;
-    (*m_ofs) << " 41"      << endl;
-    (*m_ofs) << "1"        << endl;
-    (*m_ofs) << " 50"      << endl;
-    (*m_ofs) << "0"        << endl;
-    (*m_ofs) << " 71"      << endl;
-    (*m_ofs) << "    0"    << endl;
-    (*m_ofs) << " 42"      << endl;
-    (*m_ofs) << "1"        << endl;
-    (*m_ofs) << "  3"      << endl;
-    (*m_ofs) << "TXT"      << endl;
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "ENDTAB"   << endl;
+    putLine(e2S, e2E,
+            m_ssBlock, getBlockHandle(),
+            m_saveBlkRecordHandle);
 
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "TABLE"    << endl;
-    (*m_ofs) << "  2"      << endl;
-    (*m_ofs) << "DIMSTYLE" << endl;
+    putLine(e1S, e1E,
+            m_ssBlock, getBlockHandle(),
+            m_saveBlkRecordHandle);
 
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbSymbolTable"    << endl;
-    (*m_ofs) << " 70"      << endl;
-    (*m_ofs) << "    1"    << endl;
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbDimStyleTable"    << endl;
-    (*m_ofs) << " 71"      << endl;
-    (*m_ofs) << "    1"    << endl;
+    putLine(e1E, e2E,
+            m_ssBlock, getBlockHandle(),
+            m_saveBlkRecordHandle);
 
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "DIMSTYLE" << endl;
+    putText(dimText,toVector3d(textMidPoint), toVector3d(dimLine),3.5,1,
+            m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
 
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbSymbolTableRecord"    << endl;
-//    (*m_ofs) << "100"      << endl;
-//    (*m_ofs) << "AcDbDimStyleTableRecord"    << endl;
+    perp.Normalize();
+    para.Normalize();
+    Base::Vector3d arrowStart = e1E;
+    Base::Vector3d barb1 = arrowStart + perp*arrowWidth - para*arrowLen;
+    Base::Vector3d barb2 = arrowStart - perp*arrowWidth - para*arrowLen;
+    putArrow(arrowStart, barb1, barb2,
+             m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
 
-    (*m_ofs) << "  2"      << endl;
-    (*m_ofs) << "STANDARD" << endl;
-    (*m_ofs) << " 70"      << endl;
-    (*m_ofs) << "    0"    << endl;
-    (*m_ofs) << "  3"      << endl;
-    (*m_ofs) << ""         << endl;
-    (*m_ofs) << "  4"      << endl;
-    (*m_ofs) << ""         << endl;
-    (*m_ofs) << "  5"      << endl;
-    (*m_ofs) << ""         << endl;
-    (*m_ofs) << "  6"      << endl;
-    (*m_ofs) << ""         << endl;
-    (*m_ofs) << "  7"      << endl;
-    (*m_ofs) << ""         << endl;
-    (*m_ofs) << " 40"      << endl;
-    (*m_ofs) << "1"        << endl;
-    (*m_ofs) << "  0"      << endl;
-    (*m_ofs) << "ENDTAB"   << endl;
+
+    arrowStart = e2E;
+    barb1 = arrowStart + perp*arrowWidth + para*arrowLen;
+    barb2 = arrowStart - perp*arrowWidth + para*arrowLen;
+    putArrow(arrowStart, barb1, barb2,
+             m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+}
+
+//***************************
+//writeAngularDimBlock
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeAngularDimBlock(const double* textMidPoint, const double* lineDefPoint,
+                         const double* startExt1, const double* endExt1,
+                         const double* startExt2, const double* endExt2,
+                         const char* dimText)
+{
+    Base::Vector3d e1S(startExt1[0],startExt1[1],startExt1[2]);   //apex
+    Base::Vector3d e2S(startExt2[0],startExt2[1],startExt2[2]);
+    Base::Vector3d e1E(endExt1[0],endExt1[1],endExt1[2]);
+    Base::Vector3d e2E(endExt2[0],endExt2[1],endExt2[2]);
+    Base::Vector3d e1 = e1E - e1S;
+    Base::Vector3d e2 = e2E - e2S;
+
+    double startAngle = atan2(e2.y,e2.x);
+    double endAngle = atan2(e1.y,e1.x);
+    double span = fabs(endAngle - startAngle);
+    double offset = span * 0.10;
+    if (startAngle < 0) {
+         startAngle += 2.0 * M_PI;
+    }
+    if (endAngle < 0) {
+         endAngle += 2.0 * M_PI;
+    }
+    Base::Vector3d startOff(cos(startAngle + offset),sin(startAngle + offset),0.0);
+    Base::Vector3d endOff(cos(endAngle - offset),sin(endAngle - offset),0.0);
+    startAngle = startAngle * 180.0 / M_PI;
+    endAngle = endAngle * 180.0 / M_PI;
+    
+    Base::Vector3d linePt(lineDefPoint[0],lineDefPoint[1],lineDefPoint[2]);
+    double radius = (e2S - linePt).Length();
+
+    (*m_ssBlock) << "  0"          << endl;
+    (*m_ssBlock) << "ARC"          << endl;       //dimline arc
+    (*m_ssBlock) << "  5"          << endl;
+    (*m_ssBlock) << getBlockHandle() << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "330"      << endl;
+        (*m_ssBlock) << m_saveBlkRecordHandle << endl;
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbEntity"      << endl;
+    }
+    (*m_ssBlock) << "  8"          << endl;
+    (*m_ssBlock) << "0"            << endl;
+//    (*m_ssBlock) << " 62"          << endl;
+//    (*m_ssBlock) << "     0"       << endl;
+    if (m_version > 12) {
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbCircle" << endl;
+    }
+    (*m_ssBlock) << " 10"          << endl;
+    (*m_ssBlock) << startExt2[0]   << endl;      //arc center
+    (*m_ssBlock) << " 20"          << endl;
+    (*m_ssBlock) << startExt2[1]   << endl;
+    (*m_ssBlock) << " 30"          << endl;
+    (*m_ssBlock) << startExt2[2]   << endl;
+    (*m_ssBlock) << " 40"          << endl;
+    (*m_ssBlock) << radius         << endl;      //radius
+    if (m_version > 12) {
+        (*m_ssBlock) << "100"      << endl;
+        (*m_ssBlock) << "AcDbArc" << endl;
+    }
+    (*m_ssBlock) << " 50"          << endl;
+    (*m_ssBlock) << startAngle     << endl;            //start angle
+    (*m_ssBlock) << " 51"          << endl;
+    (*m_ssBlock) << endAngle       << endl;            //end angle
+
+    putText(dimText,toVector3d(textMidPoint), toVector3d(textMidPoint),3.5,1,
+            m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+
+    e1.Normalize();
+    e2.Normalize();
+    Base::Vector3d arrow1Start = e1S + e1 * radius;
+    Base::Vector3d arrow2Start = e2S + e2 * radius;
+
+    //wf: idk why the Tan pts have to be reversed.  something to do with CW angles in Dxf?
+    Base::Vector3d endTan = e1S + (startOff * radius);
+    Base::Vector3d startTan = e2S + (endOff * radius);
+    Base::Vector3d tanP1 = (arrow1Start - startTan).Normalize();
+    Base::Vector3d perp1(-tanP1.y,tanP1.x,tanP1.z); 
+    Base::Vector3d tanP2 = (arrow2Start - endTan).Normalize();
+    Base::Vector3d perp2(-tanP2.y,tanP2.x,tanP2.z); 
+    double arrowLen = 5.0;                  //magic number
+    double arrowWidth = arrowLen/6.0/2.0;   //magic number calc!
+
+    Base::Vector3d barb1 = arrow1Start + perp1*arrowWidth - tanP1*arrowLen;
+    Base::Vector3d barb2 = arrow1Start - perp1*arrowWidth - tanP1*arrowLen;
+
+    putArrow(arrow1Start, barb1, barb2,
+             m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+
+    barb1 = arrow2Start + perp2*arrowWidth - tanP2*arrowLen;
+    barb2 = arrow2Start - perp2*arrowWidth - tanP2*arrowLen;
+
+    putArrow(arrow2Start, barb1, barb2,
+             m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+}
+
+//***************************
+//writeRadialDimBlock
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeRadialDimBlock(const double* centerPoint, const double* textMidPoint, 
+                         const double* arcPoint, const char* dimText)
+{
+    putLine(toVector3d(centerPoint), toVector3d(arcPoint),
+            m_ssBlock, getBlockHandle(),
+            m_saveBlkRecordHandle);
+
+    putText(dimText,toVector3d(textMidPoint), toVector3d(textMidPoint),3.5,1,
+            m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+
+    Base::Vector3d c(centerPoint[0],centerPoint[1],centerPoint[2]);
+    Base::Vector3d a(arcPoint[0],arcPoint[1],arcPoint[2]);
+    Base::Vector3d para = a - c;
+    double arrowLen = 5.0;                  //magic number
+    double arrowWidth = arrowLen/6.0/2.0;   //magic number calc!
+    para.Normalize();
+    Base::Vector3d perp(-para.y,para.x,para.z);
+    Base::Vector3d arrowStart = a;
+    Base::Vector3d barb1 = arrowStart + perp*arrowWidth - para*arrowLen;
+    Base::Vector3d barb2 = arrowStart - perp*arrowWidth - para*arrowLen;
+
+    putArrow(arrowStart, barb1, barb2,
+             m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+}
+
+//***************************
+//writeDiametricDimBlock
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeDiametricDimBlock(const double* textMidPoint, 
+                         const double* arcPoint1, const double* arcPoint2,
+                         const char* dimText)
+{
+    putLine(toVector3d(arcPoint1), toVector3d(arcPoint2),
+            m_ssBlock, getBlockHandle(),
+            m_saveBlkRecordHandle);
+
+    putText(dimText,toVector3d(textMidPoint), toVector3d(textMidPoint),3.5,1,
+            m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+
+    Base::Vector3d a1(arcPoint1[0],arcPoint1[1],arcPoint1[2]);
+    Base::Vector3d a2(arcPoint2[0],arcPoint2[1],arcPoint2[2]);
+    Base::Vector3d para = a2 - a1;
+    double arrowLen = 5.0;                  //magic number
+    double arrowWidth = arrowLen/6.0/2.0;   //magic number calc!
+    para.Normalize();
+    Base::Vector3d perp(-para.y,para.x,para.z);
+    Base::Vector3d arrowStart = a1;
+    Base::Vector3d barb1 = arrowStart + perp*arrowWidth + para*arrowLen;
+    Base::Vector3d barb2 = arrowStart - perp*arrowWidth + para*arrowLen;
+
+    putArrow(arrowStart, barb1, barb2,
+             m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+
+    arrowStart = a2;
+    barb1 = arrowStart + perp*arrowWidth - para*arrowLen;
+    barb2 = arrowStart - perp*arrowWidth - para*arrowLen;
+    putArrow(arrowStart, barb1, barb2,
+             m_ssBlock,getBlockHandle(),m_saveBlkRecordHandle);
+
+}
+
+//***************************
+//writeBlocksSection
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeBlocksSection(void)
+{
+    if (m_version < 14) {
+        std::stringstream ss;
+        ss << "blocks1" << m_version << ".rub";
+        std::string fileSpec = m_dataDir + ss.str();
+        (*m_ofs) << getPlateFile(fileSpec);
+    }
+    
+    //write blocks content
+    (*m_ofs) << (*m_ssBlock).str();
 
     (*m_ofs) << "  0"      << endl;
     (*m_ofs) << "ENDSEC"   << endl;
 }
 
+//***************************
+//writeEntitiesSection
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeEntitiesSection(void)
+{
+    std::stringstream ss;
+    ss << "entities" << m_version << ".rub";
+    std::string fileSpec = m_dataDir + ss.str();
+    (*m_ofs) << getPlateFile(fileSpec);
+    
+    //write entities content
+    (*m_ofs) << (*m_ssEntity).str();
+    
+
+    (*m_ofs) << "  0"      << endl;
+    (*m_ofs) << "ENDSEC"   << endl;
+}
+
+//***************************
+//writeObjectsSection
+//added by Wandererfan 2018 (wandererfan@gmail.com) for FreeCAD project
+void CDxfWrite::writeObjectsSection(void)
+{
+    if (m_version < 14) {
+        return;
+    }
+    std::stringstream ss;
+    ss << "objects" << m_version << ".rub";
+    std::string fileSpec = m_dataDir + ss.str();
+    (*m_ofs) << getPlateFile(fileSpec);
+}
 
 CDxfRead::CDxfRead(const char* filepath)
 {
     // start the file
+    memset( m_str, '\0', sizeof(m_str) );
     memset( m_unused_line, '\0', sizeof(m_unused_line) );
     m_fail = false;
     m_aci = 0;
     m_eUnits = eMillimeters;
     m_measurement_inch = false;
     strcpy(m_layer_name, "0");  // Default layer name
+    memset( m_section_name, '\0', sizeof(m_section_name) );
+    memset( m_block_name, '\0', sizeof(m_block_name) );
     m_ignore_errors = true;
 
     m_ifs = new ifstream(filepath);
@@ -1135,7 +1982,7 @@ bool CDxfRead::ReadArc()
     double start_angle = 0.0;// in degrees
     double end_angle = 0.0;
     double radius = 0.0;
-    double c[3]; // centre
+    double c[3] = {0,0,0}; // centre
     double z_extrusion_dir = 1.0;
     bool hidden = false;
     
@@ -1416,7 +2263,7 @@ bool CDxfRead::ReadSpline()
 bool CDxfRead::ReadCircle()
 {
     double radius = 0.0;
-    double c[3]; // centre
+    double c[3] = {0,0,0}; // centre
     bool hidden = false;
 
     while(!((*m_ifs).eof()))
@@ -1574,8 +2421,8 @@ bool CDxfRead::ReadText()
 
 bool CDxfRead::ReadEllipse()
 {
-    double c[3]; // centre
-    double m[3]; //major axis point
+    double c[3] = {0,0,0}; // centre
+    double m[3] = {0,0,0}; //major axis point
     double ratio=0; //ratio of major to minor axis
     double start=0; //start of arc
     double end=0;  // end of arc
@@ -1675,7 +2522,7 @@ static bool poly_prev_found = false;
 static double poly_prev_x;
 static double poly_prev_y;
 static double poly_prev_z;
-static double poly_prev_bulge_found;
+static bool poly_prev_bulge_found = false;
 static double poly_prev_bulge;
 static bool poly_first_found = false;
 static double poly_first_x;
@@ -1948,7 +2795,7 @@ bool CDxfRead::ReadPolyLine()
                 get_line();
                 if (! strcmp(m_str,"VERTEX"))
                 {
-                    double vertex[3];
+                    double vertex[3] = {0,0,0};
                     if (CDxfRead::ReadVertex(vertex, &bulge_found, &bulge))
                     {
                         if(!first_vertex_section_found) {
@@ -1991,17 +2838,17 @@ bool CDxfRead::ReadPolyLine()
 }
 
 void CDxfRead::OnReadArc(double start_angle, double end_angle, double radius, const double* c, double z_extrusion_dir, bool hidden){
-    double s[3], e[3], temp[3] ;
+    double s[3] = {0,0,0}, e[3] = {0,0,0}, temp[3] = {0,0,0};
     if (z_extrusion_dir==1.0)
   {
     temp[0] =c[0];
     temp[1] =c[1];
     temp[2] =c[2];
-    s[0] = c[0] + radius * cos(start_angle * Pi/180);
-    s[1] = c[1] + radius * sin(start_angle * Pi/180);
+    s[0] = c[0] + radius * cos(start_angle * M_PI/180);
+    s[1] = c[1] + radius * sin(start_angle * M_PI/180);
     s[2] = c[2];
-    e[0] = c[0] + radius * cos(end_angle * Pi/180);
-    e[1] = c[1] + radius * sin(end_angle * Pi/180);
+    e[0] = c[0] + radius * cos(end_angle * M_PI/180);
+    e[1] = c[1] + radius * sin(end_angle * M_PI/180);
     e[2] = c[2];
    }
     else
@@ -2010,11 +2857,11 @@ void CDxfRead::OnReadArc(double start_angle, double end_angle, double radius, co
     temp[1] =c[1];
     temp[2] =c[2];
     
-    e[0] = -(c[0] + radius * cos(start_angle * Pi/180));
-    e[1] = (c[1] + radius * sin(start_angle * Pi/180));
+    e[0] = -(c[0] + radius * cos(start_angle * M_PI/180));
+    e[1] = (c[1] + radius * sin(start_angle * M_PI/180));
     e[2] = c[2];
-    s[0] = -(c[0] + radius * cos(end_angle * Pi/180));
-    s[1] = (c[1] + radius * sin(end_angle * Pi/180));
+    s[0] = -(c[0] + radius * cos(end_angle * M_PI/180));
+    s[1] = (c[1] + radius * sin(end_angle * M_PI/180));
     s[2] = c[2];
 
     }
@@ -2024,8 +2871,8 @@ void CDxfRead::OnReadArc(double start_angle, double end_angle, double radius, co
 void CDxfRead::OnReadCircle(const double* c, double radius, bool hidden){
     double s[3];
     double start_angle = 0;
-    s[0] = c[0] + radius * cos(start_angle * Pi/180);
-    s[1] = c[1] + radius * sin(start_angle * Pi/180);
+    s[0] = c[0] + radius * cos(start_angle * M_PI/180);
+    s[1] = c[1] + radius * sin(start_angle * M_PI/180);
     s[2] = c[2];
 
     OnReadCircle(s, c, false, hidden); //false to change direction because otherwise the arc length is zero
@@ -2047,13 +2894,10 @@ void CDxfRead::OnReadEllipse(const double* c, const double* m, double ratio, dou
 
 bool CDxfRead::ReadInsert()
 {
-    double c[3]; // coordinate
-    double s[3]; // scale
+    double c[3] = {0,0,0}; // coordinate
+    double s[3] = {1,1,1}; // scale
     double rot = 0.0; // rotation
-    char name[1024];
-    s[0] = 1.0;
-    s[1] = 1.0;
-    s[2] = 1.0;
+    char name[1024] = {0};
 
     while(!((*m_ifs).eof()))
     {
@@ -2070,7 +2914,7 @@ bool CDxfRead::ReadInsert()
             case 0: 
                 // next item found
                 DerefACI();
-                OnReadInsert(c, s, name, rot * Pi/180);
+                OnReadInsert(c, s, name, rot * M_PI/180);
                 return(true);
             case 8: 
                 // Layer name follows
@@ -2142,9 +2986,9 @@ bool CDxfRead::ReadInsert()
 
 bool CDxfRead::ReadDimension()
 {
-    double s[3]; // startpoint
-    double e[3]; // endpoint
-    double p[3]; // dimpoint
+    double s[3] = {0,0,0}; // startpoint
+    double e[3] = {0,0,0}; // endpoint
+    double p[3] = {0,0,0}; // dimpoint
     double rot = -1.0; // rotation
 
     while(!((*m_ifs).eof()))
@@ -2162,7 +3006,7 @@ bool CDxfRead::ReadDimension()
             case 0: 
                 // next item found
                 DerefACI();
-                OnReadDimension(s, e, p, rot * Pi/180);
+                OnReadDimension(s, e, p, rot * M_PI/180);
                 return(true);
             case 8: 
                 // Layer name follows
@@ -2414,6 +3258,7 @@ void CDxfRead::DoRead(const bool ignore_errors /* = false */ )
         {
             get_line();
             if (!strcmp( m_str, "SECTION" )){
+              strcpy(m_section_name, "");
               get_line();
               get_line();
               if (strcmp( m_str, "ENTITIES" ))

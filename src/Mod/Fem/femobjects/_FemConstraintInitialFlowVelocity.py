@@ -1,6 +1,7 @@
 # ***************************************************************************
+# *   Copyright (c) 2017 Markus Hovorka <m.hovorka@live.de>                 *
 # *                                                                         *
-# *   Copyright (c) 2017 - Markus Hovorka <m.hovorka@live.de>               *
+# *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -20,11 +21,13 @@
 # *                                                                         *
 # ***************************************************************************
 
-
-__title__ = "the constraint initial flow velocity object"
+__title__ = "FreeCAD FEM constraint initial flow velocity document object"
 __author__ = "Markus Hovorka, Bernd Hahnebach"
 __url__ = "http://www.freecadweb.org"
 
+## @package FemConstraintInitialFlowVelocity
+#  \ingroup FEM
+#  \brief FreeCAD FEM constraint initial flow velocity object
 
 from . import FemConstraint
 
@@ -36,20 +39,38 @@ class Proxy(FemConstraint.Proxy):
     def __init__(self, obj):
         super(Proxy, self).__init__(obj)
         obj.addProperty(
-            "App::PropertyFloat", "VelocityX",
-            "Parameter", "Body heat flux")
+            "App::PropertyFloat",
+            "VelocityX",
+            "Parameter",
+            "Body heat flux"
+        )
         obj.addProperty(
-            "App::PropertyBool", "VelocityXEnabled",
-            "Parameter", "Body heat flux")
+            "App::PropertyBool",
+            "VelocityXEnabled",
+            "Parameter",
+            "Body heat flux"
+        )
         obj.addProperty(
-            "App::PropertyFloat", "VelocityY",
-            "Parameter", "Body heat flux")
+            "App::PropertyFloat",
+            "VelocityY",
+            "Parameter",
+            "Body heat flux"
+        )
         obj.addProperty(
-            "App::PropertyBool", "VelocityYEnabled",
-            "Parameter", "Body heat flux")
+            "App::PropertyBool",
+            "VelocityYEnabled",
+            "Parameter",
+            "Body heat flux"
+        )
         obj.addProperty(
-            "App::PropertyFloat", "VelocityZ",
-            "Parameter", "Body heat flux")
+            "App::PropertyFloat",
+            "VelocityZ",
+            "Parameter",
+            "Body heat flux"
+        )
         obj.addProperty(
-            "App::PropertyBool", "VelocityZEnabled",
-            "Parameter", "Body heat flux")
+            "App::PropertyBool",
+            "VelocityZEnabled",
+            "Parameter",
+            "Body heat flux"
+        )

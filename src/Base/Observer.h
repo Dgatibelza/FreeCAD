@@ -1,5 +1,5 @@
 /***************************************************************************
- *   (c) Jürgen Riegel (juergen.riegel@web.de) 2002                        *   
+ *   Copyright (c) 2002 Jürgen Riegel <juergen.riegel@web.de>              *   
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -19,7 +19,6 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
  *   USA                                                                   *
  *                                                                         *
- *   Juergen Riegel 2002                                                   *
  ***************************************************************************/
 
 
@@ -32,7 +31,9 @@
 #include <set>
 #include <cstring>
 #include <cstdio>
-
+#include <exception>
+#include "Exception.h"
+#include "Console.h"
 
 namespace Base
 {
@@ -138,7 +139,7 @@ public:
     //printf("Attach observer %p\n", ToObserv);
     _ObserverSet.insert(ToObserv);
     if ( _ObserverSet.size() == count )
-      printf("Observer %p already attached\n", ToObserv);
+      printf("Observer %p already attached\n", static_cast<void*>(ToObserv));
 #else
     _ObserverSet.insert(ToObserv);
 #endif
@@ -157,7 +158,7 @@ public:
     //printf("Detach observer %p\n", ToObserv);
     _ObserverSet.erase(ToObserv);
     if ( _ObserverSet.size() == count )
-      printf("Observer %p already detached\n", ToObserv);
+      printf("Observer %p already detached\n", static_cast<void*>(ToObserv));
 #else
     _ObserverSet.erase(ToObserv);
 #endif
@@ -172,7 +173,19 @@ public:
   void Notify(_MessageType rcReason)
   {
     for(typename std::set<Observer<_MessageType> * >::iterator Iter=_ObserverSet.begin();Iter!=_ObserverSet.end();++Iter)
-      (*Iter)->OnChange(*this,rcReason);   // send OnChange-signal
+    {
+      try {
+        (*Iter)->OnChange(*this,rcReason);   // send OnChange-signal
+      } catch (Base::Exception &e) {
+        Base::Console().Error("Unhandled Base::Exception caught when notifying observer.\n"
+                              "The error message is: %s\n", e.what());
+      } catch (std::exception &e) {
+        Base::Console().Error("Unhandled std::exception caught when notifying observer\n"
+                              "The error message is: %s\n", e.what());
+      } catch (...) {
+        Base::Console().Error("Unhandled unknown exception caught in when notifying observer.\n");
+      }
+    }
   }
 
   /** Get an Observer by name

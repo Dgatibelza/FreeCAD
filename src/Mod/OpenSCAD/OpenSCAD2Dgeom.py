@@ -22,11 +22,13 @@
 
 __title__="FreeCAD OpenSCAD Workbench - 2D helper functions"
 __author__ = "Sebastian Hoogen"
-__url__ = ["http://www.freecadweb.org"]
+__url__ = ["https://www.freecadweb.org"]
 
 '''
 This Script includes python functions to convert imported dxf geometry to Faces
 '''
+
+from functools import reduce
 
 class Overlappingfaces():
     '''combines overlapping faces together'''
@@ -411,7 +413,7 @@ def superWireReverse(debuglist,closed=False):
     '''superWireReverse(debuglist,[closed]): forces a wire between edges
     that don't necessarily have coincident endpoints. If closed=True, wire
     will always be closed. debuglist has a tuple for every edge.The first
-    entry is the edge, the second is the flag 'does not nedd to be inverted'
+    entry is the edge, the second is the flag 'does not need to be inverted'
     '''
     #taken from draftlibs
     def median(v1,v2):

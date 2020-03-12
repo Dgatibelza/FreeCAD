@@ -24,7 +24,6 @@
 #ifndef DRAWINGGUI_VIEWPROVIDERVIEWPART_H
 #define DRAWINGGUI_VIEWPROVIDERVIEWPART_H
 
-#include <App/PropertyLinks.h>
 #include <App/PropertyStandard.h>
 #include <App/PropertyUnits.h>
 
@@ -44,25 +43,31 @@ public:
     /// destructor
     virtual ~ViewProviderViewPart();
 
-    App::PropertyFloat  LineWidth;
-    App::PropertyFloat  HiddenWidth;
-    App::PropertyFloat  IsoWidth;
-    App::PropertyFloat  ExtraWidth;
+    App::PropertyLength LineWidth;
+    App::PropertyLength HiddenWidth;
+    App::PropertyLength IsoWidth;
+    App::PropertyLength ExtraWidth;
     App::PropertyBool   ArcCenterMarks;
     App::PropertyFloat  CenterScale;
     App::PropertyBool   HorizCenterLine;
     App::PropertyBool   VertCenterLine;
     App::PropertyBool   ShowSectionLine;
+    App::PropertyFloat  HighlightAdjust;
+    App::PropertyBool   ShowAllEdges;
 
     virtual void attach(App::DocumentObject *);
     virtual void setDisplayMode(const char* ModeName);
     virtual bool useNewSelectionModel(void) const {return false;}
     /// returns a list of all possible modes
     virtual std::vector<std::string> getDisplayModes(void) const;
+    virtual bool onDelete(const std::vector<std::string> &);
+    virtual bool canDelete(App::DocumentObject* obj) const;
 
 public:
     virtual void onChanged(const App::Property *prop);
     virtual void updateData(const App::Property*);
+    virtual void handleChangedPropertyType(Base::XMLReader &reader, const char *TypeName, App::Property * prop);
+
 
     virtual std::vector<App::DocumentObject*> claimChildren(void) const;
 

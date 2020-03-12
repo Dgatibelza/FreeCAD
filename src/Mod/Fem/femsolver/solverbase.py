@@ -1,6 +1,8 @@
 # ***************************************************************************
+# *   Copyright (c) 2017 Markus Hovorka <m.hovorka@live.de>                 *
+# *   Copyright (c) 2017 Bernd Hahnebach <bernd@bimstatik.org>              *
 # *                                                                         *
-# *   Copyright (c) 2017 - Markus Hovorka <m.hovorka@live.de>               *
+# *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -20,18 +22,22 @@
 # *                                                                         *
 # ***************************************************************************
 
-
-__title__ = "General Solver Object"
+__title__ = "FreeCAD FEM solver base object"
 __author__ = "Markus Hovorka"
 __url__ = "http://www.freecadweb.org"
 
+## \addtogroup FEM
+#  @{
 
-from PySide import QtGui
 
 import FreeCAD as App
+
 from . import run
+from femtools.errors import MustSaveError
+from femtools.errors import DirectoryDoesNotExistError
 
 if App.GuiUp:
+    from PySide import QtGui
     import FreeCADGui as Gui
     from femguiobjects import _TaskPanelFemSolverControl
 
@@ -77,19 +83,27 @@ class ViewProxy(object):
     def setEdit(self, vobj, mode=0):
         try:
             machine = run.getMachine(vobj.Object)
-        except run.MustSaveError:
-            QtGui.QMessageBox.critical(
-                Gui.getMainWindow(),
-                "Can't open Task Panel",
+        except MustSaveError:
+            error_message = (
                 "Please save the file before opening the task panel. "
                 "This must be done because the location of the working "
-                "directory is set to \"Beside .fcstd File\".")
-            return False
-        except run.DirectoryDoesNotExist:
+                "directory is set to \"Beside *.FCStd File\"."
+            )
+            App.Console.PrintError(error_message + "\n")
             QtGui.QMessageBox.critical(
                 Gui.getMainWindow(),
                 "Can't open Task Panel",
-                "Selected working directory doesn't exist.")
+                error_message
+            )
+            return False
+        except DirectoryDoesNotExistError:
+            error_message = "Selected working directory doesn't exist."
+            App.Console.PrintError(error_message + "\n")
+            QtGui.QMessageBox.critical(
+                Gui.getMainWindow(),
+                "Can't open Task Panel",
+                error_message
+            )
             return False
         task = _TaskPanelFemSolverControl.ControlTaskPanel(machine)
         Gui.Control.showDialog(task)
@@ -106,3 +120,5 @@ class ViewProxy(object):
 
     def attach(self, vobj):
         pass
+
+##  @}

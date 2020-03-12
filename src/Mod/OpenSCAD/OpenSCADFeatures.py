@@ -22,7 +22,12 @@
 
 __title__="FreeCAD OpenSCAD Workbench - Parametric Features"
 __author__ = "Sebastian Hoogen"
-__url__ = ["http://www.freecadweb.org"]
+__url__ = ["https://www.freecadweb.org"]
+
+try:
+    long
+except NameError:
+    long = int
 
 '''
 This Script includes python Features to represent OpenSCAD Operations
@@ -335,7 +340,7 @@ class Frustum:
                 pts.append(pts[0])
                 shape = Part.makePolygon(pts)
                 face = Part.Face(shape)
-                if ir==1: #top face
+                if ir==0: #top face
                     face.reverse()
                 wires.append(shape)
                 faces.append(face)
@@ -366,7 +371,7 @@ class Twist:
         #    self.createGeometry(fp)
 
     def createGeometry(self,fp):
-        import FreeCAD,Part,math
+        import FreeCAD,Part,math,sys
         #tangle = -twist #openscad uses degrees clockwise
         if fp.Base and fp.Angle and fp.Height and \
             fp.Base.Shape.isValid():
@@ -399,7 +404,10 @@ class Twist:
                     pipeshell.add(wire)
                     # Was before function change
                     # pipeshell.setAuxiliarySpine(auxspine,True,False)
-                    pipeshell.setAuxiliarySpine(auxspine,True,long(0))
+                    if sys.version_info.major < 3:
+                        pipeshell.setAuxiliarySpine(auxspine,True,long(0))
+                    else:
+                        pipeshell.setAuxiliarySpine(auxspine,True,0)
                     print(pipeshell.getStatus())
                     assert(pipeshell.isReady())
                     #fp.Shape=pipeshell.makeSolid()

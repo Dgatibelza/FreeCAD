@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Yorik van Havre (yorik@uncreated.net) 2015              *
+ *   Copyright (c) 2015 Yorik van Havre (yorik@uncreated.net)              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -127,9 +127,14 @@ void ImpExpDxfRead::OnReadArc(const double* s, const double* e, const double* c,
         up = -up;
     gp_Pnt pc = makePoint(c);
     gp_Circ circle(gp_Ax2(pc, up), p0.Distance(pc));
-    BRepBuilderAPI_MakeEdge makeEdge(circle, p0, p1);
-    TopoDS_Edge edge = makeEdge.Edge();
-    AddObject(new Part::TopoShape(edge));
+    if (circle.Radius() > 0) {
+        BRepBuilderAPI_MakeEdge makeEdge(circle, p0, p1);
+        TopoDS_Edge edge = makeEdge.Edge();
+        AddObject(new Part::TopoShape(edge));
+    }
+    else {
+        Base::Console().Warning("ImpExpDxf - ignore degenerate arc of circle\n");
+    }
 }
 
 
@@ -141,9 +146,14 @@ void ImpExpDxfRead::OnReadCircle(const double* s, const double* c, bool dir, boo
         up = -up;
     gp_Pnt pc = makePoint(c);
     gp_Circ circle(gp_Ax2(pc, up), p0.Distance(pc));
-    BRepBuilderAPI_MakeEdge makeEdge(circle);
-    TopoDS_Edge edge = makeEdge.Edge();
-    AddObject(new Part::TopoShape(edge));
+    if (circle.Radius() > 0) {
+        BRepBuilderAPI_MakeEdge makeEdge(circle);
+        TopoDS_Edge edge = makeEdge.Edge();
+        AddObject(new Part::TopoShape(edge));
+    }
+    else {
+        Base::Console().Warning("ImpExpDxf - ignore degenerate circle\n");
+    }
 }
 
 
@@ -161,9 +171,14 @@ void ImpExpDxfRead::OnReadEllipse(const double* c, double major_radius, double m
     gp_Pnt pc = makePoint(c);
     gp_Elips ellipse(gp_Ax2(pc, up), major_radius * optionScaling, minor_radius * optionScaling);
     ellipse.Rotate(gp_Ax1(pc,up),rotation);
-    BRepBuilderAPI_MakeEdge makeEdge(ellipse);
-    TopoDS_Edge edge = makeEdge.Edge();
-    AddObject(new Part::TopoShape(edge));
+    if (ellipse.MinorRadius() > 0) {
+        BRepBuilderAPI_MakeEdge makeEdge(ellipse);
+        TopoDS_Edge edge = makeEdge.Edge();
+        AddObject(new Part::TopoShape(edge));
+    }
+    else {
+        Base::Console().Warning("ImpExpDxf - ignore degenerate ellipse\n");
+    }
 }
 
 
@@ -327,18 +342,25 @@ point3D gPntTopoint3D(gp_Pnt& p)
 }
 
 ImpExpDxfWrite::ImpExpDxfWrite(std::string filepath) : 
-    CDxfWrite(filepath.c_str()),
-    m_layerName("none")
+    CDxfWrite(filepath.c_str())
 {
-    setOptionSource("User parameter:BaseApp/Preferences/Mod/Draft");
+    setOptionSource("User parameter:BaseApp/Preferences/Mod/Import");
     setOptions();
+}
+
+ImpExpDxfWrite::~ImpExpDxfWrite()
+{
 }
 
 void ImpExpDxfWrite::setOptions(void)
 {
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(getOptionSource().c_str());
     optionMaxLength = hGrp->GetFloat("maxsegmentlength",5.0);
-    optionPolyLine  = hGrp->GetBool("DiscretizeEllipses",true);
+    optionExpPoints  = hGrp->GetBool("ExportPoints",false);
+    m_version = hGrp->GetInt("DxfVersionOut",14);
+    optionPolyLine  = hGrp->GetBool("DiscretizeEllipses",false);
+    m_polyOverride = hGrp->GetBool("DiscretizeEllipses",false);
+    setDataDir(App::Application::getResourceDir() + "Mod/Import/DxfPlate/");
 }
 
 void ImpExpDxfWrite::exportShape(const TopoDS_Shape input)
@@ -364,25 +386,66 @@ void ImpExpDxfWrite::exportShape(const TopoDS_Shape input)
             gp_Pnt s = adapt.Value(f);
             gp_Pnt e = adapt.Value(l);
             if (fabs(l-f) > 1.0 && s.SquareDistance(e) < 0.001) {
-                if (optionPolyLine) {
-                    exportPolyline(adapt);
-                } else {
+                if (m_polyOverride) {
+                    if (m_version >= 14) {
+                        exportLWPoly(adapt);
+                    } else {           //m_version < 14
+                        exportPolyline(adapt);
+                    }
+                } else if (optionPolyLine) {
+                    if (m_version >= 14) {
+                        exportLWPoly(adapt);
+                    } else {           //m_version < 14
+                        exportPolyline(adapt);
+                    }
+                } else {                                  //no overrides, do what's right!
+                    if (m_version < 14) {
+                        exportPolyline(adapt);
+                    } else {
                     exportEllipse(adapt);
+                    }
                 }
-            } else {
-                if (optionPolyLine) {
-                    exportPolyline(adapt);
-                } else {
-                    exportEllipseArc(adapt);
+            } else {                                     // it's an arc
+                if (m_polyOverride) {
+                    if (m_version >= 14) {
+                        exportLWPoly(adapt);
+                    } else {           //m_version < 14
+                        exportPolyline(adapt);
+                    }
+                } else if (optionPolyLine) {
+                    if (m_version >= 14) {
+                        exportLWPoly(adapt);
+                    } else {           //m_version < 14
+                        exportPolyline(adapt);
+                    }
+                } else {                                  //no overrides, do what's right!
+                    if (m_version < 14) {
+                        exportPolyline(adapt);
+                    } else {
+                        exportEllipseArc(adapt);
+                    }
                 }
             }
-
         } else if (adapt.GetType() == GeomAbs_BSplineCurve) {
-            if (optionPolyLine) {
-                exportPolyline(adapt);
-            } else {
-                exportBSpline(adapt);
-            }
+                if (m_polyOverride) {
+                    if (m_version >= 14) {
+                        exportLWPoly(adapt);
+                    } else {           //m_version < 14
+                        exportPolyline(adapt);
+                    }
+                } else if (optionPolyLine) {
+                    if (m_version >= 14) {
+                        exportLWPoly(adapt);
+                    } else {           //m_version < 14
+                        exportPolyline(adapt);
+                    }
+                } else {                                  //no overrides, do what's right!
+                    if (m_version < 14) {
+                        exportPolyline(adapt);
+                    } else {
+                        exportBSpline(adapt);
+                    }
+                }
         } else if (adapt.GetType() == GeomAbs_BezierCurve) {
             exportBCurve(adapt);
         } else if (adapt.GetType() == GeomAbs_Line) {
@@ -392,23 +455,23 @@ void ImpExpDxfWrite::exportShape(const TopoDS_Shape input)
         }
     }
 
-    //export Vertice
-    //wf: this is a lot of work. Not sure that Points are worth that much in dxf??
-    TopExp_Explorer verts(input, TopAbs_VERTEX);
-    std::vector<gp_Pnt> duplicates;
-    for (int i = 1 ; verts.More(); verts.Next(),i++) {
-        const TopoDS_Vertex& v = TopoDS::Vertex(verts.Current());
-        gp_Pnt p = BRep_Tool::Pnt(v);
-        duplicates.push_back(p);
-    }
-    
-    std::sort(duplicates.begin(),duplicates.end(),ImpExpDxfWrite::gp_PntCompare);
-    auto newEnd = std::unique(duplicates.begin(),duplicates.end(),ImpExpDxfWrite::gp_PntEqual);
-    std::vector<gp_Pnt> uniquePts(duplicates.begin(),newEnd);
-    for (auto& p: uniquePts) {
-        double point[3] = {0,0,0};
-        gPntToTuple(point, p);
-        WritePoint(point, getLayerName().c_str());
+    if (optionExpPoints) {
+        TopExp_Explorer verts(input, TopAbs_VERTEX);
+        std::vector<gp_Pnt> duplicates;
+        for (int i = 1 ; verts.More(); verts.Next(),i++) {
+            const TopoDS_Vertex& v = TopoDS::Vertex(verts.Current());
+            gp_Pnt p = BRep_Tool::Pnt(v);
+            duplicates.push_back(p);
+        }
+        
+        std::sort(duplicates.begin(),duplicates.end(),ImpExpDxfWrite::gp_PntCompare);
+        auto newEnd = std::unique(duplicates.begin(),duplicates.end(),ImpExpDxfWrite::gp_PntEqual);
+        std::vector<gp_Pnt> uniquePts(duplicates.begin(),newEnd);
+        for (auto& p: uniquePts) {
+            double point[3] = {0,0,0};
+            gPntToTuple(point, p);
+            writePoint(point);
+        }
     }
 }
 
@@ -438,7 +501,7 @@ bool ImpExpDxfWrite::gp_PntCompare(gp_Pnt p1, gp_Pnt p2)
 }
 
 
-void ImpExpDxfWrite::exportCircle(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportCircle(BRepAdaptor_Curve& c)
 {
     gp_Circ circ = c.Circle();
     gp_Pnt p = circ.Location();
@@ -447,10 +510,10 @@ void ImpExpDxfWrite::exportCircle(BRepAdaptor_Curve c)
 
     double  radius = circ.Radius();
 
-    WriteCircle(center, radius, getLayerName().c_str());
+    writeCircle(center, radius);
 }
 
-void ImpExpDxfWrite::exportEllipse(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportEllipse(BRepAdaptor_Curve& c)
 {
     gp_Elips ellp = c.Ellipse();
     gp_Pnt p = ellp.Location();
@@ -465,11 +528,11 @@ void ImpExpDxfWrite::exportEllipse(BRepAdaptor_Curve c)
     double rotation = xaxis.AngleWithRef(gp_Dir(0, 1, 0), gp_Dir(0, 0, 1));
     
     //2*M_PI = 6.28319 is invalid(doesn't display in LibreCAD), but 2PI = 6.28318 is valid!
-    //WriteEllipse(center, major, minor, rotation, 0.0, 2 * M_PI, true, getLayerName().c_str() );
-    WriteEllipse(center, major, minor, rotation, 0.0, 6.28318, true, getLayerName().c_str() );
+    //writeEllipse(center, major, minor, rotation, 0.0, 2 * M_PI, true );
+    writeEllipse(center, major, minor, rotation, 0.0, 6.28318, true );
 }
 
-void ImpExpDxfWrite::exportArc(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportArc(BRepAdaptor_Curve& c)
 {
     gp_Circ circ = c.Circle();
     gp_Pnt p = circ.Location();
@@ -492,10 +555,10 @@ void ImpExpDxfWrite::exportArc(BRepAdaptor_Curve c)
     double a = v3.DotCross(v1,v2);
 
     bool dir = (a < 0) ? true: false;
-    WriteArc(start, end, center, dir, getLayerName().c_str() );
+    writeArc(start, end, center, dir );
 }
 
-void ImpExpDxfWrite::exportEllipseArc(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportEllipseArc(BRepAdaptor_Curve& c)
 {
     gp_Elips ellp = c.Ellipse();
     gp_Pnt p = ellp.Location();
@@ -532,10 +595,10 @@ void ImpExpDxfWrite::exportEllipseArc(BRepAdaptor_Curve c)
         endAngle   = -endAngle;
     }
 
-    WriteEllipse(center, major, minor, rotation, startAngle, endAngle, endIsCW, getLayerName().c_str());
+    writeEllipse(center, major, minor, rotation, startAngle, endAngle, endIsCW);
 }
 
-void ImpExpDxfWrite::exportBSpline(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportBSpline(BRepAdaptor_Curve& c)
 {
     SplineDataOut sd;
     Handle(Geom_BSplineCurve) spline;
@@ -543,7 +606,7 @@ void ImpExpDxfWrite::exportBSpline(BRepAdaptor_Curve c)
     gp_Pnt s,ePt;
 
     Standard_Real tol3D = 0.001;
-    Standard_Integer maxDegree = 3, maxSegment = 100;
+    Standard_Integer maxDegree = 3, maxSegment = 200;
     Handle(BRepAdaptor_HCurve) hCurve = new BRepAdaptor_HCurve(c);
     Approx_Curve3d approx(hCurve, tol3D, GeomAbs_C0, maxSegment, maxDegree);
     if (approx.IsDone() && approx.HasResult()) {
@@ -573,6 +636,7 @@ void ImpExpDxfWrite::exportBSpline(BRepAdaptor_Curve c)
     sd.flag = spline->IsClosed();
     sd.flag += spline->IsPeriodic()*2;
     sd.flag += spline->IsRational()*4;
+    sd.flag += 8;   //planar spline
 
     sd.degree = spline->Degree();
     sd.control_points = spline->NbPoles();
@@ -583,11 +647,22 @@ void ImpExpDxfWrite::exportBSpline(BRepAdaptor_Curve c)
     spline->D0(spline->LastParameter(),p);
     sd.endtan = gPntTopoint3D(p);
 
-    TColStd_Array1OfReal knotsequence(1,sd.knots);
+    //next bit is from DrawingExport.cpp (Dan Falk?).  
+    Standard_Integer m = 0;
+    if (spline->IsPeriodic()) {
+        m = spline->NbPoles() + 2*spline->Degree() - spline->Multiplicity(1) + 2;
+    }
+    else {
+        for (int i=1; i<= spline->NbKnots(); i++)
+            m += spline->Multiplicity(i);
+    }
+    TColStd_Array1OfReal knotsequence(1,m);
     spline->KnotSequence(knotsequence);
     for (int i = knotsequence.Lower() ; i <= knotsequence.Upper(); i++) {
-        sd.knot.push_back(knotsequence(i));
+            sd.knot.push_back(knotsequence(i));
     }
+    sd.knots = knotsequence.Length();
+
     TColgp_Array1OfPnt poles(1,spline->NbPoles());
     spline->Poles(poles);
     for (int i = poles.Lower(); i <= poles.Upper(); i++) {
@@ -595,16 +670,16 @@ void ImpExpDxfWrite::exportBSpline(BRepAdaptor_Curve c)
     }
     //OCC doesn't have separate lists for control points and fit points. 
     
-    WriteSpline(sd,getLayerName().c_str());
+    writeSpline(sd);
 }
 
-void ImpExpDxfWrite::exportBCurve(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportBCurve(BRepAdaptor_Curve& c)
 {
     (void) c;
     Base::Console().Message("BCurve dxf export not yet supported\n");
 }
 
-void ImpExpDxfWrite::exportLine(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportLine(BRepAdaptor_Curve& c)
 {
     double f = c.FirstParameter();
     double l = c.LastParameter();
@@ -614,10 +689,10 @@ void ImpExpDxfWrite::exportLine(BRepAdaptor_Curve c)
     gp_Pnt e = c.Value(l);
     double end[3] = {0,0,0};
     gPntToTuple(end, e);
-    WriteLine(start, end, getLayerName().c_str());
+    writeLine(start, end);
 }
 
-void ImpExpDxfWrite::exportLWPoly(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportLWPoly(BRepAdaptor_Curve& c)
 {
     LWPolyDataOut pd;
     pd.Flag = c.IsClosed();
@@ -638,11 +713,11 @@ void ImpExpDxfWrite::exportLWPoly(BRepAdaptor_Curve c)
             pd.Verts.push_back(gPntTopoint3D(p));
         }
         pd.nVert = discretizer.NbPoints ();
-        WriteLWPolyLine(pd,getLayerName().c_str());
+        writeLWPolyLine(pd);
     }
 }
 
-void ImpExpDxfWrite::exportPolyline(BRepAdaptor_Curve c)
+void ImpExpDxfWrite::exportPolyline(BRepAdaptor_Curve& c)
 {
     LWPolyDataOut pd;
     pd.Flag = c.IsClosed();
@@ -663,7 +738,7 @@ void ImpExpDxfWrite::exportPolyline(BRepAdaptor_Curve c)
             pd.Verts.push_back(gPntTopoint3D(p));
         }
         pd.nVert = discretizer.NbPoints ();
-        WritePolyline(pd,getLayerName().c_str());
+        writePolyline(pd);
     }
 }
 
@@ -678,12 +753,12 @@ void ImpExpDxfWrite::exportText(const char* text, Base::Vector3d position1, Base
     location2[1] = position2.y;
     location2[2] = position2.z;
 
-    WriteText(text, location1, location2, size, just, getLayerName().c_str());
+    writeText(text, location1, location2, size, just);
 }
 
 void ImpExpDxfWrite::exportLinearDim(Base::Vector3d textLocn, Base::Vector3d lineLocn, 
                                      Base::Vector3d extLine1Start, Base::Vector3d extLine2Start, 
-                                     char* dimText)
+                                     char* dimText, int type)
 {
     double text[3] = {0,0,0};
     text[0] = textLocn.x;
@@ -701,7 +776,7 @@ void ImpExpDxfWrite::exportLinearDim(Base::Vector3d textLocn, Base::Vector3d lin
     ext2[0] = extLine2Start.x;
     ext2[1] = extLine2Start.y;
     ext2[2] = extLine2Start.z;
-    WriteLinearDim(text, line, ext1,ext2,dimText, getLayerName().c_str());
+    writeLinearDim(text, line, ext1,ext2,dimText, type);
 }
 
 void ImpExpDxfWrite::exportAngularDim(Base::Vector3d textLocn, Base::Vector3d lineLocn, 
@@ -729,7 +804,7 @@ void ImpExpDxfWrite::exportAngularDim(Base::Vector3d textLocn, Base::Vector3d li
     apex[0] = apexPoint.x;
     apex[1] = apexPoint.y;
     apex[2] = apexPoint.z;
-    WriteAngularDim(text, line, apex, ext1, apex, ext2, dimText, getLayerName().c_str());
+    writeAngularDim(text, line, apex, ext1, apex, ext2, dimText);
 }
 
 void ImpExpDxfWrite::exportRadialDim(Base::Vector3d centerPoint, Base::Vector3d textLocn, 
@@ -748,7 +823,7 @@ void ImpExpDxfWrite::exportRadialDim(Base::Vector3d centerPoint, Base::Vector3d 
     arc[0] = arcPoint.x;
     arc[1] = arcPoint.y;
     arc[2] = arcPoint.z;
-    WriteRadialDim(center, text, arc, dimText, getLayerName().c_str());
+    writeRadialDim(center, text, arc, dimText);
 
 }
 
@@ -768,5 +843,5 @@ void ImpExpDxfWrite::exportDiametricDim(Base::Vector3d textLocn,
     arc2[0] = arcPoint2.x;
     arc2[1] = arcPoint2.y;
     arc2[2] = arcPoint2.z;
-    WriteDiametricDim(text, arc1, arc2, dimText, getLayerName().c_str());
+    writeDiametricDim(text, arc1, arc2, dimText);
 }

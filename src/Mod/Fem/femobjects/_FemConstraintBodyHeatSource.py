@@ -1,6 +1,7 @@
 # ***************************************************************************
+# *   Copyright (c) 2017 Markus Hovorka <m.hovorka@live.de>                 *
 # *                                                                         *
-# *   Copyright (c) 2017 - Markus Hovorka <m.hovorka@live.de>               *
+# *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -20,11 +21,13 @@
 # *                                                                         *
 # ***************************************************************************
 
-
-__title__ = "the constraint body heat source object"
+__title__ = "FreeCAD FEM constraint body heat source document object"
 __author__ = "Markus Hovorka, Bernd Hahnebach"
 __url__ = "http://www.freecadweb.org"
 
+## @package FemConstraintBodyHeatSource
+#  \ingroup FEM
+#  \brief FreeCAD FEM constraint body heat source object
 
 from . import FemConstraint
 
@@ -35,6 +38,10 @@ class Proxy(FemConstraint.Proxy):
 
     def __init__(self, obj):
         super(Proxy, self).__init__(obj)
+
         obj.addProperty(
-            "App::PropertyFloat", "HeatSource",
-            "Base", "Body heat source")
+            "App::PropertyFloat",
+            "HeatSource",
+            "Base",
+            "Body heat source"
+        )

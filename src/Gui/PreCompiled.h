@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Jürgen Riegel          (juergen.riegel@web.de) 2002     *
+ *   Copyright (c) 2002 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -26,7 +26,10 @@
  
 #include <FCConfig.h>
 
-#ifdef _PreComp_
+#ifdef FC_OS_WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#endif
 
 // here get the warnings of too long specifiers disabled (needed for VC6)
 #ifdef _MSC_VER
@@ -36,6 +39,8 @@
 #pragma warning( disable : 4503 )
 #pragma warning( disable : 4786 )  // specifier longer then 255 chars
 #endif
+
+#ifdef _PreComp_
 
 // standard
 #include <stdio.h>
@@ -47,9 +52,7 @@
 #include <limits.h>
 
 #ifdef FC_OS_WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
+#include <Windows.h>
 #include <io.h>
 #include <shellapi.h>
 #endif
@@ -70,9 +73,11 @@
 #include <queue>
 #include <sstream>
 #include <bitset>
+#include <unordered_set>
+#include <unordered_map>
 
 // Boost
-#include <boost/signals.hpp>
+#include <boost/signals2.hpp>
 #include <boost/bind.hpp>
 #include <boost/program_options.hpp>
 #include <boost/tuple/tuple.hpp>

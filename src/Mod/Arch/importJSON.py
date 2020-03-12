@@ -1,7 +1,5 @@
 #***************************************************************************
-#*                                                                         *
-#*   Copyright (c) 2017                                                    *
-#*   Joseph Coffland <joseph@cauldrondevelopment.com>                      *
+#*   Copyright (c) 2017 Joseph Coffland <joseph@cauldrondevelopment.com>   *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -35,7 +33,8 @@ else:
     def translate(ctxt, txt): return txt
 
 
-if open.__module__ == '__builtin__': pythonopen = open
+if open.__module__ in ['__builtin__','io']:
+    pythonopen = open
 
 
 def export(exportList, filename):

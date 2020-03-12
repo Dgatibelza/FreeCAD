@@ -34,8 +34,8 @@ DlgPrefsTechDraw2Imp::DlgPrefsTechDraw2Imp( QWidget* parent )
   : PreferencePage( parent )
 {
     this->setupUi(this);
-    plsb_FontSize->setUnit(Base::Unit::Length);
-    plsb_ArrowSize->setUnit(Base::Unit::Length);
+//    pdsbTemplateMark->setUnit(Base::Unit::Length);
+
 }
 
 DlgPrefsTechDraw2Imp::~DlgPrefsTechDraw2Imp()
@@ -45,38 +45,38 @@ DlgPrefsTechDraw2Imp::~DlgPrefsTechDraw2Imp()
 
 void DlgPrefsTechDraw2Imp::saveSettings()
 {
-    cbShowUnits->onSave();
-    plsb_FontSize->onSave();
-    colDimColor->onSave();
-    leDiameter->onSave();
-    pcbMatting->onSave();
-    pcbCenterStyle->onSave();
-    colCenterLine->onSave();
-    pcbSectionStyle->onSave();
-    colSectionLine->onSave();
-    pcbArrow->onSave();
-    cbGlobalDecimals->onSave();
-    sbAltDecimals->onSave();
-    plsb_ArrowSize->onSave();
-    leLineGroup->onSave();
+    pdsbToleranceScale->onSave();
+    pdsbTemplateMark->onSave();
+
+    pdsbVertexScale->onSave();
+    pdsbCenterScale->onSave();
+
+    pdsbPageScale->onSave();
+    cbViewScaleType->onSave();
+    pdsbViewScale->onSave();
+    pdsbEdgeFuzz->onSave();
+    pdsbMarkFuzz->onSave();
+    pdsbOverlapRadius->onSave();
+    pdsbTemplateMark->onSave();
 }
 
 void DlgPrefsTechDraw2Imp::loadSettings()
 {
-    cbShowUnits->onRestore();
-    plsb_FontSize->onRestore();
-    colDimColor->onRestore();
-    leDiameter->onRestore();
-    pcbMatting->onRestore();
-    pcbCenterStyle->onRestore();
-    colCenterLine->onRestore();
-    pcbSectionStyle->onRestore();
-    colSectionLine->onRestore();
-    pcbArrow->onRestore();
-    cbGlobalDecimals->onRestore();
-    sbAltDecimals->onRestore();
-    plsb_ArrowSize->onRestore();
-    leLineGroup->onRestore();
+
+    pdsbToleranceScale->onRestore();
+
+    pdsbTemplateMark->onRestore();
+
+    pdsbVertexScale->onRestore();
+    pdsbCenterScale->onRestore();
+
+    pdsbPageScale->onRestore();
+    cbViewScaleType->onRestore();
+    pdsbViewScale->onRestore();
+    pdsbEdgeFuzz->onRestore();
+    pdsbMarkFuzz->onRestore();
+    pdsbOverlapRadius->onRestore();
+    pdsbTemplateMark->onRestore();
 }
 
 /**

@@ -67,12 +67,12 @@ PROPERTY_SOURCE(TechDrawGui::ViewProviderGeomHatch, Gui::ViewProviderDocumentObj
 
 ViewProviderGeomHatch::ViewProviderGeomHatch()
 {
-    sPixmap = "actions/techdraw-geomhatch";
+    sPixmap = "actions/techdraw-GeometricHatch";
 
     static const char *vgroup = "GeomHatch";
 
-    ADD_PROPERTY_TYPE(ColorPattern,(0),vgroup,App::Prop_None,"The color of the pattern");
-    ADD_PROPERTY_TYPE(WeightPattern,(0),vgroup,App::Prop_None,"GeomHatch pattern line thickness");
+    ADD_PROPERTY_TYPE(ColorPattern,(0),vgroup,App::Prop_None,"Color of the pattern");
+    ADD_PROPERTY_TYPE(WeightPattern,(0),vgroup,App::Prop_None,"GeometricHatch pattern line thickness");
 
     getParameters();
 
@@ -181,7 +181,6 @@ void ViewProviderGeomHatch::updateGraphic(void)
    }
 }
 
-
 void ViewProviderGeomHatch::getParameters(void)
 {
     Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
@@ -198,7 +197,24 @@ void ViewProviderGeomHatch::getParameters(void)
     WeightPattern.setValue(weight);
 }
 
+bool ViewProviderGeomHatch::canDelete(App::DocumentObject *obj) const
+{
+    // deletion of hatches don't destroy anything
+    // thus we can pass this action
+    Q_UNUSED(obj)
+    return true;
+}
+
 TechDraw::DrawGeomHatch* ViewProviderGeomHatch::getViewObject() const
 {
     return dynamic_cast<TechDraw::DrawGeomHatch*>(pcObject);
+}
+
+Gui::MDIView *ViewProviderGeomHatch::getMDIView() const
+{
+    auto obj = getViewObject();
+    if(!obj) return 0;
+    auto vp = Gui::Application::Instance->getViewProvider(obj->getSourceView());
+    if(!vp) return 0;
+    return vp->getMDIView();
 }

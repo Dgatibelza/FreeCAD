@@ -46,7 +46,7 @@
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="133"/>
       <source>Maximum number of faces for polygons (fn)</source>
-      <translation>Maximálny počet stien pre mnohouholníka (fn)</translation>
+      <translation>Maximálny počet stien pre mnohouholníky (fn)</translation>
     </message>
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="177"/>
@@ -61,7 +61,7 @@
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="208"/>
       <source>angular (fa)</source>
-      <translation>Uhlový (fa)</translation>
+      <translation>uhlový (fa)</translation>
     </message>
     <message encoding="UTF-8">
       <location filename="../ui/openscadprefs-base.ui" line="218"/>
@@ -71,7 +71,7 @@
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="250"/>
       <source>size (fs)</source>
-      <translation>Veľkosť (fs)</translation>
+      <translation>veľkosť (fs)</translation>
     </message>
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="278"/>
@@ -81,7 +81,7 @@
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="304"/>
       <source>convexity</source>
-      <translation>Kovexita</translation>
+      <translation>konvexnosť</translation>
     </message>
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="341"/>
@@ -96,7 +96,7 @@
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="386"/>
       <source>deflection</source>
-      <translation>Odchýlka</translation>
+      <translation>odchýlka</translation>
     </message>
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="393"/>
@@ -116,78 +116,78 @@
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="47"/>
       <source>The path to the OpenSCAD executable</source>
-      <translation type="unfinished">The path to the OpenSCAD executable</translation>
+      <translation>Cesta k spustiteľnému súboru OpenSCAD</translation>
     </message>
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="215"/>
       <source>Minimum angle for a fragment</source>
-      <translation type="unfinished">Minimum angle for a fragment</translation>
+      <translation>Minimálny uhol fragmentu</translation>
     </message>
     <message>
       <location filename="../ui/openscadprefs-base.ui" line="272"/>
       <source>Minimum size of a fragment</source>
-      <translation type="unfinished">Minimum size of a fragment</translation>
+      <translation>Minimálna veľkosť fragmentu</translation>
     </message>
   </context>
   <context>
     <name>OpenSCAD</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="148"/>
+      <location filename="../../OpenSCADCommands.py" line="139"/>
       <source>Convert Edges to Faces</source>
-      <translation>Previesť hrany steny</translation>
+      <translation>Previesť hrany na steny</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="227"/>
+      <location filename="../../OpenSCADCommands.py" line="211"/>
       <source>Please select 3 objects first</source>
       <translation>Najprv vyberte 3 objekty</translation>
     </message>
     <message>
-      <location filename="../../importCSG.py" line="1200"/>
+      <location filename="../../importCSG.py" line="1207"/>
       <source>Unsupported Function</source>
       <translation>Nepodporovaná funkcia</translation>
     </message>
     <message>
-      <location filename="../../importCSG.py" line="1200"/>
+      <location filename="../../importCSG.py" line="1207"/>
       <source>Press OK</source>
       <translation>Stlačte OK</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="271"/>
+      <location filename="../../OpenSCADCommands.py" line="249"/>
       <source>Add</source>
       <translation>Pridať</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="272"/>
+      <location filename="../../OpenSCADCommands.py" line="250"/>
       <source>Clear</source>
       <translation>Vyčistiť</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="273"/>
+      <location filename="../../OpenSCADCommands.py" line="251"/>
       <source>as Mesh</source>
-      <translation>Ako sieť</translation>
+      <translation>ako sieť</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="274"/>
+      <location filename="../../OpenSCADCommands.py" line="252"/>
       <source>Add OpenSCAD Element</source>
       <translation>Pridať prvok OpenSCAD</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="347"/>
+      <location filename="../../OpenSCADCommands.py" line="325"/>
       <source>Perform</source>
       <translation>Vykonať</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="348"/>
+      <location filename="../../OpenSCADCommands.py" line="326"/>
       <source>Mesh Boolean</source>
       <translation>Booleovské operácie so sieťou</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADUtils.py" line="566"/>
+      <location filename="../../OpenSCADUtils.py" line="596"/>
       <source>Error all shapes must be either 2D or both must be 3D</source>
       <translation>Chyba, všetky tvary musia byť buď 2D alebo 3D</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="98"/>
+      <location filename="../../OpenSCADCommands.py" line="94"/>
       <source>Unable to explode %s</source>
       <translation>Nieje možné rozložiť %s</translation>
     </message>
@@ -195,12 +195,12 @@
   <context>
     <name>OpenSCAD_AddOpenSCADElement</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="389"/>
+      <location filename="../../OpenSCADCommands.py" line="366"/>
       <source>Add OpenSCAD Element...</source>
       <translation>Pridať prvok OpenSCAD...</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="391"/>
+      <location filename="../../OpenSCADCommands.py" line="367"/>
       <source>Add an OpenSCAD element by entering OpenSCAD code and executing the OpenSCAD binary</source>
       <translation>Pridať prvok OpenSCAD zadaním a spustením kódu OpenSCAD</translation>
     </message>
@@ -208,12 +208,12 @@
   <context>
     <name>OpenSCAD_ColorCodeShape</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="125"/>
+      <location filename="../../OpenSCADCommands.py" line="118"/>
       <source>Color Shapes</source>
-      <translation>Farba plôch</translation>
+      <translation>Ofarbiť plochy</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="127"/>
+      <location filename="../../OpenSCADCommands.py" line="119"/>
       <source>Color Shapes by validity and type</source>
       <translation>Ofarbiť plochy podľa platnosti a typu</translation>
     </message>
@@ -221,7 +221,7 @@
   <context>
     <name>OpenSCAD_Edgestofaces</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="146"/>
+      <location filename="../../OpenSCADCommands.py" line="138"/>
       <source>Convert Edges To Faces</source>
       <translation>Prevod hrán na steny</translation>
     </message>
@@ -229,12 +229,12 @@
   <context>
     <name>OpenSCAD_ExpandPlacements</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="207"/>
+      <location filename="../../OpenSCADCommands.py" line="193"/>
       <source>Expand Placements</source>
       <translation>Rozbaliť umiestnenie</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="209"/>
+      <location filename="../../OpenSCADCommands.py" line="194"/>
       <source>Expand all placements downwards the FeatureTree</source>
       <translation>Rozbaliť všetky umiestnenia v strome funkcií</translation>
     </message>
@@ -242,25 +242,25 @@
   <context>
     <name>OpenSCAD_ExplodeGroup</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="107"/>
+      <location filename="../../OpenSCADCommands.py" line="102"/>
       <source>Explode Group</source>
       <translation>Rozložiť skupinu</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="109"/>
+      <location filename="../../OpenSCADCommands.py" line="103"/>
       <source>Remove fusion, apply placement to children, and color randomly</source>
-      <translation type="unfinished">Remove fusion, apply placement to children, and color randomly</translation>
+      <translation>Odstrániť zlúčenie, prevziať umiestnenie potomkov a náhodne ofarbiť</translation>
     </message>
   </context>
   <context>
     <name>OpenSCAD_Hull</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="424"/>
+      <location filename="../../OpenSCADCommands.py" line="399"/>
       <source>Hull</source>
-      <translation type="unfinished">Hull</translation>
+      <translation>Škrupina</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="426"/>
+      <location filename="../../OpenSCADCommands.py" line="400"/>
       <source>Perform Hull</source>
       <translation>Vytvoriť škrupinu</translation>
     </message>
@@ -268,12 +268,12 @@
   <context>
     <name>OpenSCAD_IncreaseToleranceFeature</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="188"/>
+      <location filename="../../OpenSCADCommands.py" line="176"/>
       <source>Increase Tolerance Feature</source>
       <translation>Zvýšiť toleranciu prvku</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="190"/>
+      <location filename="../../OpenSCADCommands.py" line="177"/>
       <source>Create Feature that allows to increase the tolerance</source>
       <translation>Vytvoriť prvok, ktorý umožňuje zvýšiť toleranciu</translation>
     </message>
@@ -281,38 +281,38 @@
   <context>
     <name>OpenSCAD_MeshBoolean</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="403"/>
+      <location filename="../../OpenSCADCommands.py" line="379"/>
       <source>Mesh Boolean...</source>
       <translation>Booleovské operácie so sieťou...</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="405"/>
+      <location filename="../../OpenSCADCommands.py" line="380"/>
       <source>Export objects as meshes and use OpenSCAD to perform a boolean operation</source>
-      <translation type="unfinished">Export objects as meshes and use OpenSCAD to perform a boolean operation</translation>
+      <translation>Exportovať objekty ako siete a booleovskou operáciou previesť pomocou OpenSCAD</translation>
     </message>
   </context>
   <context>
     <name>OpenSCAD_Minkowski</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="445"/>
+      <location filename="../../OpenSCADCommands.py" line="418"/>
       <source>Minkowski</source>
-      <translation>Minkowského operácie</translation>
+      <translation>Minkowského operácia</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="447"/>
+      <location filename="../../OpenSCADCommands.py" line="419"/>
       <source>Perform Minkowski</source>
-      <translation>Previesť Minkowského operáciu</translation>
+      <translation>Vykonať Minkowského operáciu</translation>
     </message>
   </context>
   <context>
     <name>OpenSCAD_RefineShapeFeature</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="167"/>
+      <location filename="../../OpenSCADCommands.py" line="157"/>
       <source>Refine Shape Feature</source>
       <translation>Vyčistenie tvarového prvku</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="169"/>
+      <location filename="../../OpenSCADCommands.py" line="158"/>
       <source>Create Refine Shape Feature</source>
       <translation>Vytvoriť vyčistenie tvarového prvku</translation>
     </message>
@@ -320,12 +320,12 @@
   <context>
     <name>OpenSCAD_RemoveSubtree</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="246"/>
+      <location filename="../../OpenSCADCommands.py" line="226"/>
       <source>Remove Objects and their Children</source>
       <translation>Odstrániť objekty a ich potomkov</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="248"/>
+      <location filename="../../OpenSCADCommands.py" line="227"/>
       <source>Removes the selected objects and all children that are not referenced from other objects</source>
       <translation>Odstrániť vybrané objekty a všetkých potomkov, na ktoré nieje odkaz z iných objektov</translation>
     </message>
@@ -333,20 +333,20 @@
   <context>
     <name>OpenSCAD_ReplaceObject</name>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="231"/>
+      <location filename="../../OpenSCADCommands.py" line="214"/>
       <source>Replace Object</source>
       <translation>Nahradiť objekt</translation>
     </message>
     <message>
-      <location filename="../../OpenSCADCommands.py" line="233"/>
+      <location filename="../../OpenSCADCommands.py" line="215"/>
       <source>Replace an object in the Feature Tree. Please select old, new, and parent object</source>
-      <translation type="unfinished">Replace an object in the Feature Tree. Please select old, new, and parent object</translation>
+      <translation>Nahradenie objektu v strome funkcií. Vyberte prosím starý, nový a nadradený objekt</translation>
     </message>
   </context>
   <context>
     <name>Workbech</name>
     <message>
-      <location filename="../../InitGui.py" line="80"/>
+      <location filename="../../InitGui.py" line="82"/>
       <source>OpenSCAD Part tools</source>
       <translation>Nástroje súčastí OpenSCAD</translation>
     </message>
@@ -354,7 +354,7 @@
   <context>
     <name>Workbench</name>
     <message>
-      <location filename="../../InitGui.py" line="78"/>
+      <location filename="../../InitGui.py" line="80"/>
       <source>OpenSCADTools</source>
       <translation>Nástroje OpenSCAD</translation>
     </message>

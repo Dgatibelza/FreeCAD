@@ -37,6 +37,8 @@
 # include <QtGlobal>
 #endif
 
+#include <boost/algorithm/string/predicate.hpp>
+
 #include <Base/Tools.h>
 #include <Base/Console.h>
 #include <Base/Interpreter.h>
@@ -48,9 +50,11 @@
 #include <App/PropertyUnits.h>
 #include <Gui/Application.h>
 #include <Gui/Control.h>
+#include <Gui/Widgets.h>
 #include <Gui/Command.h>
 #include <Gui/Document.h>
 #include <Gui/Selection.h>
+#include <Gui/MainWindow.h>
 #include <Gui/ViewProviderDocumentObject.h>
 #include <Gui/Placement.h>
 #include <Gui/FileDialog.h>
@@ -58,9 +62,11 @@
 #include <Gui/QuantitySpinBox.h>
 
 #include "PropertyItem.h"
+#include "PropertyView.h"
 #include <Gui/SpinBox.h>
 
 using namespace Gui::PropertyEditor;
+using namespace Gui::Dialog;
 
 Gui::PropertyEditor::PropertyItemFactory* Gui::PropertyEditor::PropertyItemFactory::_singleton = NULL;
 
@@ -84,10 +90,11 @@ PropertyItem* PropertyItemFactory::createPropertyItem (const char* sName) const
 }
 
 // ----------------------------------------------------
+Q_DECLARE_METATYPE(Py::Object)
 
 PROPERTYITEM_SOURCE(Gui::PropertyEditor::PropertyItem)
 
-PropertyItem::PropertyItem() : parentItem(0), readonly(false), cleared(false)
+PropertyItem::PropertyItem() : parentItem(0), readonly(false), cleared(false), linked(false)
 {
     precision = Base::UnitsApi::getDecimals();
     setAutoApply(true);
@@ -106,6 +113,29 @@ void PropertyItem::reset()
 {
     qDeleteAll(childItems);
     childItems.clear();
+}
+
+void PropertyItem::onChange()
+{
+    if(hasExpression()) {
+        for(auto child : childItems) {
+            if(child && child->hasExpression())
+                child->setExpression(boost::shared_ptr<App::Expression>());
+        }
+        for(auto item=parentItem;item;item=item->parentItem) {
+            if(item->hasExpression())
+                item->setExpression(boost::shared_ptr<App::Expression>());
+        }
+    }
+}
+
+bool PropertyItem::hasAnyExpression() const
+{
+    if(ExpressionBinding::hasExpression())
+        return true;
+    if(parentItem)
+        return parentItem->hasExpression();
+    return false;
 }
 
 void PropertyItem::setPropertyData(const std::vector<App::Property*>& items)
@@ -206,6 +236,11 @@ void PropertyItem::appendChild(PropertyItem *item)
     childItems.append(item);
 }
 
+void PropertyItem::insertChild(int index, PropertyItem *child)
+{
+    childItems.insert(index, child);
+}
+
 /*!
  * \brief PropertyItem::removeChildren
  * Deletes the children in the range of [from, to]
@@ -257,6 +292,18 @@ bool PropertyItem::isReadOnly() const
     return readonly;
 }
 
+void PropertyItem::setLinked(bool l)
+{
+    linked = l;
+    for (QList<PropertyItem*>::iterator it = childItems.begin(); it != childItems.end(); ++it)
+        (*it)->setLinked(l);
+}
+
+bool PropertyItem::isLinked() const
+{
+    return linked;
+}
+
 bool PropertyItem::testStatus(App::Property::Status pos) const
 {
     std::vector<App::Property*>::const_iterator it;
@@ -296,7 +343,47 @@ QVariant PropertyItem::decoration(const QVariant&) const
 
 QVariant PropertyItem::toString(const QVariant& prop) const
 {
-    return prop;
+    if(prop != QVariant() || propertyItems.size()!=1)
+        return prop;
+    Base::PyGILStateLocker lock;
+    Py::Object pyobj(propertyItems[0]->getPyObject(),true);
+    std::ostringstream ss;
+    if(pyobj.isNone()) 
+        ss << "<None>";
+    else if(pyobj.isSequence()) {
+        ss << '[';
+        Py::Sequence seq(pyobj);
+        bool first = true;
+        size_t i=0;
+        for(i=0;i<2 && i<seq.size(); ++i) {
+            if(first)
+                first = false;
+            else
+                ss << ", ";
+            ss << Py::Object(seq[i]).as_string();
+        }
+        if(i<seq.size())
+            ss << "...";
+        ss << ']';
+    }else if(pyobj.isMapping()) {
+        ss << '{';
+        Py::Mapping map(pyobj);
+        bool first = true;
+        auto it = map.begin();
+        for(int i=0;i<2 && it!=map.end(); ++it) {
+            if(first)
+                first = false;
+            else
+                ss << ", ";
+            const auto &v = *it;
+            ss << Py::Object(v.first).as_string() << ':' << Py::Object(v.second).as_string();
+        }
+        if(it!=map.end())
+            ss << "...";
+        ss << '}';
+    }else
+        ss << pyobj.as_string();
+    return QVariant(QString::fromUtf8(ss.str().c_str()));
 }
 
 QVariant PropertyItem::value(const App::Property* /*prop*/) const
@@ -311,20 +398,21 @@ void PropertyItem::setValue(const QVariant& /*value*/)
 QString PropertyItem::pythonIdentifier(const App::Property* prop) const
 {
     App::PropertyContainer* parent = prop->getContainer();
+    QString propPrefix = QString::fromLatin1(parent->getPropertyPrefix());
     if (parent->getTypeId() == App::Document::getClassTypeId()) {
         App::Document* doc = static_cast<App::Document*>(parent);
         QString docName = QString::fromLatin1(App::GetApplication().getDocumentName(doc));
-        QString propName = QString::fromLatin1(parent->getPropertyName(prop));
-        return QString::fromLatin1("FreeCAD.getDocument(\"%1\").%2").arg(docName).arg(propName);
+        QString propName = QString::fromLatin1(prop->getName());
+        return QString::fromLatin1("FreeCAD.getDocument(\"%1\").%3%2").arg(docName).arg(propName).arg(propPrefix);
     }
     if (parent->getTypeId().isDerivedFrom(App::DocumentObject::getClassTypeId())) {
         App::DocumentObject* obj = static_cast<App::DocumentObject*>(parent);
         App::Document* doc = obj->getDocument();
         QString docName = QString::fromLatin1(App::GetApplication().getDocumentName(doc));
         QString objName = QString::fromLatin1(obj->getNameInDocument());
-        QString propName = QString::fromLatin1(parent->getPropertyName(prop));
-        return QString::fromLatin1("FreeCAD.getDocument(\"%1\").getObject(\"%2\").%3")
-            .arg(docName).arg(objName).arg(propName);
+        QString propName = QString::fromLatin1(prop->getName());
+        return QString::fromLatin1("FreeCAD.getDocument(\"%1\").getObject(\"%2\").%4%3")
+            .arg(docName,objName,propName,propPrefix);
     }
     auto* vp = dynamic_cast<Gui::ViewProviderDocumentObject*>(parent);
     if (vp) {
@@ -332,9 +420,9 @@ QString PropertyItem::pythonIdentifier(const App::Property* prop) const
         App::Document* doc = obj->getDocument();
         QString docName = QString::fromLatin1(App::GetApplication().getDocumentName(doc));
         QString objName = QString::fromLatin1(obj->getNameInDocument());
-        QString propName = QString::fromLatin1(parent->getPropertyName(prop));
-        return QString::fromLatin1("FreeCADGui.getDocument(\"%1\").getObject(\"%2\").%3")
-            .arg(docName).arg(objName).arg(propName);
+        QString propName = QString::fromLatin1(prop->getName());
+        return QString::fromLatin1("FreeCADGui.getDocument(\"%1\").getObject(\"%2\").%4%3")
+            .arg(docName,objName,propName,propPrefix);
     }
     return QString();
 }
@@ -353,6 +441,34 @@ QVariant PropertyItem::editorData(QWidget * /*editor*/) const
     return QVariant();
 }
 
+QWidget* PropertyItem::createExpressionEditor(QWidget* parent, const QObject* receiver, const char* method) const
+{
+    if(!isBound())
+        return 0;
+    ExpLineEdit *le = new ExpLineEdit(parent,true);
+    le->setFrame(false);
+    le->setReadOnly(true);
+    QObject::connect(le, SIGNAL(textChanged(const QString&)), receiver, method);
+    le->bind(getPath());
+    le->setAutoApply(autoApply());
+    return le;
+}
+
+void PropertyItem::setExpressionEditorData(QWidget *editor, const QVariant& data) const
+{
+    QLineEdit *le = qobject_cast<QLineEdit*>(editor);
+    if(le)
+        le->setText(data.toString());
+}
+
+QVariant PropertyItem::expressionEditorData(QWidget *editor) const
+{
+    QLineEdit *le = qobject_cast<QLineEdit*>(editor);
+    if(le)
+        return QVariant(le->text());
+    return QVariant();
+}
+
 QString PropertyItem::propertyName() const
 {
     if (propName.isEmpty())
@@ -368,8 +484,11 @@ void PropertyItem::setPropertyName(const QString& name)
     for (int i=0; i<name.length(); i++) {
         if (name[i].isUpper() && !display.isEmpty()) {
             // if there is a sequence of capital letters do not insert spaces
-            if (!upper)
-                display += QLatin1String(" ");
+            if (!upper) {
+                QChar last = display.at(display.length()-1);
+                if (!last.isSpace())
+                    display += QLatin1String(" ");
+            }
         }
         upper = name[i].isUpper();
         display += name[i];
@@ -377,7 +496,7 @@ void PropertyItem::setPropertyName(const QString& name)
 
     propName = display;
 
-    QString str = QApplication::translate("App::Property", propName.toLatin1());
+    QString str = QApplication::translate("App::Property", propName.toUtf8());
     displayText = str;
 }
 
@@ -387,7 +506,7 @@ void PropertyItem::setPropertyValue(const QString& value)
         it != propertyItems.end(); ++it) {
         App::PropertyContainer* parent = (*it)->getContainer();
         if (parent && !parent->isReadOnly(*it) && !(*it)->testStatus(App::Property::ReadOnly)) {
-            QString cmd = QString::fromLatin1("%1 = %2").arg(pythonIdentifier(*it)).arg(value);
+            QString cmd = QString::fromLatin1("%1 = %2").arg(pythonIdentifier(*it), value);
             try {
                 Gui::Command::runCommand(Gui::Command::App, cmd.toUtf8());
             }
@@ -409,13 +528,34 @@ QVariant PropertyItem::data(int column, int role) const
 {
     // property name
     if (column == 0) {
+        if (role == Qt::BackgroundRole || role == Qt::TextColorRole) {
+            if(PropertyView::showAll()
+                && propertyItems.size() == 1
+                && propertyItems.front()->testStatus(App::Property::PropDynamic)
+                && !propertyItems.front()->testStatus(App::Property::LockDynamic))
+            {
+                return role==Qt::BackgroundRole
+                    ? QVariant::fromValue(QColor(0xFF,0xFF,0x99)) 
+                    : QVariant::fromValue(QColor(0,0,0));
+            }
+            return QVariant();
+        }
         if (role == Qt::DisplayRole)
             return displayName();
         // no properties set
         if (propertyItems.empty())
             return QVariant();
-        else if (role == Qt::ToolTipRole)
-            return toolTip(propertyItems[0]);
+        else if (role == Qt::ToolTipRole) {
+            if(!PropertyView::showAll())
+                return toolTip(propertyItems[0]);
+            QString type = QString::fromLatin1("Type: %1").arg(
+                    QString::fromLatin1(propertyItems[0]->getTypeId().getName()));
+            QString doc = toolTip(propertyItems[0]).toString();
+            if(doc.size())
+                return type + QLatin1String("\n\n") + doc;
+            return type;
+        } else if (role == Qt::TextColorRole && linked)
+            return QVariant::fromValue(QColor(0,0x80,0));
         else
             return QVariant();
     }
@@ -435,9 +575,12 @@ QVariant PropertyItem::data(int column, int role) const
             else if (role == Qt::DisplayRole) {
                 QVariant val = parent->property(qPrintable(objectName()));
                 return toString(val);
-
-            }
-            else
+            } 
+            else if( role == Qt::TextColorRole) {
+                if(hasExpression())
+                    return QVariant::fromValue(QApplication::palette().color(QPalette::Link));
+                return QVariant();
+            } else
                 return QVariant();
         }
         if (role == Qt::EditRole)
@@ -448,7 +591,11 @@ QVariant PropertyItem::data(int column, int role) const
             return toString(value(propertyItems[0]));
         else if (role == Qt::ToolTipRole)
             return toolTip(propertyItems[0]);
-        else
+        else if( role == Qt::TextColorRole) {
+            if(hasExpression())
+                return QVariant::fromValue(QApplication::palette().color(QPalette::Link));
+            return QVariant();
+        } else
             return QVariant();
     }
 }
@@ -456,14 +603,14 @@ QVariant PropertyItem::data(int column, int role) const
 bool PropertyItem::setData (const QVariant& value)
 {
     cleared = false;
-    
+
     // This is the basic mechanism to set the value to
     // a property and if no property is set for this item
     // it delegates it to its parent which sets then the
     // property or delegates again to its parent...
     if (propertyItems.empty()) {
         PropertyItem* parent = this->parent();
-        if (!parent || !parent->parent())
+        if (!parent || !parent->parent() || hasAnyExpression())
             return false;
         parent->setProperty(qPrintable(objectName()),value);
         return true;
@@ -491,12 +638,14 @@ int PropertyItem::row() const
     return 0;
 }
 
-void PropertyItem::bind(const App::ObjectIdentifier& _path) {
+void PropertyItem::bind(const App::ObjectIdentifier& _path)
+{
     Gui::ExpressionBinding::bind(_path);
     propertyBound();
 }
 
-void PropertyItem::bind(const App::Property& prop) {
+void PropertyItem::bind(const App::Property& prop)
+{
     Gui::ExpressionBinding::bind(prop);
     propertyBound();
 }
@@ -534,20 +683,27 @@ QVariant PropertyStringItem::value(const App::Property* prop) const
 
 void PropertyStringItem::setValue(const QVariant& value)
 {
-    if (!value.canConvert(QVariant::String))
-        return;
-    QString val = value.toString();
-    val = QString::fromUtf8(Base::Interpreter().strToPython(val.toUtf8()).c_str());
-    QString data = QString::fromLatin1("\"%1\"").arg(val);
-    setPropertyValue(data);
+    if(!hasExpression())  {
+        if (!value.canConvert(QVariant::String))
+            return;
+        QString val = value.toString();
+        val = QString::fromUtf8(Base::Interpreter().strToPython(val.toUtf8()).c_str());
+        QString data = QString::fromLatin1("\"%1\"").arg(val);
+        setPropertyValue(data);
+    }
 }
 
 QWidget* PropertyStringItem::createEditor(QWidget* parent, const QObject* receiver, const char* method) const
 {
-    QLineEdit *le = new QLineEdit(parent);
+    ExpLineEdit *le = new ExpLineEdit(parent);
     le->setFrame(false);
     le->setReadOnly(isReadOnly());
     QObject::connect(le, SIGNAL(textChanged(const QString&)), receiver, method);
+    if(isBound()) {
+        le->bind(getPath());
+        le->setAutoApply(autoApply());
+    }
+        
     return le;
 }
 
@@ -644,7 +800,7 @@ QVariant PropertyIntegerItem::value(const App::Property* prop) const
 void PropertyIntegerItem::setValue(const QVariant& value)
 {
     //if the item has an expression it issues the python code
-    if(!hasExpression())  {
+    if (!hasExpression()) {
         if (!value.canConvert(QVariant::Int))
             return;
         int val = value.toInt();
@@ -659,13 +815,12 @@ QWidget* PropertyIntegerItem::createEditor(QWidget* parent, const QObject* recei
     sb->setFrame(false);
     sb->setReadOnly(isReadOnly());
     QObject::connect(sb, SIGNAL(valueChanged(int)), receiver, method);
-    
-    if(isBound()) {
+
+    if (isBound()) {
         sb->bind(getPath());
         sb->setAutoApply(autoApply());
     }
 
-    
     return sb;
 }
 
@@ -682,12 +837,13 @@ QVariant PropertyIntegerItem::editorData(QWidget *editor) const
     return QVariant(sb->value());
 }
 
-QVariant PropertyIntegerItem::toString(const QVariant& v) const {
+QVariant PropertyIntegerItem::toString(const QVariant& v) const
+{
     QString string(PropertyItem::toString(v).toString());
-    
-    if(hasExpression())
+
+    if (hasExpression())
         string += QString::fromLatin1("  ( %1 )").arg(QString::fromStdString(getExpressionString()));
-    
+
     return QVariant(string);
 }
 
@@ -711,7 +867,7 @@ QVariant PropertyIntegerConstraintItem::value(const App::Property* prop) const
 void PropertyIntegerConstraintItem::setValue(const QVariant& value)
 {
     //if the item has an expression it issues the python code
-    if(!hasExpression())  {
+    if (!hasExpression()) {
         if (!value.canConvert(QVariant::Int))
             return;
         int val = value.toInt();
@@ -726,12 +882,12 @@ QWidget* PropertyIntegerConstraintItem::createEditor(QWidget* parent, const QObj
     sb->setFrame(false);
     sb->setReadOnly(isReadOnly());
     QObject::connect(sb, SIGNAL(valueChanged(int)), receiver, method);
-    
-    if(isBound()) {
+
+    if (isBound()) {
         sb->bind(getPath());
         sb->setAutoApply(autoApply());
-    }  
-    
+    }
+
     return sb;
 }
 
@@ -764,13 +920,13 @@ QVariant PropertyIntegerConstraintItem::editorData(QWidget *editor) const
     return QVariant(sb->value());
 }
 
-QVariant PropertyIntegerConstraintItem::toString(const QVariant& v) const {
-    
+QVariant PropertyIntegerConstraintItem::toString(const QVariant& v) const
+{
     QString string(PropertyItem::toString(v).toString());
-    
-    if(hasExpression())
+
+    if (hasExpression())
         string += QString::fromLatin1("  ( %1 )").arg(QString::fromStdString(getExpressionString()));
-    
+
     return QVariant(string);
 }
 
@@ -787,10 +943,10 @@ QVariant PropertyFloatItem::toString(const QVariant& prop) const
 {
     double value = prop.toDouble();
     QString data = QLocale::system().toString(value, 'f', decimals());
-    
-    if(hasExpression())
+
+    if (hasExpression())
         data += QString::fromLatin1("  ( %1 )").arg(QString::fromStdString(getExpressionString()));
-    
+
     return QVariant(data);
 }
 
@@ -805,7 +961,7 @@ QVariant PropertyFloatItem::value(const App::Property* prop) const
 void PropertyFloatItem::setValue(const QVariant& value)
 {
     //if the item has an expression it issues the python code
-    if(!hasExpression())  {
+    if (!hasExpression()) {
         if (!value.canConvert(QVariant::Double))
             return;
         double val = value.toDouble();
@@ -821,12 +977,12 @@ QWidget* PropertyFloatItem::createEditor(QWidget* parent, const QObject* receive
     sb->setDecimals(decimals());
     sb->setReadOnly(isReadOnly());
     QObject::connect(sb, SIGNAL(valueChanged(double)), receiver, method);
-    
-    if(isBound()) {
+
+    if (isBound()) {
         sb->bind(getPath());
         sb->setAutoApply(autoApply());
     }
-        
+
     return sb;
 }
 
@@ -856,9 +1012,9 @@ QVariant PropertyUnitItem::toString(const QVariant& prop) const
 {
     const Base::Quantity& unit = prop.value<Base::Quantity>();
     QString string = unit.getUserString();
-    if(hasExpression())
+    if (hasExpression())
         string += QString::fromLatin1("  ( %1 )").arg(QString::fromStdString(getExpressionString()));
-    
+
     return QVariant(string);
 }
 
@@ -873,7 +1029,7 @@ QVariant PropertyUnitItem::value(const App::Property* prop) const
 void PropertyUnitItem::setValue(const QVariant& value)
 {
     //if the item has an expression it handles the python code
-    if(!hasExpression()) {
+    if (!hasExpression()) {
         if (!value.canConvert<Base::Quantity>())
             return;
         const Base::Quantity& val = value.value<Base::Quantity>();
@@ -891,7 +1047,7 @@ QWidget* PropertyUnitItem::createEditor(QWidget* parent, const QObject* receiver
     infield->setReadOnly(isReadOnly());
     
     //if we are bound to an expression we need to bind it to the input field
-    if(isBound()) {
+    if (isBound()) {
         infield->bind(getPath());
         infield->setAutoApply(autoApply());
     }
@@ -980,7 +1136,7 @@ QVariant PropertyFloatConstraintItem::value(const App::Property* prop) const
 void PropertyFloatConstraintItem::setValue(const QVariant& value)
 {
     //if the item has an expression it issues the python code
-    if(!hasExpression())  {
+    if (!hasExpression()) {
         if (!value.canConvert(QVariant::Double))
             return;
         double val = value.toDouble();
@@ -996,13 +1152,12 @@ QWidget* PropertyFloatConstraintItem::createEditor(QWidget* parent, const QObjec
     sb->setFrame(false);
     sb->setReadOnly(isReadOnly());
     QObject::connect(sb, SIGNAL(valueChanged(double)), receiver, method);
-    
-    if(isBound()) {
+
+    if (isBound()) {
         sb->bind(getPath());
         sb->setAutoApply(autoApply());
     }
 
-    
     return sb;
 }
 
@@ -1055,36 +1210,12 @@ PropertyAngleItem::PropertyAngleItem()
 
 void PropertyAngleItem::setEditorData(QWidget *editor, const QVariant& data) const
 {
-    const App::PropertyQuantityConstraint* prop = static_cast
-        <const App::PropertyQuantityConstraint*>(getFirstProperty());
-
-    const App::PropertyQuantityConstraint::Constraints* c = 0;
-    if (prop) {
-        c = prop->getConstraints();
-    }
-
-    QDoubleSpinBox *sb = qobject_cast<QDoubleSpinBox*>(editor);
-    if (c) {
-        sb->setMinimum(c->LowerBound);
-        sb->setMaximum(c->UpperBound);
-        sb->setSingleStep(c->StepSize);
-    }
-    else {
-        sb->setMinimum((double)INT_MIN);
-        sb->setMaximum((double)INT_MAX);
-        sb->setSingleStep(1.0);
-    }
-
-    sb->setValue(data.toDouble());
-    sb->setSuffix(QString::fromUtf8(" \xc2\xb0"));
+    PropertyUnitConstraintItem::setEditorData(editor, data);
 }
 
 QVariant PropertyAngleItem::toString(const QVariant& prop) const
 {
-    double value = prop.toDouble();
-    QString data = QString::fromUtf8("%1 \xc2\xb0")
-        .arg(QLocale::system().toString(value, 'f', decimals()));
-    return QVariant(data);
+    return PropertyUnitConstraintItem::toString(prop);
 }
 
 // --------------------------------------------------------------------
@@ -1137,6 +1268,40 @@ QVariant PropertyBoolItem::editorData(QWidget *editor) const
 
 // ---------------------------------------------------------------
 
+namespace Gui { namespace PropertyEditor {
+class VectorLineEdit : public Gui::ExpLineEdit
+{
+    int decimals;
+public:
+    VectorLineEdit (int decimals, QWidget * parent=0, bool expressionOnly=false)
+        : Gui::ExpLineEdit(parent, expressionOnly)
+        , decimals(decimals)
+    {
+    }
+
+    bool apply(const std::string &propName) {
+        if (!ExpressionBinding::apply(propName)) {
+            QVariant data = property("coords");
+            if (data.canConvert<Base::Vector3d>()) {
+                const Base::Vector3d& value = data.value<Base::Vector3d>();
+
+                QString str = QString::fromLatin1("(%1, %2, %3)")
+                                .arg(value.x,0,'f',decimals)
+                                .arg(value.y,0,'f',decimals)
+                                .arg(value.z,0,'f',decimals);
+
+                Gui::Command::doCommand(Gui::Command::Doc, "%s = %s", propName.c_str(), str.toLatin1().constData());
+                return true;
+            }
+        }
+
+        return false;
+    }
+};
+}}
+
+// ---------------------------------------------------------------
+
 PROPERTYITEM_SOURCE(Gui::PropertyEditor::PropertyVectorItem)
 
 PropertyVectorItem::PropertyVectorItem()
@@ -1159,9 +1324,11 @@ QVariant PropertyVectorItem::toString(const QVariant& prop) const
 {
     const Base::Vector3d& value = prop.value<Base::Vector3d>();
     QString data = QString::fromLatin1("[%1 %2 %3]")
-        .arg(QLocale::system().toString(value.x, 'f', 2))
-        .arg(QLocale::system().toString(value.y, 'f', 2))
-        .arg(QLocale::system().toString(value.z, 'f', 2));
+        .arg(QLocale::system().toString(value.x, 'f', 2),
+             QLocale::system().toString(value.y, 'f', 2),
+             QLocale::system().toString(value.z, 'f', 2));
+    if (hasExpression())
+        data += QString::fromLatin1("  ( %1 )").arg(QString::fromStdString(getExpressionString()));
     return QVariant(data);
 }
 
@@ -1187,9 +1354,15 @@ void PropertyVectorItem::setValue(const QVariant& value)
 
 QWidget* PropertyVectorItem::createEditor(QWidget* parent, const QObject* /*receiver*/, const char* /*method*/) const
 {
-    QLineEdit *le = new QLineEdit(parent);
+    VectorLineEdit *le = new VectorLineEdit(decimals(), parent);
     le->setFrame(false);
     le->setReadOnly(true);
+
+    if (isBound()) {
+        le->bind(getPath());
+        le->setAutoApply(autoApply());
+    }
+
     return le;
 }
 
@@ -1198,9 +1371,10 @@ void PropertyVectorItem::setEditorData(QWidget *editor, const QVariant& data) co
     QLineEdit* le = qobject_cast<QLineEdit*>(editor);
     const Base::Vector3d& value = data.value<Base::Vector3d>();
     QString text = QString::fromLatin1("[%1 %2 %3]")
-        .arg(QLocale::system().toString(value.x, 'f', 2))
-        .arg(QLocale::system().toString(value.y, 'f', 2))
-        .arg(QLocale::system().toString(value.z, 'f', 2));
+        .arg(QLocale::system().toString(value.x, 'f', 2),
+             QLocale::system().toString(value.y, 'f', 2),
+             QLocale::system().toString(value.z, 'f', 2));
+    le->setProperty("coords", data);
     le->setText(text);
 }
 
@@ -1240,13 +1414,12 @@ void PropertyVectorItem::setZ(double z)
     setData(QVariant::fromValue(Base::Vector3d(x(), y(), z)));
 }
 
-void PropertyVectorItem::propertyBound() {
-    
+void PropertyVectorItem::propertyBound()
+{
     m_x->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("x"));
     m_y->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("y"));
     m_z->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("z"));
 }
-
 
 // ---------------------------------------------------------------
 
@@ -1275,6 +1448,8 @@ QVariant PropertyVectorDistanceItem::toString(const QVariant& prop) const
            Base::Quantity(value.x, Base::Unit::Length).getUserString() + QString::fromLatin1("  ") +
            Base::Quantity(value.y, Base::Unit::Length).getUserString() + QString::fromLatin1("  ") +
            Base::Quantity(value.z, Base::Unit::Length).getUserString() + QString::fromLatin1("]");
+    if (hasExpression())
+        data += QString::fromLatin1("  ( %1 )").arg(QString::fromStdString(getExpressionString()));
     return QVariant(data);
 }
 
@@ -1306,14 +1481,21 @@ void PropertyVectorDistanceItem::setValue(const QVariant& variant)
 void PropertyVectorDistanceItem::setEditorData(QWidget *editor, const QVariant& data) const
 {
     QLineEdit* le = qobject_cast<QLineEdit*>(editor);
+    le->setProperty("coords", data);
     le->setText(toString(data).toString());
 }
 
 QWidget* PropertyVectorDistanceItem::createEditor(QWidget* parent, const QObject* /*receiver*/, const char* /*method*/) const
 {
-    QLineEdit *le = new QLineEdit(parent);
+    VectorLineEdit *le = new VectorLineEdit(decimals(), parent);
     le->setFrame(false);
     le->setReadOnly(true);
+
+    if (isBound()) {
+        le->bind(getPath());
+        le->setAutoApply(autoApply());
+    }
+
     return le;
 }
 
@@ -1353,9 +1535,9 @@ void PropertyVectorDistanceItem::setZ(Base::Quantity z)
     setData(QVariant::fromValue(Base::Vector3d(x().getValue(), y().getValue(), z.getValue())));
 }
 
-void PropertyVectorDistanceItem::propertyBound() {
-
-    if(isBound()) {
+void PropertyVectorDistanceItem::propertyBound()
+{
+    if (isBound()) {
         m_x->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("x"));
         m_y->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("y"));
         m_z->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("z"));
@@ -1459,22 +1641,22 @@ QVariant PropertyMatrixItem::toString(const QVariant& prop) const
 {
     const Base::Matrix4D& value = prop.value<Base::Matrix4D>();
     QString text = QString::fromLatin1("[%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16]")
-        .arg(QLocale::system().toString(value[0][0], 'f', 2)) //(unsigned short usNdx)
-        .arg(QLocale::system().toString(value[0][1], 'f', 2))
-        .arg(QLocale::system().toString(value[0][2], 'f', 2))
-        .arg(QLocale::system().toString(value[0][3], 'f', 2))
-        .arg(QLocale::system().toString(value[1][0], 'f', 2))
-        .arg(QLocale::system().toString(value[1][1], 'f', 2))
-        .arg(QLocale::system().toString(value[1][2], 'f', 2))
-        .arg(QLocale::system().toString(value[1][3], 'f', 2))
-        .arg(QLocale::system().toString(value[2][0], 'f', 2))
-        .arg(QLocale::system().toString(value[2][1], 'f', 2))
-        .arg(QLocale::system().toString(value[2][2], 'f', 2))
-        .arg(QLocale::system().toString(value[2][3], 'f', 2))
-        .arg(QLocale::system().toString(value[3][0], 'f', 2))
-        .arg(QLocale::system().toString(value[3][1], 'f', 2))
-        .arg(QLocale::system().toString(value[3][2], 'f', 2))
-        .arg(QLocale::system().toString(value[3][3], 'f', 2));
+        .arg(QLocale::system().toString(value[0][0], 'f', 2), //(unsigned short usNdx)
+            QLocale::system().toString(value[0][1], 'f', 2),
+            QLocale::system().toString(value[0][2], 'f', 2),
+            QLocale::system().toString(value[0][3], 'f', 2),
+            QLocale::system().toString(value[1][0], 'f', 2),
+            QLocale::system().toString(value[1][1], 'f', 2),
+            QLocale::system().toString(value[1][2], 'f', 2),
+            QLocale::system().toString(value[1][3], 'f', 2),
+            QLocale::system().toString(value[2][0], 'f', 2))
+         .arg(QLocale::system().toString(value[2][1], 'f', 2),
+            QLocale::system().toString(value[2][2], 'f', 2),
+            QLocale::system().toString(value[2][3], 'f', 2),
+            QLocale::system().toString(value[3][0], 'f', 2),
+            QLocale::system().toString(value[3][1], 'f', 2),
+            QLocale::system().toString(value[3][2], 'f', 2),
+            QLocale::system().toString(value[3][3], 'f', 2));
     return QVariant(text);
 }
 
@@ -1533,22 +1715,22 @@ void PropertyMatrixItem::setEditorData(QWidget *editor, const QVariant& data) co
     QLineEdit* le = qobject_cast<QLineEdit*>(editor);
     const Base::Matrix4D& value = data.value<Base::Matrix4D>();
     QString text = QString::fromLatin1("[%1 %2 %3 %4 %5 %6 %7 %8 %9 %10 %11 %12 %13 %14 %15 %16]")
-        .arg(QLocale::system().toString(value[0][0], 'f', 2)) //(unsigned short usNdx)
-        .arg(QLocale::system().toString(value[0][1], 'f', 2))
-        .arg(QLocale::system().toString(value[0][2], 'f', 2))
-        .arg(QLocale::system().toString(value[0][3], 'f', 2))
-        .arg(QLocale::system().toString(value[1][0], 'f', 2))
-        .arg(QLocale::system().toString(value[1][1], 'f', 2))
-        .arg(QLocale::system().toString(value[1][2], 'f', 2))
-        .arg(QLocale::system().toString(value[1][3], 'f', 2))
-        .arg(QLocale::system().toString(value[2][0], 'f', 2))
-        .arg(QLocale::system().toString(value[2][1], 'f', 2))
-        .arg(QLocale::system().toString(value[2][2], 'f', 2))
-        .arg(QLocale::system().toString(value[2][3], 'f', 2))
-        .arg(QLocale::system().toString(value[3][0], 'f', 2))
-        .arg(QLocale::system().toString(value[3][1], 'f', 2))
-        .arg(QLocale::system().toString(value[3][2], 'f', 2))
-        .arg(QLocale::system().toString(value[3][3], 'f', 2));
+        .arg(QLocale::system().toString(value[0][0], 'f', 2), //(unsigned short usNdx)
+            QLocale::system().toString(value[0][1], 'f', 2),
+            QLocale::system().toString(value[0][2], 'f', 2),
+            QLocale::system().toString(value[0][3], 'f', 2),
+            QLocale::system().toString(value[1][0], 'f', 2),
+            QLocale::system().toString(value[1][1], 'f', 2),
+            QLocale::system().toString(value[1][2], 'f', 2),
+            QLocale::system().toString(value[1][3], 'f', 2),
+            QLocale::system().toString(value[2][0], 'f', 2))
+        .arg(QLocale::system().toString(value[2][1], 'f', 2),
+            QLocale::system().toString(value[2][2], 'f', 2),
+            QLocale::system().toString(value[2][3], 'f', 2),
+            QLocale::system().toString(value[3][0], 'f', 2),
+            QLocale::system().toString(value[3][1], 'f', 2),
+            QLocale::system().toString(value[3][2], 'f', 2),
+            QLocale::system().toString(value[3][3], 'f', 2));
     le->setText(text);
 }
 
@@ -1763,13 +1945,13 @@ void PlacementEditor::showValue(const QVariant& d)
     angle = Base::toDegrees<double>(angle);
     pos = p.getPosition();
     QString data = QString::fromUtf8("[(%1 %2 %3);%4 \xc2\xb0;(%5 %6 %7)]")
-                    .arg(QLocale::system().toString(dir.x,'f',2))
-                    .arg(QLocale::system().toString(dir.y,'f',2))
-                    .arg(QLocale::system().toString(dir.z,'f',2))
-                    .arg(QLocale::system().toString(angle,'f',2))
-                    .arg(QLocale::system().toString(pos.x,'f',2))
-                    .arg(QLocale::system().toString(pos.y,'f',2))
-                    .arg(QLocale::system().toString(pos.z,'f',2));
+                    .arg(QLocale::system().toString(dir.x,'f',2),
+                         QLocale::system().toString(dir.y,'f',2),
+                         QLocale::system().toString(dir.z,'f',2),
+                         QLocale::system().toString(angle,'f',2),
+                         QLocale::system().toString(pos.x,'f',2),
+                         QLocale::system().toString(pos.y,'f',2),
+                         QLocale::system().toString(pos.z,'f',2));
     getLabel()->setText(data);
 }
 
@@ -1964,13 +2146,13 @@ QVariant PropertyPlacementItem::toolTip(const App::Property* prop) const
     QString data = QString::fromUtf8("Axis: (%1 %2 %3)\n"
                                      "Angle: %4\n"
                                      "Position: (%5  %6  %7)")
-                    .arg(QLocale::system().toString(dir.x,'f',decimals()))
-                    .arg(QLocale::system().toString(dir.y,'f',decimals()))
-                    .arg(QLocale::system().toString(dir.z,'f',decimals()))
-                    .arg(Base::Quantity(angle, Base::Unit::Angle).getUserString())
-                    .arg(Base::Quantity(pos.x, Base::Unit::Length).getUserString())
-                    .arg(Base::Quantity(pos.y, Base::Unit::Length).getUserString())
-                    .arg(Base::Quantity(pos.z, Base::Unit::Length).getUserString());
+            .arg(QLocale::system().toString(dir.x,'f',decimals()),
+                 QLocale::system().toString(dir.y,'f',decimals()),
+                 QLocale::system().toString(dir.z,'f',decimals()),
+                 Base::Quantity(angle, Base::Unit::Angle).getUserString(),
+                 Base::Quantity(pos.x, Base::Unit::Length).getUserString(),
+                 Base::Quantity(pos.y, Base::Unit::Length).getUserString(),
+                 Base::Quantity(pos.z, Base::Unit::Length).getUserString());
     return QVariant(data);
 }
 
@@ -1983,13 +2165,13 @@ QVariant PropertyPlacementItem::toString(const QVariant& prop) const
     angle = Base::toDegrees<double>(angle);
     pos = p.getPosition();
     QString data = QString::fromUtf8("[(%1 %2 %3); %4; (%5  %6  %7)]")
-                    .arg(QLocale::system().toString(dir.x,'f',2))
-                    .arg(QLocale::system().toString(dir.y,'f',2))
-                    .arg(QLocale::system().toString(dir.z,'f',2))
-                    .arg(Base::Quantity(angle, Base::Unit::Angle).getUserString())
-                    .arg(Base::Quantity(pos.x, Base::Unit::Length).getUserString())
-                    .arg(Base::Quantity(pos.y, Base::Unit::Length).getUserString())
-                    .arg(Base::Quantity(pos.z, Base::Unit::Length).getUserString());
+            .arg(QLocale::system().toString(dir.x,'f',2),
+                 QLocale::system().toString(dir.y,'f',2),
+                 QLocale::system().toString(dir.z,'f',2),
+                 Base::Quantity(angle, Base::Unit::Angle).getUserString(),
+                 Base::Quantity(pos.x, Base::Unit::Length).getUserString(),
+                 Base::Quantity(pos.y, Base::Unit::Length).getUserString(),
+                 Base::Quantity(pos.z, Base::Unit::Length).getUserString());
     return QVariant(data);
 }
 
@@ -2038,9 +2220,9 @@ QVariant PropertyPlacementItem::editorData(QWidget *editor) const
     return pe->value();
 }
 
-void PropertyPlacementItem::propertyBound() {
-    
-    if(isBound()) {
+void PropertyPlacementItem::propertyBound()
+{
+    if (isBound()) {
         m_a->bind(App::ObjectIdentifier(getPath())<<App::ObjectIdentifier::String("Rotation")
                                                   <<App::ObjectIdentifier::String("Angle"));
    
@@ -2177,6 +2359,7 @@ QVariant PropertyStringListItem::toString(const QVariant& prop) const
         list = list.mid(0, 10);
         list.append(QLatin1String("..."));
     }
+
     QString text = QString::fromUtf8("[%1]").arg(list.join(QLatin1String(",")));
     text.replace(QString::fromUtf8("'"),QString::fromUtf8("\\'"));
 
@@ -2190,7 +2373,7 @@ QVariant PropertyStringListItem::value(const App::Property* prop) const
     QStringList list;
     const std::vector<std::string>& value = ((App::PropertyStringList*)prop)->getValues();
     for ( std::vector<std::string>::const_iterator jt = value.begin(); jt != value.end(); ++jt ) {
-        list << QString::fromUtf8(jt->c_str());
+        list << QString::fromUtf8(Base::Tools::escapedUnicodeToUtf8(*jt).c_str());
     }
 
     return QVariant(list);
@@ -2207,7 +2390,10 @@ void PropertyStringListItem::setValue(const QVariant& value)
     for (QStringList::Iterator it = values.begin(); it != values.end(); ++it) {
         QString text(*it);
         text.replace(QString::fromUtf8("'"),QString::fromUtf8("\\'"));
-        str << "unicode('" << text << "', 'utf-8'),";
+
+        std::string pystr = Base::Tools::escapedUnicodeFromUtf8(text.toUtf8());
+        pystr = Base::Interpreter().strToPython(pystr.c_str());
+        str << "u\"" << pystr.c_str() << "\", ";
     }
     str << "]";
     setPropertyValue(data);
@@ -2264,7 +2450,7 @@ QVariant PropertyFloatListItem::value(const App::Property* prop) const
     QStringList list;
     const std::vector<double>& value = static_cast<const App::PropertyFloatList*>(prop)->getValues();
     for (std::vector<double>::const_iterator jt = value.begin(); jt != value.end(); ++jt) {
-        list << QString::number(*jt);
+        list << QString::number(*jt, 'f', decimals());
     }
 
     return QVariant(list);
@@ -3267,7 +3453,13 @@ QWidget* PropertyFileItem::createEditor(QWidget* parent, const QObject* receiver
 
 void PropertyFileItem::setEditorData(QWidget *editor, const QVariant& data) const
 {
+    const App::Property* prop = getFirstProperty();
+    const App::PropertyFile* propFile = static_cast<const App::PropertyFile*>(prop);
+    std::string filter = propFile->getFilter();
     Gui::FileChooser *fc = qobject_cast<Gui::FileChooser*>(editor);
+    if (!filter.empty()) {
+        fc->setFilter(Base::Tools::fromStdString(filter));
+    }
     fc->setFileName(data.toString());
 }
 
@@ -3382,7 +3574,7 @@ QVariant PropertyTransientFileItem::editorData(QWidget *editor) const
 
 // ---------------------------------------------------------------
 
-LinkSelection::LinkSelection(const QStringList& list) : link(list)
+LinkSelection::LinkSelection(const App::SubObjectT &link) : link(link)
 {
 }
 
@@ -3392,16 +3584,24 @@ LinkSelection::~LinkSelection()
 
 void LinkSelection::select()
 {
+    auto sobj = link.getSubObject();
+    if(!sobj) {
+        QMessageBox::critical(getMainWindow(), tr("Error"), tr("Object not found"));
+        return;
+    }
+    Gui::Selection().selStackPush();
     Gui::Selection().clearSelection();
-    Gui::Selection().addSelection((const char*)link[0].toLatin1(),
-                                  (const char*)link[1].toLatin1());
+    Gui::Selection().addSelection(link.getDocumentName().c_str(),
+                                  link.getObjectName().c_str(),
+                                  link.getSubName().c_str());
     this->deleteLater();
 }
 
 // ---------------------------------------------------------------
 
-LinkLabel::LinkLabel (QWidget * parent) : QWidget(parent)
-{
+LinkLabel::LinkLabel (QWidget * parent, const App::Property *prop)
+    : QWidget(parent), objProp(prop), dlg(nullptr)
+{   
     QHBoxLayout *layout = new QHBoxLayout(this);
     layout->setMargin(0);
     layout->setSpacing(1);
@@ -3409,6 +3609,8 @@ LinkLabel::LinkLabel (QWidget * parent) : QWidget(parent)
     label = new QLabel(this);
     label->setAutoFillBackground(true);
     label->setTextFormat(Qt::RichText);
+    // Below is necessary for the hytperlink to be clickable without losing focus
+    label->setTextInteractionFlags(Qt::TextBrowserInteraction);
     layout->addWidget(label);
 
     editButton = new QPushButton(QLatin1String("..."), this);
@@ -3430,26 +3632,42 @@ LinkLabel::~LinkLabel()
 {
 }
 
-void LinkLabel::setPropertyLink(const QStringList& o)
+void LinkLabel::updatePropertyLink()
 {
-    link = o;
-    QString linkcolor = QApplication::palette().color(QPalette::Link).name();
-    QString text = QString::fromLatin1(
-        "<html><head><style type=\"text/css\">"
-        "p, li { white-space: pre-wrap; }"
-        "</style></head><body>"
-        "<p>"
-        "<a href=\"%1.%2\"><span style=\" text-decoration: underline; color:%3;\">%4</span></a>"
-        "</p></body></html>"
-    )
-    .arg(link[0])
-    .arg(link[1])
-    .arg(linkcolor)
-    .arg(link[2]);
+    QString text;
+    auto owner = objProp.getObject();
+    auto prop = Base::freecad_dynamic_cast<App::PropertyLinkBase>(objProp.getProperty());
+
+    link = QVariant();
+
+    if(owner && prop) {
+        auto links = DlgPropertyLink::getLinksFromProperty(prop);
+        if(links.size() == 1) {
+            auto &sobj = links.front();
+            link = QVariant::fromValue(sobj);
+            QString linkcolor = QApplication::palette().color(QPalette::Link).name();
+            text = QString::fromLatin1(
+                    "<html><head><style type=\"text/css\">"
+                    "p, li { white-space: pre-wrap; }"
+                    "</style></head><body>"
+                    "<p>"
+                    "<a href=\"%1#%2.%3\"><span style=\" text-decoration: underline; color:%4;\">%5</span></a>"
+                    "</p></body></html>"
+                    )
+                .arg(QLatin1String(sobj.getDocumentName().c_str()),
+                     QLatin1String(sobj.getObjectName().c_str()),
+                     QString::fromUtf8(sobj.getSubName().c_str()),
+                     linkcolor,
+                     DlgPropertyLink::formatObject(
+                         owner->getDocument(), sobj.getObject(), sobj.getSubName().c_str()));
+        } else if (links.size()) {
+            text = DlgPropertyLink::formatLinks(owner->getDocument(), links);
+        }
+    }
     label->setText(text);
 }
 
-QStringList LinkLabel::propertyLink() const
+QVariant LinkLabel::propertyLink() const
 {
     return link;
 }
@@ -3457,25 +3675,38 @@ QStringList LinkLabel::propertyLink() const
 void LinkLabel::onLinkActivated (const QString& s)
 {
     Q_UNUSED(s);
-    LinkSelection* select = new LinkSelection(link);
+    LinkSelection* select = new LinkSelection(qvariant_cast<App::SubObjectT>(link));
     QTimer::singleShot(50, select, SLOT(select()));
 }
 
 void LinkLabel::onEditClicked ()
 {
-    Gui::Dialog::DlgPropertyLink dlg(link, this);
-    if (dlg.exec() == QDialog::Accepted) {
-        setPropertyLink(dlg.propertyLink());
-        /*emit*/ linkChanged(link);
+    if(!dlg) {
+        dlg = new DlgPropertyLink(this);
+        dlg->init(objProp,true);
+        connect(dlg, SIGNAL(accepted()), this, SLOT(onLinkChanged()));
+    } else
+        dlg->init(objProp,false);
+    dlg->show();
+}
+
+void LinkLabel::onLinkChanged() {
+    if(dlg) {
+        auto links = dlg->currentLinks();
+        if(links != dlg->originalLinks()) {
+            link = QVariant::fromValue(links);
+            /*emit*/ linkChanged(link);
+            updatePropertyLink();
+        }
     }
 }
 
 void LinkLabel::resizeEvent(QResizeEvent* e)
 {
     editButton->setFixedWidth(e->size().height());
-    editButton->setFixedHeight(e->size().height());
 }
 
+// --------------------------------------------------------------------
 
 PROPERTYITEM_SOURCE(Gui::PropertyEditor::PropertyLinkItem)
 
@@ -3485,279 +3716,85 @@ PropertyLinkItem::PropertyLinkItem()
 
 QVariant PropertyLinkItem::toString(const QVariant& prop) const
 {
-    QStringList list = prop.toStringList();
-    return QVariant(list[2]);
+    QString res;
+    if(propertyItems.size()) {
+        App::DocumentObjectT owner(propertyItems[0]);
+        res = DlgPropertyLink::formatLinks(owner.getDocument(),
+                                           qvariant_cast<QList<App::SubObjectT> >(prop));
+    }
+    return res;
+}
+
+QVariant PropertyLinkItem::data(int column, int role) const {
+    if(propertyItems.size() && column == 1 
+            && (role == Qt::TextColorRole || role == Qt::ToolTipRole))
+    {
+        auto propLink = Base::freecad_dynamic_cast<const App::PropertyLinkBase>(propertyItems[0]);
+        if(propLink) {
+            if(role==Qt::TextColorRole && propLink->checkRestore()>1)
+                return QVariant::fromValue(QColor(0xff,0,0));
+            else if(role == Qt::ToolTipRole) {
+                auto xlink = Base::freecad_dynamic_cast<const App::PropertyXLink>(propertyItems[0]);
+                if(xlink) {
+                    const char *filePath = xlink->getFilePath();
+                    if(filePath && filePath[0])
+                        return QVariant::fromValue(QString::fromUtf8(filePath));
+                }
+            }
+        }
+    }
+    return PropertyItem::data(column,role);
 }
 
 QVariant PropertyLinkItem::value(const App::Property* prop) const
 {
-    assert(prop && prop->getTypeId().isDerivedFrom(App::PropertyLink::getClassTypeId()));
+    auto propLink = Base::freecad_dynamic_cast<App::PropertyLinkBase>(prop);
+    if(!propLink)
+        return QVariant();
 
-    const App::PropertyLink* prop_link = static_cast<const App::PropertyLink*>(prop);
-    App::PropertyContainer* c = prop_link->getContainer();
+    auto links = DlgPropertyLink::getLinksFromProperty(propLink);
+    if(links.empty())
+        return QVariant();
 
-    // the list has five elements:
-    // [document name, internal name, label, internal name of container, property name]
-    App::DocumentObject* obj = prop_link->getValue();
-    QStringList list;
-    if (obj) {
-        list << QString::fromLatin1(obj->getDocument()->getName());
-        list << QString::fromLatin1(obj->getNameInDocument());
-        list << QString::fromUtf8(obj->Label.getValue());
-    }
-    else {
-        // no object assigned
-        // the document name
-        if (c->getTypeId().isDerivedFrom(App::DocumentObject::getClassTypeId())) {
-            App::DocumentObject* obj = static_cast<App::DocumentObject*>(c);
-            list << QString::fromLatin1(obj->getDocument()->getName());
-        }
-        else {
-            list << QString::fromLatin1("");
-        }
-
-        // the internal object name
-        list << QString::fromLatin1("Null");
-        // the object label
-        list << QString::fromLatin1("");
-    }
-
-    // the name of this object
-    if (c->getTypeId().isDerivedFrom(App::DocumentObject::getClassTypeId())) {
-        App::DocumentObject* obj = static_cast<App::DocumentObject*>(c);
-        list << QString::fromLatin1(obj->getNameInDocument());
-    }
-    else {
-        list << QString::fromLatin1("Null");
-    }
-
-    list << QString::fromLatin1(prop->getName());
-
-    return QVariant(list);
+    return QVariant::fromValue(links);
 }
 
 void PropertyLinkItem::setValue(const QVariant& value)
 {
-    if (!value.canConvert(QVariant::StringList))
-        return;
-    QStringList items = value.toStringList();
-    if (items.size() > 1) {
-        QString d = items[0];
-        QString o = items[1];
-        QString data;
-        if ( o.isEmpty() )
-            data = QString::fromLatin1("None");
-        else
-            data = QString::fromLatin1("App.getDocument('%1').getObject('%2')").arg(d).arg(o);
-        setPropertyValue(data);
-    }
+    auto links = qvariant_cast<QList<App::SubObjectT> >(value);
+    setPropertyValue(DlgPropertyLink::linksToPython(links));
 }
 
 QWidget* PropertyLinkItem::createEditor(QWidget* parent, const QObject* receiver, const char* method) const
 {
-    LinkLabel *ll = new LinkLabel(parent);
+    if(propertyItems.empty())
+        return 0;
+    LinkLabel *ll = new LinkLabel(parent, propertyItems.front());
     ll->setAutoFillBackground(true);
     ll->setDisabled(isReadOnly());
-    QObject::connect(ll, SIGNAL(linkChanged(const QStringList&)), receiver, method);
+    QObject::connect(ll, SIGNAL(linkChanged(const QVariant&)), receiver, method);
     return ll;
 }
 
 void PropertyLinkItem::setEditorData(QWidget *editor, const QVariant& data) const
 {
-    QStringList list = data.toStringList();
+    (void)data;
     LinkLabel *ll = static_cast<LinkLabel*>(editor);
-    ll->setPropertyLink(list);
+    return ll->updatePropertyLink();
 }
 
 QVariant PropertyLinkItem::editorData(QWidget *editor) const
 {
     LinkLabel *ll = static_cast<LinkLabel*>(editor);
-    return QVariant(ll->propertyLink());
+    return ll->propertyLink();
 }
 
 // --------------------------------------------------------------------
-
-LinkListLabel::LinkListLabel (QWidget * parent) : QWidget(parent)
-{
-    QHBoxLayout *layout = new QHBoxLayout(this);
-    layout->setMargin(0);
-    layout->setSpacing(1);
-
-    label = new QLabel(this);
-    label->setAutoFillBackground(true);
-    layout->addWidget(label);
-
-    editButton = new QPushButton(QLatin1String("..."), this);
-    editButton->setToolTip(tr("Change the linked objects"));
-    layout->addWidget(editButton);
-
-    // setLayout(layout);
-    connect(editButton, SIGNAL(clicked()),
-            this, SLOT(onEditClicked()));
-}
-
-LinkListLabel::~LinkListLabel()
-{
-}
-
-void LinkListLabel::setPropertyLinkList(const QVariantList& o)
-{
-    links = o;
-    if (links.isEmpty()) {
-        label->clear();
-    }
-    else if (links.size() == 1) {
-        QStringList s = links.front().toStringList();
-        label->setText(s[2]);
-    }
-    else {
-        QStringList obj;
-        for (QVariantList::iterator it = links.begin(); it != links.end(); ++it)
-            obj << it->toStringList()[2];
-        label->setText(QString::fromLatin1("[%1]").arg(obj.join(QString::fromLatin1(", "))));
-    }
-}
-
-QVariantList LinkListLabel::propertyLinkList() const
-{
-    return links;
-}
-
-void LinkListLabel::onEditClicked ()
-{
-    QStringList list = links.front().toStringList();
-    Gui::Dialog::DlgPropertyLink dlg(list, this);
-    dlg.setSelectionMode(QAbstractItemView::ExtendedSelection);
-    if (dlg.exec() == QDialog::Accepted) {
-        setPropertyLinkList(dlg.propertyLinkList());
-        Q_EMIT linkChanged(links);
-    }
-}
-
-void LinkListLabel::resizeEvent(QResizeEvent* e)
-{
-    editButton->setFixedWidth(e->size().height());
-}
-
 
 PROPERTYITEM_SOURCE(Gui::PropertyEditor::PropertyLinkListItem)
 
 PropertyLinkListItem::PropertyLinkListItem()
 {
-}
-
-QVariant PropertyLinkListItem::toString(const QVariant& prop) const
-{
-    QVariantList list = prop.toList();
-    if (list.empty()) {
-        return QString();
-    }
-    else if (list.size() == 1) {
-        QStringList item = list.front().toStringList();
-        return QString::fromLatin1("%1").arg(item[2]);
-    }
-    else {
-        QStringList obj;
-        for (QVariantList::iterator it = list.begin(); it != list.end(); ++it)
-            obj << it->toStringList()[2];
-        return QString::fromLatin1("[%1]").arg(obj.join(QString::fromLatin1(", ")));
-    }
-}
-
-QVariant PropertyLinkListItem::value(const App::Property* prop) const
-{
-    assert(prop && prop->getTypeId().isDerivedFrom(App::PropertyLinkList::getClassTypeId()));
-
-    const App::PropertyLinkList* prop_link = static_cast<const App::PropertyLinkList*>(prop);
-    App::PropertyContainer* c = prop_link->getContainer();
-
-    // the name of this object
-    QString objName;
-    if (c->getTypeId().isDerivedFrom(App::DocumentObject::getClassTypeId())) {
-        App::DocumentObject* obj = static_cast<App::DocumentObject*>(c);
-        objName = QString::fromLatin1(obj->getNameInDocument());
-    }
-    else {
-        objName = QString::fromLatin1("Null");
-    }
-
-    // each item is a list of five elements:
-    //[document name, internal name, label, internal name of container, property name]
-    // the variant list contains at least one item
-    std::vector<App::DocumentObject*> obj = prop_link->getValues();
-    QVariantList varList;
-    if (!obj.empty()) {
-        for (std::vector<App::DocumentObject*>::iterator it = obj.begin(); it != obj.end(); ++it) {
-            QStringList list;
-            list << QString::fromLatin1((*it)->getDocument()->getName());
-            list << QString::fromLatin1((*it)->getNameInDocument());
-            list << QString::fromUtf8((*it)->Label.getValue());
-            list << objName;
-            list << QString::fromLatin1(prop->getName());
-            varList << list;
-        }
-    }
-    else {
-        QStringList list;
-        // no object assigned
-        // the document name
-        if (c->getTypeId().isDerivedFrom(App::DocumentObject::getClassTypeId())) {
-            App::DocumentObject* obj = static_cast<App::DocumentObject*>(c);
-            list << QString::fromLatin1(obj->getDocument()->getName());
-        }
-        else {
-            list << QString::fromLatin1("");
-        }
-
-        // the internal object name
-        list << QString::fromLatin1("Null");
-        // the object label
-        list << QString::fromLatin1("");
-        list << objName;
-        list << QString::fromLatin1(prop->getName());
-        varList << list;
-    }
-
-    return QVariant(varList);
-}
-
-void PropertyLinkListItem::setValue(const QVariant& value)
-{
-    if (!value.canConvert(QVariant::List))
-        return;
-    QVariantList items = value.toList();
-    QStringList data;
-    for (QVariantList::iterator it = items.begin(); it != items.end(); ++it) {
-        QStringList list = it->toStringList();
-        QString d = list[0];
-        QString o = list[1];
-        if (!o.isEmpty())
-            data << QString::fromLatin1("App.getDocument('%1').getObject('%2')").arg(d).arg(o);
-    }
-
-    setPropertyValue(QString::fromLatin1("[%1]").arg(data.join(QString::fromLatin1(", "))));
-}
-
-QWidget* PropertyLinkListItem::createEditor(QWidget* parent, const QObject* receiver, const char* method) const
-{
-    LinkListLabel *ll = new LinkListLabel(parent);
-    ll->setAutoFillBackground(true);
-    ll->setDisabled(isReadOnly());
-    QObject::connect(ll, SIGNAL(linkChanged(const QVariantList&)), receiver, method);
-    return ll;
-}
-
-void PropertyLinkListItem::setEditorData(QWidget *editor, const QVariant& data) const
-{
-    QVariantList list = data.toList();
-    LinkListLabel *ll = static_cast<LinkListLabel*>(editor);
-    ll->setPropertyLinkList(list);
-}
-
-QVariant PropertyLinkListItem::editorData(QWidget *editor) const
-{
-    LinkListLabel *ll = static_cast<LinkListLabel*>(editor);
-    return QVariant(ll->propertyLinkList());
 }
 
 // --------------------------------------------------------------------

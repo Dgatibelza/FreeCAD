@@ -22,6 +22,7 @@
 #*                                                                         *
 #***************************************************************************
 
+from __future__ import print_function
 
 '''
 Usage:
@@ -38,7 +39,12 @@ Options:
     -d or --directory : specifies a directory containing unzipped translation folders
     -z or --zipfile : specifies a path to the freecad.zip file
     -m or --module : specifies a single module name to be updated, instead of all modules
-    
+
+If no argument is specified, the command will try to find and use a freecad.zip file
+located in the current src/Tools directory (such as the one obtained by running
+updatecrowdin.py download) and will extract the default languages specified below
+in this file.
+
 This command must be run from its current source tree location (/src/Tools)
 so it can find the correct places to put the translation files.  If run with
 no arguments, the latest translations from crowdin will be downloaded, unzipped
@@ -62,10 +68,10 @@ import sys, os, shutil, tempfile, zipfile, getopt, StringIO, re
 
 crowdinpath = "http://crowdin.net/download/project/freecad.zip"
 
-# locations list contains Module name, relative path to translation folder, relative path to qrc file, and optionally
-# a python rc file
+# locations list contains Module name, relative path to translation folder and relative path to qrc file
 
-locations = [["Arch","../Mod/Arch/Resources/translations","../Mod/Arch/Resources/Arch.qrc"],
+locations = [["AddonManager","../Mod/AddonManager/Resources/translations","../Mod/AddonManager/Resources/AddonManager.qrc"],
+             ["Arch","../Mod/Arch/Resources/translations","../Mod/Arch/Resources/Arch.qrc"],
              ["Assembly","../Mod/Assembly/Gui/Resources/translations","../Mod/Assembly/Gui/Resources/Assembly.qrc"],
              ["draft","../Mod/Draft/Resources/translations","../Mod/Draft/Resources/Draft.qrc"],
              ["Drawing","../Mod/Drawing/Gui/Resources/translations","../Mod/Drawing/Gui/Resources/Drawing.qrc"],
@@ -93,7 +99,7 @@ locations = [["Arch","../Mod/Arch/Resources/translations","../Mod/Arch/Resources
              ["TechDraw","../Mod/TechDraw/Gui/Resources/translations","../Mod/TechDraw/Gui/Resources/TechDraw.qrc"],
              ]
              
-default_languages = "af zh-CN zh-TW hr cs nl fi fr de hu ja no pl pt-PT ro ru sr es-ES sv-SE uk it pt-BR el sk tr sl eu ca gl kab ko fil id lt val-ES"
+default_languages = "af ar ca cs de el es-ES eu fi fil fr gl hr hu id it ja kab ko lt nl no pl pt-BR pt-PT ro ru sk sl sr sv-SE tr uk val-ES vi zh-CN zh-TW"
 
 def updateqrc(qrcpath,lncode):
     "updates a qrc file with the given translation entry"
@@ -122,12 +128,12 @@ def updateqrc(qrcpath,lncode):
     for i in range(len(resources)):
         if ".qm" in resources[i]:
             pos = i
-    if pos == None:
+    if pos is None:
         print("No existing .qm file in this resource. Appending to the end position")
         for i in range(len(resources)):
             if "</qresource>" in resources[i]:
                 pos = i-1
-    if pos == None:
+    if pos is None:
         print("ERROR: couldn't add qm files to this resource: " + qrcpath)
         sys.exit()
 
@@ -188,30 +194,36 @@ def doLanguage(lncode,fmodule=""):
     print(lncode + " done!")
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    if len(args) < 1:
-        print(__doc__)
-        sys.exit()
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "hd:z:m:", ["help", "directory=","zipfile=", "module="])
-    except getopt.GetoptError:
-        print(__doc__)
-        sys.exit()
-        
-    # checking on the options
+    
     inputdir = ""
     inputzip = ""
     fmodule = ""
-    for o, a in opts:
-        if o in ("-h", "--help"):
+    args = sys.argv[1:]
+    if len(args) < 1:
+        inputzip = os.path.join(os.path.abspath(os.curdir),"freecad.zip")
+        if os.path.exists(inputzip):
+            print("Using zip file found at",inputzip)
+        else:
             print(__doc__)
             sys.exit()
-        if o in ("-d", "--directory"):
-            inputdir = a
-        if o in ("-z", "--zipfile"):
-            inputzip = a
-        if o in ("-m", "--module"):
-            fmodule = a
+    else:
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "hd:z:m:", ["help", "directory=","zipfile=", "module="])
+        except getopt.GetoptError:
+            print(__doc__)
+            sys.exit()
+            
+        # checking on the options
+        for o, a in opts:
+            if o in ("-h", "--help"):
+                print(__doc__)
+                sys.exit()
+            if o in ("-d", "--directory"):
+                inputdir = a
+            if o in ("-z", "--zipfile"):
+                inputzip = a
+            if o in ("-m", "--module"):
+                fmodule = a
 
     currentfolder = os.getcwd()
     if inputdir:
@@ -222,12 +234,12 @@ if __name__ == "__main__":
     elif inputzip:
         tempfolder = tempfile.mkdtemp()
         print("creating temp folder " + tempfolder)
-        os.chdir(tempfolder)
         inputzip=os.path.realpath(inputzip)
         if not os.path.exists(inputzip):
             print("ERROR: " + inputzip + " not found")
             sys.exit()
         shutil.copy(inputzip,tempfolder)
+        os.chdir(tempfolder)
         zfile=zipfile.ZipFile("freecad.zip")
         print("extracting freecad.zip...")
         zfile.extractall()
@@ -252,4 +264,3 @@ if __name__ == "__main__":
             print("ERROR: language path for " + ln + " not found!")
         else:
             doLanguage(ln,fmodule)
-

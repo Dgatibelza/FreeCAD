@@ -43,7 +43,6 @@
 # include <QItemSelection>
 # include <QItemSelectionModel>
 # include <QTimer>
-# include <boost/signal.hpp>
 # include <boost/bind.hpp>
 # include <Python.h>
 # include <Inventor/actions/SoSearchAction.h>
@@ -207,7 +206,7 @@ namespace PartGui {
         std::vector<int> edge_ids;
         TopTools_IndexedMapOfShape all_edges;
         TopTools_IndexedMapOfShape all_faces;
-        typedef boost::signals::connection Connection;
+        typedef boost::signals2::connection Connection;
         Connection connectApplicationDeletedObject;
         Connection connectApplicationDeletedDocument;
 
@@ -224,7 +223,7 @@ namespace PartGui {
             }
         };
     };
-};
+}
 
 /* TRANSLATOR PartGui::DlgFilletEdges */
 
@@ -453,7 +452,7 @@ void DlgFilletEdges::onSelectEdgesOfFace(const QString& subelement, int type)
                 }
             }
         }
-        catch (Standard_Failure) {
+        catch (Standard_Failure&) {
         }
     }
 }
@@ -629,10 +628,15 @@ void DlgFilletEdges::setupFillet(const std::vector<App::DocumentObject*>& objs)
 
         App::Document* doc = d->object->getDocument();
         // get current selection and their sub-elements
-        std::vector<Gui::SelectionObject> selObj = Gui::Selection().getSelectionEx(doc->getName());
-        std::vector<Gui::SelectionObject>::iterator selIt = std::find_if(selObj.begin(), selObj.end(),
-            Private::SelectionObjectCompare(d->object));
+        //std::vector<Gui::SelectionObject> selObj = Gui::Selection().getSelectionEx(doc->getName());
+        //std::vector<Gui::SelectionObject>::iterator selIt = std::find_if(selObj.begin(), selObj.end(),
+        //    Private::SelectionObjectCompare(d->object));
 
+
+         /*
+          * Edit: the following check is no longer necessary, as Gui::Selection
+          * will do the check
+          *
         // If sub-objects are already selected then only add the un-selected parts.
         // This is impotant to avoid recursive calls of rmvSelection() which
         // invalidates the internal iterator (#0002200).
@@ -646,9 +650,12 @@ void DlgFilletEdges::setupFillet(const std::vector<App::DocumentObject*>& objs)
             std::set_difference(subElements.begin(), subElements.end(), selElements.begin(), selElements.end(), biit);
             subElements = complementary;
         }
+        */
+
+        Gui::Selection().clearSelection(doc->getName());
 
         if (!subElements.empty()) {
-            Gui::Selection().addSelection(doc->getName(),
+            Gui::Selection().addSelections(doc->getName(),
                 d->object->getNameInDocument(),
                 subElements);
         }
@@ -796,7 +803,7 @@ void DlgFilletEdges::on_selectAllButton_clicked()
 
     if (d->object) {
         App::Document* doc = d->object->getDocument();
-        Gui::Selection().addSelection(doc->getName(),
+        Gui::Selection().addSelections(doc->getName(),
             d->object->getNameInDocument(),
             subElements);
     }

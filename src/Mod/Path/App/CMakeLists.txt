@@ -43,6 +43,7 @@ SET(Python_SRCS
     PathPy.xml
     PathPyImp.cpp
     ToolPy.xml
+    ToolPyImp.cpp
     TooltablePy.xml
     TooltablePyImp.cpp
     FeaturePathCompoundPy.xml
@@ -65,6 +66,8 @@ SET(Path_SRCS
     Command.h
     Path.cpp
     Path.h
+    Tool.cpp
+    Tool.h
     Tooltable.cpp
     Tooltable.h
     PropertyPath.cpp
@@ -85,6 +88,8 @@ SET(Path_SRCS
     ParamsHelper.h
     FeatureArea.cpp
     FeatureArea.h
+    PathSegmentWalker.h
+    PathSegmentWalker.cpp
     ${Mod_SRCS}
     ${Python_SRCS}
 )
@@ -113,22 +118,15 @@ SOURCE_GROUP("Module" FILES ${Mod_SRCS})
 #    SOURCE_GROUP("KDL" FILES ${KDL_SRCS} ${KDL_HPPS} ${UTIL_SRCS} ${UTIL_HPPS} )
 #endif(WIN32)
 
-SET(Path_Scripts
-    Init.py
-)
-
 add_library(Path SHARED ${Path_SRCS})
 target_link_libraries(Path ${Path_LIBS})
 
-fc_target_copy_resource(Path 
-    ${CMAKE_SOURCE_DIR}/src/Mod/Path
-    ${CMAKE_BINARY_DIR}/Mod/Path
-    ${Path_Scripts})
+if(FREECAD_USE_PCH)
+    add_definitions(-D_PreComp_)
+    GET_MSVC_PRECOMPILED_SOURCE("PreCompiled.cpp" Path_CPP_SRCS ${Path_SRCS})
+    ADD_MSVC_PRECOMPILED_HEADER(Path PreCompiled.h PreCompiled.cpp Path_CPP_SRCS)
+endif(FREECAD_USE_PCH)
 
-fc_target_copy_resource(Path 
-    ${CMAKE_SOURCE_DIR}/src/Mod/Path
-    ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_DATADIR}/Mod/Path
-    ${Path_Resources})
 
 SET_BIN_DIR(Path Path /Mod/Path)
 SET_PYTHON_PREFIX_SUFFIX(Path)

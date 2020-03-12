@@ -30,7 +30,7 @@ import Part
 from FreeCAD import Units
 from PySide import QtGui, QtCore
 from . import PlotAux
-from . import Instance
+import Instance
 from shipUtils import Paths
 import shipUtils.Units as USys
 import shipUtils.Locale as Locale
@@ -488,7 +488,7 @@ class TaskPanel:
             "Computing external faces",
             None)
         App.Console.PrintMessage(msg + '...\n')
-        # Valid/unvalid faces detection loop
+        # Valid/Invalid faces detection loop
         for i in range(len(faces)):
             App.Console.PrintMessage("\t{} / {}\n".format(i + 1, len(faces)))
             f = faces[i]

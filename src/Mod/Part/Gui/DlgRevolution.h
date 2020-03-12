@@ -56,6 +56,7 @@ public:
 
 protected:
     void changeEvent(QEvent *e);
+    void keyPressEvent(QKeyEvent*);
 
 private Q_SLOTS:
     void on_selectLine_clicked();
@@ -75,7 +76,6 @@ private:
     void autoSolid();
 
 private:
-    //typedef Gui::LocationInterfaceComp<Ui_DlgRevolution> Ui_RevolutionComp;
     Ui_DlgRevolution* ui;
     class EdgeSelection;
     EdgeSelection* filter;

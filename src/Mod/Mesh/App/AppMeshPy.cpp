@@ -209,6 +209,20 @@ private:
 
                 pcDoc->addObject(pcFeature, file.fileNamePure().c_str());
             }
+            else if (mat.binding == MeshCore::MeshIO::PER_FACE && 
+                     mat.diffuseColor.size() == mesh.countFacets()) {
+                FeatureCustom *pcFeature = new FeatureCustom();
+                pcFeature->Label.setValue(file.fileNamePure().c_str());
+                pcFeature->Mesh.swapMesh(mesh);
+                App::PropertyColorList* prop = static_cast<App::PropertyColorList*>
+                    (pcFeature->addDynamicProperty("App::PropertyColorList", "FaceColors"));
+                if (prop) {
+                    prop->setValues(mat.diffuseColor);
+                }
+                pcFeature->purgeTouched();
+
+                pcDoc->addObject(pcFeature, file.fileNamePure().c_str());
+            }
             else {
                 Mesh::Feature *pcFeature = static_cast<Mesh::Feature *>
                     (pcDoc->addObject("Mesh::Feature", file.fileNamePure().c_str()));
@@ -274,6 +288,20 @@ private:
 
                 pcDoc->addObject(pcFeature, file.fileNamePure().c_str());
             }
+            else if (mat.binding == MeshCore::MeshIO::PER_FACE && 
+                     mat.diffuseColor.size() == mesh.countFacets()) {
+                FeatureCustom *pcFeature = new FeatureCustom();
+                pcFeature->Label.setValue(file.fileNamePure().c_str());
+                pcFeature->Mesh.swapMesh(mesh);
+                App::PropertyColorList* prop = static_cast<App::PropertyColorList*>
+                    (pcFeature->addDynamicProperty("App::PropertyColorList", "FaceColors"));
+                if (prop) {
+                    prop->setValues(mat.diffuseColor);
+                }
+                pcFeature->purgeTouched();
+
+                pcDoc->addObject(pcFeature, file.fileNamePure().c_str());
+            }
             else {
                 Mesh::Feature *pcFeature = static_cast<Mesh::Feature *>
                     (pcDoc->addObject("Mesh::Feature", file.fileNamePure().c_str()));
@@ -322,6 +350,33 @@ private:
             return Py::None();
         }
 
+        // collect all object types that can be exported as mesh
+        std::vector<App::DocumentObject*> objectList;
+        std::string label;
+        for (auto it : list) {
+            PyObject *item = it.ptr();
+            if (PyObject_TypeCheck(item, &(App::DocumentObjectPy::Type))) {
+                auto obj( static_cast<App::DocumentObjectPy *>(item)->getDocumentObjectPtr() );
+                label = obj->Label.getValue();
+                if (Exporter::isSupported(obj))
+                    objectList.push_back(obj);
+            }
+        }
+
+        if (objectList.empty()) {
+            std::string errorMessage;
+            if (list.length() == 1) {
+                std::stringstream str;
+                str << label << " cannot be exported to a mesh file";
+                errorMessage = str.str();
+            }
+            else {
+                errorMessage = "None of the objects can be exported to a mesh file";
+            }
+
+            throw Py::TypeError(errorMessage);
+        }
+
         auto exportFormat( MeshOutput::GetFormat(outputFileName.c_str()) );
 
         std::unique_ptr<Exporter> exporter;
@@ -343,13 +398,8 @@ private:
             throw Py::Exception(Base::BaseExceptionFreeCADError, exStr.c_str());
         }
 
-        for (auto it : list) {
-            PyObject *item = it.ptr();
-            if (PyObject_TypeCheck(item, &(App::DocumentObjectPy::Type))) {
-                auto obj( static_cast<App::DocumentObjectPy *>(item)->getDocumentObjectPtr() );
-
-                exporter->addObject(obj, fTolerance);
-            }
+        for (auto it : objectList) {
+            exporter->addObject(it, fTolerance);
         }
         exporter.reset();   // deletes Exporter, mesh file is written by destructor
 
@@ -410,8 +460,8 @@ private:
         float hy = y/2.0f;
 
         std::vector<MeshCore::MeshGeomFacet> TriaList;
-        TriaList.push_back(MeshCore::MeshGeomFacet(Base::Vector3f(-hx, -hy, 0.0),Base::Vector3f(hx, hy, 0.0),Base::Vector3f(-hx, hy, 0.0)));
-        TriaList.push_back(MeshCore::MeshGeomFacet(Base::Vector3f(-hx, -hy, 0.0),Base::Vector3f(hx, -hy, 0.0),Base::Vector3f(hx, hy, 0.0)));
+        TriaList.emplace_back(Base::Vector3f(-hx, -hy, 0.0),Base::Vector3f(hx, hy, 0.0),Base::Vector3f(-hx, hy, 0.0));
+        TriaList.emplace_back(Base::Vector3f(-hx, -hy, 0.0),Base::Vector3f(hx, -hy, 0.0),Base::Vector3f(hx, hy, 0.0));
 
         std::unique_ptr<MeshObject> mesh(new MeshObject);
         mesh->addFacets(TriaList);

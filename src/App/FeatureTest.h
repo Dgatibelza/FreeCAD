@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Jürgen Riegel          (juergen.riegel@web.de) 2006     *
+ *   Copyright (c) 2006 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -96,7 +96,8 @@ public:
   App::PropertyInteger   TypeOutput;
   App::PropertyInteger   TypeAll;
   App::PropertyInteger   TypeTransient;
-  
+  App::PropertyInteger   TypeNoRecompute;
+
   App::PropertyQuantity  QuantityLength;
   App::PropertyQuantity  QuantityOther;
   //App::PropertyQuantity  QuantityMass;
@@ -104,6 +105,7 @@ public:
 
   /** @name methods override Feature */
   //@{
+  virtual short mustExecute(void) const;
   /// recalculate the Feature
   virtual DocumentObjectExecReturn *execute(void);
   /// returns the type name of the ViewProvider

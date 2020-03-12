@@ -1,5 +1,6 @@
 /***************************************************************************
- *   Copyright (c) 2012 Jan Rheinländer <jrheinlaender[at]users.sourceforge.net>     *
+ *   Copyright (c) 2012 Jan Rheinländer                                    *
+ *                                   <jrheinlaender@users.sourceforge.net> *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -59,13 +60,15 @@
 
 #include <Base/Console.h>
 #include <Base/Exception.h>
+#include <Base/Tools.h>
 
 using namespace PartDesign;
 
 
 PROPERTY_SOURCE(PartDesign::Draft, PartDesign::DressUp)
 
-const App::PropertyFloatConstraint::Constraints floatAngle = {0.0,89.99,0.1};
+
+App::PropertyAngle::Constraints Draft::floatAngle = {0.0,89.99,0.1};
 
 Draft::Draft()
 {
@@ -74,6 +77,18 @@ Draft::Draft()
     ADD_PROPERTY_TYPE(NeutralPlane,(0),"Draft",(App::PropertyType)(App::Prop_None),"NeutralPlane");
     ADD_PROPERTY_TYPE(PullDirection,(0),"Draft",(App::PropertyType)(App::Prop_None),"PullDirection");
     ADD_PROPERTY(Reversed,(0));
+}
+
+void Draft::handleChangedPropertyType(Base::XMLReader &reader,
+                                      const char * TypeName,
+                                      App::Property * prop)
+{
+    Base::Type inputType = Base::Type::fromName(TypeName);
+    if (prop == &Angle && inputType == App::PropertyFloatConstraint::getClassTypeId()) {
+        App::PropertyFloatConstraint v;
+        v.Restore(reader);
+        Angle.setValue(v.getValue());
+    }
 }
 
 short Draft::mustExecute() const
@@ -105,7 +120,7 @@ App::DocumentObjectExecReturn *Draft::execute(void)
         return new App::DocumentObjectExecReturn("No faces specified");
 
     // Draft angle
-    double angle = Angle.getValue() / 180.0 * M_PI;
+    double angle = Base::toRadians(Angle.getValue());
 
     // Pull direction
     gp_Dir pullDirection;
@@ -118,7 +133,7 @@ App::DocumentObjectExecReturn *Draft::execute(void)
         } else if (refDirection->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId())) {
             std::vector<std::string> subStrings = PullDirection.getSubValues();
             if (subStrings.empty() || subStrings[0].empty())
-                throw Base::Exception("No pull direction reference specified");
+                throw Base::ValueError("No pull direction reference specified");
 
             Part::Feature* refFeature = static_cast<Part::Feature*>(refDirection);
             Part::TopoShape refShape = refFeature->Shape.getShape();
@@ -127,17 +142,17 @@ App::DocumentObjectExecReturn *Draft::execute(void)
             if (ref.ShapeType() == TopAbs_EDGE) {
                 TopoDS_Edge refEdge = TopoDS::Edge(ref);
                 if (refEdge.IsNull())
-                    throw Base::Exception("Failed to extract pull direction reference edge");
+                    throw Base::ValueError("Failed to extract pull direction reference edge");
                 BRepAdaptor_Curve adapt(refEdge);
                 if (adapt.GetType() != GeomAbs_Line)
-                    throw Base::Exception("Pull direction reference edge must be linear");
+                    throw Base::TypeError("Pull direction reference edge must be linear");
 
                 pullDirection = adapt.Line().Direction();
             } else {
-                throw Base::Exception("Pull direction reference must be an edge or a datum line");
+                throw Base::TypeError("Pull direction reference must be an edge or a datum line");
             }
         } else {
-            throw Base::Exception("Pull direction reference must be an edge of a feature or a datum line");
+            throw Base::TypeError("Pull direction reference must be an edge of a feature or a datum line");
         }
 
         TopLoc_Location invObjLoc = this->getLocation().Inverted();
@@ -178,7 +193,7 @@ App::DocumentObjectExecReturn *Draft::execute(void)
                 BRepAdaptor_Surface adapt(TopoDS::Face(face), Standard_False);
                 Handle(Geom_Surface) sf = adapt.Surface().Surface();
                 GeomAPI_IntSS intersector(aux, sf, Precision::Confusion());
-                if (!intersector.IsDone())
+                if (!intersector.IsDone() || intersector.NbLines() < 1)
                     continue;
                 Handle(Geom_Curve) icurve = intersector.Line(1);
                 if (!icurve->IsKind(STANDARD_TYPE(Geom_Line)))
@@ -193,7 +208,7 @@ App::DocumentObjectExecReturn *Draft::execute(void)
         }
 
         if (!found)
-            throw Base::Exception("No neutral plane specified and none can be guessed");
+            throw Base::RuntimeError("No neutral plane specified and none can be guessed");
     } else {
         if (refPlane->getTypeId().isDerivedFrom(PartDesign::Plane::getClassTypeId())) {
             PartDesign::Plane* plane = static_cast<PartDesign::Plane*>(refPlane);
@@ -205,7 +220,7 @@ App::DocumentObjectExecReturn *Draft::execute(void)
         } else if (refPlane->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId())) {
             std::vector<std::string> subStrings = NeutralPlane.getSubValues();
             if (subStrings.empty() || subStrings[0].empty())
-                throw Base::Exception("No neutral plane reference specified");
+                throw Base::ValueError("No neutral plane reference specified");
 
             Part::Feature* refFeature = static_cast<Part::Feature*>(refPlane);
             Part::TopoShape refShape = refFeature->Shape.getShape();
@@ -214,10 +229,10 @@ App::DocumentObjectExecReturn *Draft::execute(void)
             if (ref.ShapeType() == TopAbs_FACE) {
                 TopoDS_Face refFace = TopoDS::Face(ref);
                 if (refFace.IsNull())
-                    throw Base::Exception("Failed to extract neutral plane reference face");
+                    throw Base::ValueError("Failed to extract neutral plane reference face");
                 BRepAdaptor_Surface adapt(refFace);
                 if (adapt.GetType() != GeomAbs_Plane)
-                    throw Base::Exception("Neutral plane reference face must be planar");
+                    throw Base::TypeError("Neutral plane reference face must be planar");
 
                 neutralPlane = adapt.Plane();
             } else if (ref.ShapeType() == TopAbs_EDGE) {
@@ -225,22 +240,22 @@ App::DocumentObjectExecReturn *Draft::execute(void)
                     // Create neutral plane through edge normal to pull direction
                     TopoDS_Edge refEdge = TopoDS::Edge(ref);
                     if (refEdge.IsNull())
-                        throw Base::Exception("Failed to extract neutral plane reference edge");
+                        throw Base::ValueError("Failed to extract neutral plane reference edge");
                     BRepAdaptor_Curve c(refEdge);
                     if (c.GetType() != GeomAbs_Line)
-                        throw Base::Exception("Neutral plane reference edge must be linear");
+                        throw Base::TypeError("Neutral plane reference edge must be linear");
                     double a = c.Line().Angle(gp_Lin(c.Value(c.FirstParameter()), pullDirection));
                     if (std::fabs(a - M_PI_2) > Precision::Confusion())
-                        throw Base::Exception("Neutral plane reference edge must be normal to pull direction");
+                        throw Base::ValueError("Neutral plane reference edge must be normal to pull direction");
                     neutralPlane = gp_Pln(c.Value(c.FirstParameter()), pullDirection);
                 } else {
-                    throw Base::Exception("Neutral plane reference can only be an edge if pull direction is defined");
+                    throw Base::TypeError("Neutral plane reference can only be an edge if pull direction is defined");
                 }
             } else {
-                throw Base::Exception("Neutral plane reference must be a face");
+                throw Base::TypeError("Neutral plane reference must be a face");
             }
         } else {
-            throw Base::Exception("Neutral plane reference must be face of a feature or a datum plane");
+            throw Base::TypeError("Neutral plane reference must be face of a feature or a datum plane");
         }
 
         TopLoc_Location invObjLoc = this->getLocation().Inverted();
@@ -303,6 +318,11 @@ App::DocumentObjectExecReturn *Draft::execute(void)
         TopoDS_Shape shape = mkDraft.Shape();
         if (shape.IsNull())
             return new App::DocumentObjectExecReturn("Resulting shape is null");
+
+        int solidCount = countSolids(shape);
+        if (solidCount > 1) {
+            return new App::DocumentObjectExecReturn("Fuse: Result has multiple solids. This is not supported at this time.");
+        }
 
         this->Shape.setValue(getSolid(shape));
         return App::DocumentObject::StdReturn;

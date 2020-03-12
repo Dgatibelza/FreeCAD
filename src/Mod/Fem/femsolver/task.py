@@ -1,6 +1,8 @@
 # ***************************************************************************
+# *   Copyright (c) 2017 Markus Hovorka <m.hovorka@live.de>                 *
+# *   Copyright (c) 2017 Bernd Hahnebach <bernd@bimstatik.org>              *
 # *                                                                         *
-# *   Copyright (c) 2017 - Markus Hovorka <m.hovorka@live.de>               *
+# *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -20,11 +22,12 @@
 # *                                                                         *
 # ***************************************************************************
 
-
-__title__ = "task"
+__title__ = "FreeCAD FEM solver task"
 __author__ = "Markus Hovorka"
 __url__ = "http://www.freecadweb.org"
 
+## \addtogroup FEM
+#  @{
 
 import threading
 import time
@@ -144,3 +147,5 @@ class Thread(Task):
         thread = threading.Thread(target=waitForStop)
         thread.daemon = True
         thread.start()
+
+##  @}

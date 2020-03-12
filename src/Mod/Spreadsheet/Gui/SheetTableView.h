@@ -26,7 +26,6 @@
 #include <QTableView>
 #include <QHeaderView>
 #include <QKeyEvent>
-#include <boost/signals/connection.hpp>
 #include <Mod/Spreadsheet/App/Sheet.h>
 #include <Mod/Spreadsheet/App/Utils.h>
 
@@ -35,7 +34,9 @@ namespace SpreadsheetGui {
 class SheetViewHeader : public QHeaderView {
     Q_OBJECT
 public:
-    SheetViewHeader(Qt::Orientation o) : QHeaderView(o) {
+    SheetViewHeader(QTableView *owner, Qt::Orientation o) 
+        : QHeaderView(o),owner(owner) 
+    {
 #if QT_VERSION >= 0x050000
         setSectionsClickable(true);
 #else
@@ -46,6 +47,9 @@ Q_SIGNALS:
     void resizeFinished();
 protected:
     void mouseReleaseEvent(QMouseEvent * event);
+    bool viewportEvent(QEvent *e);
+private:
+    QTableView *owner;
 };
 
 class SheetTableView : public QTableView
@@ -58,6 +62,11 @@ public:
     void edit(const QModelIndex &index);
     void setSheet(Spreadsheet::Sheet *_sheet);
     std::vector<App::Range> selectedRanges() const;
+    void deleteSelection();
+    void copySelection();
+    void cutSelection();
+    void pasteClipboard();
+
 protected Q_SLOTS:
     void commitData(QWidget *editor);
     void updateCellSpan(App::CellAddress address);
@@ -74,7 +83,7 @@ protected:
     QModelIndex currentEditIndex;
     Spreadsheet::Sheet * sheet;
 
-    boost::BOOST_SIGNALS_NAMESPACE::scoped_connection cellSpanChangedConnection;
+    boost::signals2::scoped_connection cellSpanChangedConnection;
 };
 
 }

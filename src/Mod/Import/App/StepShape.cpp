@@ -1,5 +1,5 @@
 /***************************************************************************
- *   (c) Jürgen Riegel (juergen.riegel@web.de) 2014                        *
+ *   Copyright (c) 2014 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -58,11 +58,11 @@ int StepShape::read(const char* fileName)
     if (!fi.exists()) {
         std::stringstream str;
         str << "File '" << fileName << "' does not exist!";
-        throw Base::Exception(str.str().c_str());
+        throw Base::FileException(str.str().c_str());
     }
 
     if (aReader.ReadFile((Standard_CString)fileName) != IFSelect_RetDone) {
-        throw Base::Exception("Cannot open STEP file");
+        throw Base::FileException("Cannot open STEP file");
     }
 
     //Standard_Integer ic = Interface_Static::IVal("read.precision.mode"); 

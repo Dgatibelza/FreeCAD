@@ -33,7 +33,7 @@ __url__ = ["http://www.sloan-home.co.uk/ImportCSG"]
 
 printverbose = False
 
-import FreeCAD, os, sys
+import FreeCAD, io, os, sys
 if FreeCAD.GuiUp:
     import FreeCADGui
     gui = True
@@ -41,9 +41,11 @@ else:
     if printverbose: print("FreeCAD Gui not present.")
     gui = False
 
-
-import ply.lex as lex
-import ply.yacc as yacc
+try:
+    import ply.lex as lex
+    import ply.yacc as yacc
+except:
+    FreeCAD.Console.PrintError("PLY module was not found. Please refer to the OpenSCAD documentation on the FreeCAD wiki\n")
 import Part
 
 from OpenSCADFeatures import *
@@ -51,9 +53,6 @@ from OpenSCADUtils import *
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printVerbose',False)
-
-if open.__module__ == '__builtin__':
-    pythonopen = open # to distinguish python built-in open function from the one declared here
 
 # Get the token map from the lexer.  This is required.
 import tokrules
@@ -136,7 +135,7 @@ def processcsg(filename):
     if printverbose: print('Parser Loaded')
     # Give the lexer some input
     #f=open('test.scad', 'r')
-    f = pythonopen(filename, 'r')
+    f = io.open(filename, 'r', encoding="utf8")
     #lexer.input(f.read())
 
     if printverbose: print('Start Parser')
@@ -403,8 +402,8 @@ def p_offset_action(p):
        newobj=doc.addObject("Part::Offset",'offset')
        newobj.Shape = subobj[0].Shape.makeOffset(offset)
     newobj.Document.recompute()
-    subobj[0].ViewObject.hide()
-#    if gui:
+    if gui:
+        subobj[0].ViewObject.hide()
 #        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
 #            GetBool('useViewProviderTree'):
 #            from OpenSCADFeatures import ViewProviderTree
@@ -431,7 +430,7 @@ def p_not_supported(p):
     if gui and not FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('usePlaceholderForUnsupported'):
         from PySide import QtGui
-        QtGui.QMessageBox.critical(None, unicode(translate('OpenSCAD',"Unsupported Function"))+" : "+p[1],unicode(translate('OpenSCAD',"Press OK")))
+        QtGui.QMessageBox.critical(None, translate('OpenSCAD',"Unsupported Function")+" : "+p[1],translate('OpenSCAD',"Press OK"))
     else:
         p[0] = [placeholder(p[1],p[6],p[3])]
 
@@ -568,7 +567,7 @@ def p_intersection_action(p):
     p[0] = [mycommon]
     if printverbose: print("End Intersection")
 
-def process_rotate_extrude(obj):
+def process_rotate_extrude(obj,angle):
     newobj=doc.addObject("Part::FeaturePython",'RefineRotateExtrude')
     RefineShape(newobj,obj)
     if gui:
@@ -583,7 +582,7 @@ def process_rotate_extrude(obj):
     myrev.Source = newobj
     myrev.Axis = (0.00,1.00,0.00)
     myrev.Base = (0.00,0.00,0.00)
-    myrev.Angle = 360.00
+    myrev.Angle = angle
     myrev.Placement=FreeCAD.Placement(FreeCAD.Vector(),FreeCAD.Rotation(0,0,90))
     if gui:
         newobj.ViewObject.hide()
@@ -596,7 +595,8 @@ def p_rotate_extrude_action(p):
         part = fuse(p[6],"Rotate Extrude Union")
     else :
         part = p[6][0]
-    p[0] = [process_rotate_extrude(part)]
+    angle = float(p[3]['angle'])    
+    p[0] = [process_rotate_extrude(part,angle)]
     if printverbose: print("End Rotate Extrude")
 
 def p_rotate_extrude_file(p):
@@ -1156,9 +1156,16 @@ def p_polyhedron_action(p) :
         pp =[v2(v[k]) for k in i]
         # Add first point to end of list to close polygon
         pp.append(pp[0])
+        print("pp")
         print(pp)
         w = Part.makePolygon(pp)
-        f = Part.Face(w)
+        print("w")
+        print(w)
+        try:
+           f = Part.Face(w)
+        except:
+            secWireList = w.Edges[:]
+            f = Part.makeFilledFace(Part.__sortEdges__(secWireList))
         #f = make_face(v[int(i[0])],v[int(i[1])],v[int(i[2])])
         faces_list.append(f)
     shell=Part.makeShell(faces_list)
@@ -1197,6 +1204,6 @@ def p_projection_action(p) :
         if gui and not FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
                 GetBool('usePlaceholderForUnsupported'):
             from PySide import QtGui
-            QtGui.QMessageBox.critical(None, unicode(translate('OpenSCAD',"Unsupported Function"))+" : "+p[1],unicode(translate('OpenSCAD',"Press OK")))
+            QtGui.QMessageBox.critical(None, translate('OpenSCAD',"Unsupported Function")+" : "+p[1],translate('OpenSCAD',"Press OK"))
         else:
             p[0] = [placeholder(p[1],p[6],p[3])]

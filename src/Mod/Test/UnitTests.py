@@ -66,6 +66,11 @@ class UnitBasicCases(unittest.TestCase):
         qu = FreeCAD.Units.Quantity("237.000 W/mm/K")
         self.assertTrue(ts(qu), ts2(qu))
 
+    def testDivide(self):
+        qu1 = FreeCAD.Units.Quantity("1 m/s")
+        qu2 = FreeCAD.Units.Quantity("m/s")
+        self.assertTrue(qu1/qu2, 1)
+
     def testSchemes(self):
         schemes = FreeCAD.Units.listSchemas()
         num = len(schemes)
@@ -74,13 +79,45 @@ class UnitBasicCases(unittest.TestCase):
         for i in range(num):
             t = FreeCAD.Units.schemaTranslate(psi, i)
             v = FreeCAD.Units.parseQuantity(t[0]).getValueAs("psi")
-            self.assertAlmostEqual(1, v.Value, msg="Failed with \"{0}\" scheme: {1} != 1".format(schemes[i], v.Value), delta=self.delta)
+            self.assertAlmostEqual(1, v.Value, msg="Failed with \"{0}\" scheme: {1} != 1 (delta: {2})".format(schemes[i], v.Value, self.delta), delta=self.delta)
 
         ksi = FreeCAD.Units.parseQuantity("1ksi")
         for i in range(num):
             t = FreeCAD.Units.schemaTranslate(ksi, i)
             v = FreeCAD.Units.parseQuantity(t[0]).getValueAs("ksi")
-            self.assertAlmostEqual(1, v.Value, msg="Failed with \"{0}\" scheme: {1} != 1".format(schemes[i], v.Value), delta=self.delta)
+            self.assertAlmostEqual(1, v.Value, msg="Failed with \"{0}\" scheme: {1} != 1 (delta: {2})".format(schemes[i], v.Value, self.delta), delta=self.delta)
+
+    def testSchemeTranslation(self):
+        quantities = []
+        for i in dir(FreeCAD.Units):
+            if issubclass(type(getattr(FreeCAD.Units, i)), FreeCAD.Units.Quantity):
+                quantities.append(i)
+
+        schemes = FreeCAD.Units.listSchemas()
+        for i in quantities:
+            q1 = getattr(FreeCAD.Units, i)
+            q1 = FreeCAD.Units.Quantity(q1)
+            q1.Format = {'Precision': 16}
+            for idx, val in enumerate(schemes):
+                t = FreeCAD.Units.schemaTranslate(q1, idx)
+                try:
+                    q2 = FreeCAD.Units.Quantity(t[0])
+                    if math.fabs(q1.Value - q2.Value) > 0.01:
+                        print (q1, " : ", q2, " : ", t, " : ", i, " : ", val)
+                except Exception as e:
+                    print ("{}: {}".format(str(e), t[0]))
+
+    def testVoltage(self):
+        q1 = FreeCAD.Units.Quantity("1e20 V")
+        t = FreeCAD.Units.schemaTranslate(q1, 0) # Standard
+        q2 = FreeCAD.Units.Quantity(t[0])
+        self.assertAlmostEqual(q1.Value, q2.Value, delta=self.delta)
+
+    def testEnergy(self):
+        q1 = FreeCAD.Units.Quantity("1e20 J")
+        t = FreeCAD.Units.schemaTranslate(q1, 0) # Standard
+        q2 = FreeCAD.Units.Quantity(t[0])
+        self.assertAlmostEqual(q1.Value, q2.Value, delta=self.delta)
 
     def testTrigonometric(self):
         #tu=FreeCAD.Units.translateUnit

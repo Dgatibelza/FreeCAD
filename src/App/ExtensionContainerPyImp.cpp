@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Stefan Tröger          (stefantroeger@gmx.net) 2016     *
+ *   Copyright (c) 2016 Stefan Tröger <stefantroeger@gmx.net>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -112,6 +112,30 @@ int ExtensionContainerPy::PyInit(PyObject* /*args*/, PyObject* /*kwd*/)
 
 PyObject *ExtensionContainerPy::getCustomAttributes(const char* attr) const
 {
+    if (Base::streq(attr, "__dict__")) {
+        PyObject* dict = PyDict_New();
+        PyObject* props = PropertyContainerPy::getCustomAttributes("__dict__");
+        if (props && PyDict_Check(props)) {
+            PyDict_Merge(dict, props, 0);
+            Py_DECREF(props);
+        }
+
+        ExtensionContainer::ExtensionIterator it = this->getExtensionContainerPtr()->extensionBegin();
+        for (; it != this->getExtensionContainerPtr()->extensionEnd(); ++it) {
+            // The PyTypeObject is shared by all instances of this type and therefore
+            // we have to add new methods only once.
+            PyObject* obj = (*it).second->getExtensionPyObject();
+            PyTypeObject *tp = Py_TYPE(obj);
+            if (tp && tp->tp_dict) {
+                Py_XINCREF(tp->tp_dict);
+                PyDict_Merge(dict, tp->tp_dict, 0);
+                Py_XDECREF(tp->tp_dict);
+            }
+            Py_DECREF(obj);
+        }
+
+        return dict;
+    }
     // Search for the method called 'attr' in the extensions. If the search with
     // Py_FindMethod is successful then a PyCFunction_New instance is returned
     // with the PyObject pointer of the extension to make sure the method will
@@ -183,7 +207,7 @@ PyObject* ExtensionContainerPy::addExtension(PyObject *args) {
         str << "No extension found of type '" << typeId << "'" << std::ends;
         throw Py::Exception(Base::BaseExceptionFreeCADError,str.str());
     }
-
+    
     //register the extension
     App::Extension* ext = static_cast<App::Extension*>(extension.createInstance());
     //check if this really is a python extension!
@@ -193,7 +217,8 @@ PyObject* ExtensionContainerPy::addExtension(PyObject *args) {
         str << "Extension is not a python addable version: '" << typeId << "'" << std::ends;
         throw Py::Exception(Base::BaseExceptionFreeCADError,str.str());
     }
-
+    
+    GetApplication().signalBeforeAddingDynamicExtension(*getExtensionContainerPtr(), typeId);
     ext->initExtension(getExtensionContainerPtr());
 
     //set the proxy to allow python overrides
@@ -236,6 +261,9 @@ PyObject* ExtensionContainerPy::addExtension(PyObject *args) {
     }
 
     Py_DECREF(obj);
+    
+    //throw the appropriate event
+    GetApplication().signalAddedDynamicExtension(*getExtensionContainerPtr(), typeId);
 
     Py_Return;
 }

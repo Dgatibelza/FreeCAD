@@ -35,6 +35,11 @@ void MeshSurfaceSegment::Initialize(unsigned long)
 {
 }
 
+bool MeshSurfaceSegment::TestInitialFacet(unsigned long) const
+{
+    return true;
+}
+
 void MeshSurfaceSegment::AddFacet(const MeshFacet&)
 {
 }
@@ -97,6 +102,348 @@ void MeshDistancePlanarSegment::AddFacet(const MeshFacet& face)
 {
     MeshGeomFacet triangle = kernel.GetFacet(face);
     fitter->AddPoint(triangle.GetGravityPoint());
+}
+
+// --------------------------------------------------------
+
+PlaneSurfaceFit::PlaneSurfaceFit()
+    : fitter(new PlaneFit)
+{
+}
+
+PlaneSurfaceFit::PlaneSurfaceFit(const Base::Vector3f& b, const Base::Vector3f& n)
+    : basepoint(b)
+    , normal(n)
+    , fitter(nullptr)
+{
+}
+
+PlaneSurfaceFit::~PlaneSurfaceFit()
+{
+    delete fitter;
+}
+
+void PlaneSurfaceFit::Initialize(const MeshCore::MeshGeomFacet& tria)
+{
+    if (fitter) {
+        fitter->Clear();
+
+        basepoint = tria.GetGravityPoint();
+        normal = tria.GetNormal();
+        fitter->AddPoint(tria._aclPoints[0]);
+        fitter->AddPoint(tria._aclPoints[1]);
+        fitter->AddPoint(tria._aclPoints[2]);
+    }
+}
+
+bool PlaneSurfaceFit::TestTriangle(const MeshGeomFacet&) const
+{
+    return true;
+}
+
+void PlaneSurfaceFit::AddTriangle(const MeshCore::MeshGeomFacet& tria)
+{
+    if (fitter)
+        fitter->AddPoint(tria.GetGravityPoint());
+}
+
+bool PlaneSurfaceFit::Done() const
+{
+    if (!fitter)
+        return true;
+    else
+        return fitter->Done();
+}
+
+float PlaneSurfaceFit::Fit()
+{
+    if (!fitter)
+        return 0;
+    else
+        return fitter->Fit();
+}
+
+float PlaneSurfaceFit::GetDistanceToSurface(const Base::Vector3f& pnt) const
+{
+    if (!fitter)
+        return pnt.DistanceToPlane(basepoint, normal);
+    else
+        return fitter->GetDistanceToPlane(pnt);
+}
+
+std::vector<float> PlaneSurfaceFit::Parameters() const
+{
+    Base::Vector3f base = basepoint;
+    Base::Vector3f norm = normal;
+    if (fitter) {
+        base = fitter->GetBase();
+        norm = fitter->GetNormal();
+    }
+
+    std::vector<float> c;
+    c.push_back(base.x);
+    c.push_back(base.y);
+    c.push_back(base.z);
+    c.push_back(norm.x);
+    c.push_back(norm.y);
+    c.push_back(norm.z);
+    return c;
+}
+
+// --------------------------------------------------------
+
+CylinderSurfaceFit::CylinderSurfaceFit()
+    : fitter(new CylinderFit)
+{
+    axis.Set(0,0,0);
+    radius = FLOAT_MAX;
+}
+
+/*!
+ * \brief CylinderSurfaceFit::CylinderSurfaceFit
+ * Set a pre-defined cylinder. Internal cylinder fits are not done, then.
+ */
+CylinderSurfaceFit::CylinderSurfaceFit(const Base::Vector3f& b, const Base::Vector3f& a, float r)
+    : basepoint(b)
+    , axis(a)
+    , radius(r)
+    , fitter(nullptr)
+{
+}
+
+CylinderSurfaceFit::~CylinderSurfaceFit()
+{
+    delete fitter;
+}
+
+void CylinderSurfaceFit::Initialize(const MeshCore::MeshGeomFacet& tria)
+{
+    if (fitter) {
+        fitter->Clear();
+        fitter->AddPoint(tria._aclPoints[0]);
+        fitter->AddPoint(tria._aclPoints[1]);
+        fitter->AddPoint(tria._aclPoints[2]);
+    }
+}
+
+void CylinderSurfaceFit::AddTriangle(const MeshCore::MeshGeomFacet& tria)
+{
+    if (fitter) {
+        fitter->AddPoint(tria._aclPoints[0]);
+        fitter->AddPoint(tria._aclPoints[1]);
+        fitter->AddPoint(tria._aclPoints[2]);
+    }
+}
+
+bool CylinderSurfaceFit::TestTriangle(const MeshGeomFacet& tria) const
+{
+    // This is to filter out triangles whose points lie on the cylinder and
+    // that whose normals are more or less parallel to the cylinder axis
+    float dot = axis.Dot(tria.GetNormal());
+    return fabs(dot) < 0.5f;
+}
+
+bool CylinderSurfaceFit::Done() const
+{
+    if (fitter) {
+        return fitter->Done();
+    }
+
+    return true;
+}
+
+float CylinderSurfaceFit::Fit()
+{
+    if (!fitter)
+        return 0;
+
+    float fit = fitter->Fit();
+    if (fit < FLOAT_MAX) {
+        basepoint = fitter->GetBase();
+        axis = fitter->GetAxis();
+        radius = fitter->GetRadius();
+    }
+    return fit;
+}
+
+float CylinderSurfaceFit::GetDistanceToSurface(const Base::Vector3f& pnt) const
+{
+    if (fitter && !fitter->Done()) {
+        // collect some points
+        return 0;
+    }
+    float dist = pnt.DistanceToLine(basepoint, axis);
+    return (dist - radius);
+}
+
+std::vector<float> CylinderSurfaceFit::Parameters() const
+{
+    Base::Vector3f base = basepoint;
+    Base::Vector3f norm = axis;
+    float radval = radius;
+    if (fitter) {
+        base = fitter->GetBase();
+        norm = fitter->GetAxis();
+        radval = fitter->GetRadius();
+    }
+
+    std::vector<float> c;
+    c.push_back(base.x);
+    c.push_back(base.y);
+    c.push_back(base.z);
+    c.push_back(norm.x);
+    c.push_back(norm.y);
+    c.push_back(norm.z);
+    c.push_back(radval);
+    return c;
+}
+
+// --------------------------------------------------------
+
+SphereSurfaceFit::SphereSurfaceFit()
+    : fitter(new SphereFit)
+{
+    center.Set(0,0,0);
+    radius = FLOAT_MAX;
+}
+
+SphereSurfaceFit::SphereSurfaceFit(const Base::Vector3f& c, float r)
+    : center(c)
+    , radius(r)
+    , fitter(0)
+{
+
+}
+
+SphereSurfaceFit::~SphereSurfaceFit()
+{
+    delete fitter;
+}
+
+void SphereSurfaceFit::Initialize(const MeshCore::MeshGeomFacet& tria)
+{
+    if (fitter) {
+        fitter->Clear();
+        fitter->AddPoint(tria._aclPoints[0]);
+        fitter->AddPoint(tria._aclPoints[1]);
+        fitter->AddPoint(tria._aclPoints[2]);
+    }
+}
+
+void SphereSurfaceFit::AddTriangle(const MeshCore::MeshGeomFacet& tria)
+{
+    if (fitter) {
+        fitter->AddPoint(tria._aclPoints[0]);
+        fitter->AddPoint(tria._aclPoints[1]);
+        fitter->AddPoint(tria._aclPoints[2]);
+    }
+}
+
+bool SphereSurfaceFit::TestTriangle(const MeshGeomFacet&) const
+{
+    // Already handled by GetDistanceToSurface
+    return true;
+}
+
+bool SphereSurfaceFit::Done() const
+{
+    if (fitter) {
+        return fitter->Done();
+    }
+
+    return true;
+}
+
+float SphereSurfaceFit::Fit()
+{
+    if (!fitter)
+        return 0;
+
+    float fit = fitter->Fit();
+    if (fit < FLOAT_MAX) {
+        center = fitter->GetCenter();
+        radius = fitter->GetRadius();
+    }
+    return fit;
+}
+
+float SphereSurfaceFit::GetDistanceToSurface(const Base::Vector3f& pnt) const
+{
+    float dist = Base::Distance(pnt, center);
+    return (dist - radius);
+}
+
+std::vector<float> SphereSurfaceFit::Parameters() const
+{
+    Base::Vector3f base = center;
+    float radval = radius;
+    if (fitter) {
+        base = fitter->GetCenter();
+        radval = fitter->GetRadius();
+    }
+
+    std::vector<float> c;
+    c.push_back(base.x);
+    c.push_back(base.y);
+    c.push_back(base.z);
+    c.push_back(radval);
+    return c;
+}
+
+// --------------------------------------------------------
+
+MeshDistanceGenericSurfaceFitSegment::MeshDistanceGenericSurfaceFitSegment(AbstractSurfaceFit* fit,
+                                                                           const MeshKernel& mesh,
+                                                                           unsigned long minFacets,
+                                                                           float tol)
+  : MeshDistanceSurfaceSegment(mesh, minFacets, tol)
+  , fitter(fit)
+{
+}
+
+MeshDistanceGenericSurfaceFitSegment::~MeshDistanceGenericSurfaceFitSegment()
+{
+    delete fitter;
+}
+
+void MeshDistanceGenericSurfaceFitSegment::Initialize(unsigned long index)
+{
+    MeshGeomFacet triangle = kernel.GetFacet(index);
+    fitter->Initialize(triangle);
+}
+
+bool MeshDistanceGenericSurfaceFitSegment::TestInitialFacet(unsigned long index) const
+{
+    MeshGeomFacet triangle = kernel.GetFacet(index);
+    for (int i=0; i<3; i++) {
+        if (fabs(fitter->GetDistanceToSurface(triangle._aclPoints[i])) > tolerance)
+            return false;
+    }
+    return fitter->TestTriangle(triangle);
+}
+
+bool MeshDistanceGenericSurfaceFitSegment::TestFacet (const MeshFacet& face) const
+{
+    if (!fitter->Done())
+        fitter->Fit();
+    MeshGeomFacet triangle = kernel.GetFacet(face);
+    for (int i=0; i<3; i++) {
+        if (fabs(fitter->GetDistanceToSurface(triangle._aclPoints[i])) > tolerance)
+            return false;
+    }
+
+    return fitter->TestTriangle(triangle);
+}
+
+void MeshDistanceGenericSurfaceFitSegment::AddFacet(const MeshFacet& face)
+{
+    MeshGeomFacet triangle = kernel.GetFacet(face);
+    fitter->AddTriangle(triangle);
+}
+
+std::vector<float> MeshDistanceGenericSurfaceFitSegment::Parameters() const
+{
+    return fitter->Parameters();
 }
 
 // --------------------------------------------------------
@@ -187,7 +534,7 @@ bool MeshSurfaceVisitor::Visit (const MeshFacet & face, const MeshFacet &,
 
 // --------------------------------------------------------
 
-void MeshSegmentAlgorithm::FindSegments(std::vector<MeshSurfaceSegment*>& segm)
+void MeshSegmentAlgorithm::FindSegments(std::vector<MeshSurfaceSegmentPtr>& segm)
 {
     // reset VISIT flags
     unsigned long startFacet;
@@ -203,23 +550,27 @@ void MeshSegmentAlgorithm::FindSegments(std::vector<MeshSurfaceSegment*>& segm)
     cAlgo.CountFacetFlag(MeshCore::MeshFacet::VISIT);
     std::vector<unsigned long> resetVisited;
 
-    for (std::vector<MeshSurfaceSegment*>::iterator it = segm.begin(); it != segm.end(); ++it) {
+    for (std::vector<MeshSurfaceSegmentPtr>::iterator it = segm.begin(); it != segm.end(); ++it) {
         cAlgo.ResetFacetsFlag(resetVisited, MeshCore::MeshFacet::VISIT);
         resetVisited.clear();
 
         iCur = std::find_if(iBeg, iEnd, std::bind2nd(MeshCore::MeshIsNotFlag<MeshCore::MeshFacet>(),
             MeshCore::MeshFacet::VISIT));
-        startFacet = iCur - iBeg;
+        if (iCur < iEnd)
+            startFacet = iCur - iBeg;
+        else
+            startFacet = ULONG_MAX;
         while (startFacet != ULONG_MAX) {
             // collect all facets of the same geometry
             std::vector<unsigned long> indices;
-            indices.push_back(startFacet);
             (*it)->Initialize(startFacet);
+            if ((*it)->TestInitialFacet(startFacet))
+                indices.push_back(startFacet);
             MeshSurfaceVisitor pv(**it, indices);
             myKernel.VisitNeighbourFacets(pv, startFacet);
 
             // add or discard the segment
-            if (indices.size() == 1) {
+            if (indices.size() <= 1) {
                 resetVisited.push_back(startFacet);
             }
             else {

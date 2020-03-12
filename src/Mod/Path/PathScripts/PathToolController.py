@@ -24,31 +24,24 @@
 ''' Tool Controller defines tool, spindle speed and feed rates for Path Operations '''
 
 import FreeCAD
-import Part
 import Path
-import PathScripts
 import PathScripts.PathLog as PathLog
-import PathScripts.PathUtil as PathUtil
+import PathScripts.PathPreferences as PathPreferences
+import PathScripts.PathToolBit as PathToolBit
 
-from FreeCAD import Units
 from PySide import QtCore
 
-if FreeCAD.GuiUp:
-    import FreeCADGui
-    import PathScripts.PathGui as PathGui
+#PathLog.setLevel(PathLog.Level.DEBUG, PathLog.thisModule())
+#PathLog.trackModule(PathLog.thisModule())
 
-if False:
-    PathLog.setLevel(PathLog.Level.DEBUG, PathLog.thisModule())
-    PathLog.trackModule(PathLog.thisModule())
-else:
-    PathLog.setLevel(PathLog.Level.INFO, PathLog.thisModule())
-
-# Qt tanslation handling
+# Qt translation handling
 def translate(context, text, disambig=None):
     return QtCore.QCoreApplication.translate(context, text, disambig)
 
 class ToolControllerTemplate:
     '''Attribute and sub element strings for template export/import.'''
+    # pylint: disable=no-init
+
     Expressions  = 'xengine'
     ExprExpr     = 'expr'
     ExprProp     = 'prop'
@@ -65,52 +58,74 @@ class ToolControllerTemplate:
     VertRapid    = 'vrapid'
 
 class ToolController:
-    def __init__(self, obj, tool=1):
-        PathLog.track('tool: {}'.format(tool))
 
-        obj.addProperty("App::PropertyIntegerConstraint", "ToolNumber", "Tool", QtCore.QT_TRANSLATE_NOOP("App::Property", "The active tool"))
+    def __init__(self, obj, cTool=False):
+        PathLog.track('tool: {}'.format(cTool))
+
+        obj.addProperty("App::PropertyIntegerConstraint", "ToolNumber", "Tool", QtCore.QT_TRANSLATE_NOOP("PathToolController", "The active tool"))
         obj.ToolNumber = (0, 0, 10000, 1)
-        obj.addProperty("Path::PropertyTool", "Tool", "Base", QtCore.QT_TRANSLATE_NOOP("App::Property", "The tool used by this controller"))
-
-        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", QtCore.QT_TRANSLATE_NOOP("App::Property", "The speed of the cutting spindle in RPM"))
-        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", QtCore.QT_TRANSLATE_NOOP("App::Property", "Direction of spindle rotation"))
+        self.ensureUseLegacyTool(obj, cTool)
+        obj.addProperty("App::PropertyFloat", "SpindleSpeed", "Tool", QtCore.QT_TRANSLATE_NOOP("PathToolController", "The speed of the cutting spindle in RPM"))
+        obj.addProperty("App::PropertyEnumeration", "SpindleDir", "Tool", QtCore.QT_TRANSLATE_NOOP("PathToolController", "Direction of spindle rotation"))
         obj.SpindleDir = ['Forward', 'Reverse']
-        obj.addProperty("App::PropertySpeed", "VertFeed", "Feed", QtCore.QT_TRANSLATE_NOOP("App::Property", "Feed rate for vertical moves in Z"))
-        obj.addProperty("App::PropertySpeed", "HorizFeed", "Feed", QtCore.QT_TRANSLATE_NOOP("App::Property", "Feed rate for horizontal moves"))
-        obj.addProperty("App::PropertySpeed", "VertRapid", "Rapid", QtCore.QT_TRANSLATE_NOOP("App::Property", "Rapid rate for vertical moves in Z"))
-        obj.addProperty("App::PropertySpeed", "HorizRapid", "Rapid", QtCore.QT_TRANSLATE_NOOP("App::Property", "Rapid rate for horizontal moves"))
-        obj.Proxy = self
-        mode = 2
-        obj.setEditorMode('Placement', mode)
+        obj.addProperty("App::PropertySpeed", "VertFeed", "Feed", QtCore.QT_TRANSLATE_NOOP("PathToolController", "Feed rate for vertical moves in Z"))
+        obj.addProperty("App::PropertySpeed", "HorizFeed", "Feed", QtCore.QT_TRANSLATE_NOOP("PathToolController", "Feed rate for horizontal moves"))
+        obj.addProperty("App::PropertySpeed", "VertRapid", "Rapid", QtCore.QT_TRANSLATE_NOOP("PathToolController", "Rapid rate for vertical moves in Z"))
+        obj.addProperty("App::PropertySpeed", "HorizRapid", "Rapid", QtCore.QT_TRANSLATE_NOOP("PathToolController", "Rapid rate for horizontal moves"))
+        obj.setEditorMode('Placement', 2)
+
+    def onDocumentRestored(self, obj):
+        obj.setEditorMode('Placement', 2)
+
+    def onDelete(self, obj, arg2=None):
+        # pylint: disable=unused-argument
+        if not self.usesLegacyTool(obj):
+            if len(obj.Tool.InList) == 1:
+                if hasattr(obj.Tool.Proxy, 'onDelete'):
+                    obj.Tool.Proxy.onDelete(obj.Tool)
+                obj.Document.removeObject(obj.Tool.Name)
 
     def setFromTemplate(self, obj, template):
         '''setFromTemplate(obj, xmlItem) ... extract properties from xmlItem and assign to receiver.'''
         PathLog.track(obj.Name, template)
-        if template.get(ToolControllerTemplate.Version) and 1 == int(template.get(ToolControllerTemplate.Version)):
-            if template.get(ToolControllerTemplate.Label):
-                obj.Label = template.get(ToolControllerTemplate.Label)
-            if template.get(ToolControllerTemplate.VertFeed):
-                obj.VertFeed = template.get(ToolControllerTemplate.VertFeed)
-            if template.get(ToolControllerTemplate.HorizFeed):
-                obj.HorizFeed = template.get(ToolControllerTemplate.HorizFeed)
-            if template.get(ToolControllerTemplate.VertRapid):
-                obj.VertRapid = template.get(ToolControllerTemplate.VertRapid)
-            if template.get(ToolControllerTemplate.HorizRapid):
-                obj.HorizRapid = template.get(ToolControllerTemplate.HorizRapid)
-            if template.get(ToolControllerTemplate.SpindleSpeed):
-                obj.SpindleSpeed = float(template.get(ToolControllerTemplate.SpindleSpeed))
-            if template.get(ToolControllerTemplate.SpindleDir):
-                obj.SpindleDir = template.get(ToolControllerTemplate.SpindleDir)
-            if template.get(ToolControllerTemplate.ToolNumber):
-                obj.ToolNumber = int(template.get(ToolControllerTemplate.ToolNumber))
-            if template.get(ToolControllerTemplate.Tool):
-                obj.Tool.setFromTemplate(template.get(ToolControllerTemplate.Tool))
-            if template.get(ToolControllerTemplate.Expressions):
-                for exprDef in template.get(ToolControllerTemplate.Expressions):
-                    if exprDef[ToolControllerTemplate.ExprExpr]:
-                        obj.setExpression(exprDef[ToolControllerTemplate.ExprProp], exprDef[ToolControllerTemplate.ExprExpr])
+        version = 0
+        if template.get(ToolControllerTemplate.Version):
+            version = int(template.get(ToolControllerTemplate.Version))
+            if version == 1 or version == 2:
+                if template.get(ToolControllerTemplate.Label):
+                    obj.Label = template.get(ToolControllerTemplate.Label)
+                if template.get(ToolControllerTemplate.VertFeed):
+                    obj.VertFeed = template.get(ToolControllerTemplate.VertFeed)
+                if template.get(ToolControllerTemplate.HorizFeed):
+                    obj.HorizFeed = template.get(ToolControllerTemplate.HorizFeed)
+                if template.get(ToolControllerTemplate.VertRapid):
+                    obj.VertRapid = template.get(ToolControllerTemplate.VertRapid)
+                if template.get(ToolControllerTemplate.HorizRapid):
+                    obj.HorizRapid = template.get(ToolControllerTemplate.HorizRapid)
+                if template.get(ToolControllerTemplate.SpindleSpeed):
+                    obj.SpindleSpeed = float(template.get(ToolControllerTemplate.SpindleSpeed))
+                if template.get(ToolControllerTemplate.SpindleDir):
+                    obj.SpindleDir = template.get(ToolControllerTemplate.SpindleDir)
+                if template.get(ToolControllerTemplate.ToolNumber):
+                    obj.ToolNumber = int(template.get(ToolControllerTemplate.ToolNumber))
+                if template.get(ToolControllerTemplate.Tool):
+                    toolVersion = template.get(ToolControllerTemplate.Tool).get(ToolControllerTemplate.Version)
+                    if toolVersion == 1:
+                        self.ensureUseLegacyTool(obj, True)
+                        obj.Tool.setFromTemplate(template.get(ToolControllerTemplate.Tool))
+                    else:
+                        self.ensureUseLegacyTool(obj, False)
+                        obj.Tool = PathToolBit.Factory.CreateFromAttrs(template.get(ToolControllerTemplate.Tool))
+                        if obj.Tool and obj.Tool.ViewObject and obj.Tool.ViewObject.Visibility:
+                            obj.Tool.ViewObject.Visibility = False
+                if template.get(ToolControllerTemplate.Expressions):
+                    for exprDef in template.get(ToolControllerTemplate.Expressions):
+                        if exprDef[ToolControllerTemplate.ExprExpr]:
+                            obj.setExpression(exprDef[ToolControllerTemplate.ExprProp], exprDef[ToolControllerTemplate.ExprExpr])
+            else:
+                PathLog.error(translate('PathToolController', "Unsupported PathToolController template version %s") % template.get(ToolControllerTemplate.Version))
         else:
-            PathLog.error(translate('PathToolController', "Unsupported PathToolController template version %s") % template.get(ToolControllerTemplate.Version))
+            PathLog.error(translate('PathToolController', 'PathToolController template has no version - corrupted template file?'))
 
     def templateAttrs(self, obj):
         '''templateAttrs(obj) ... answer a dictionary with all properties that should be stored for a template.'''
@@ -125,7 +140,10 @@ class ToolController:
         attrs[ToolControllerTemplate.HorizRapid]   = ("%s" % (obj.HorizRapid))
         attrs[ToolControllerTemplate.SpindleSpeed] = obj.SpindleSpeed
         attrs[ToolControllerTemplate.SpindleDir]   = obj.SpindleDir
-        attrs[ToolControllerTemplate.Tool]         = obj.Tool.templateAttrs()
+        if self.usesLegacyTool(obj):
+            attrs[ToolControllerTemplate.Tool]     = obj.Tool.templateAttrs()
+        else:
+            attrs[ToolControllerTemplate.Tool]     = obj.Tool.Proxy.templateAttrs(obj.Tool)
         expressions = []
         for expr in obj.ExpressionEngine:
             PathLog.debug('%s: %s' % (expr[0], expr[1]))
@@ -159,301 +177,66 @@ class ToolController:
         PathLog.track()
         return obj.Tool
 
+    def usesLegacyTool(self, obj):
+        '''returns True if the tool being controlled is a legacy tool'''
+        return isinstance(obj.Tool, Path.Tool)
 
-class ViewProvider:
+    def ensureUseLegacyTool(self, obj, legacy):
+        if not hasattr(obj, 'Tool') or (legacy != self.usesLegacyTool(obj)):
+            if legacy and hasattr(obj, 'Tool') and len(obj.Tool.InList) == 1:
+                if hasattr(obj.Tool.Proxy, 'onDelete'):
+                    obj.Tool.Proxy.onDelete(obj.Tool)
+                obj.Document.removeObject(obj.Tool.Name)
 
-    def __init__(self, vobj):
-        vobj.Proxy = self
-        mode = 2
-        vobj.setEditorMode('LineWidth', mode)
-        vobj.setEditorMode('MarkerColor', mode)
-        vobj.setEditorMode('NormalColor', mode)
-        vobj.setEditorMode('DisplayMode', mode)
-        vobj.setEditorMode('BoundingBox', mode)
-        vobj.setEditorMode('Selectable', mode)
-        vobj.setEditorMode('ShapeColor', mode)
-        vobj.setEditorMode('Transparency', mode)
-        vobj.setEditorMode('Visibility', mode)
+            if hasattr(obj, 'Tool'):
+                obj.removeProperty('Tool')
 
-    def __getstate__(self):
-        return None
-
-    def __setstate__(self, state):
-        return None
-
-    def getIcon(self):
-        return ":/icons/Path-ToolController.svg"
-
-    def onChanged(self, vobj, prop):
-        mode = 2
-        vobj.setEditorMode('LineWidth', mode)
-        vobj.setEditorMode('MarkerColor', mode)
-        vobj.setEditorMode('NormalColor', mode)
-        vobj.setEditorMode('DisplayMode', mode)
-        vobj.setEditorMode('BoundingBox', mode)
-        vobj.setEditorMode('Selectable', mode)
-
-    def onDelete(self, vobj, args=None):
-        PathUtil.clearExpressionEngine(vobj.Object)
-        return True
-
-    def updateData(self, vobj, prop):
-        # this is executed when a property of the APP OBJECT changes
-        pass
-
-    def setEdit(self, vobj, mode):
-        # this is executed when the object is double-clicked in the tree
-        FreeCADGui.Control.closeDialog()
-        taskd = TaskPanel(vobj.Object)
-        FreeCADGui.Control.showDialog(taskd)
-        taskd.setupUi()
-
-        FreeCAD.ActiveDocument.recompute()
-
-        return True
-
-    def unsetEdit(self, vobj, mode):
-        # this is executed when the user cancels or terminates edit mode
-        return False
+            if legacy:
+                obj.addProperty("Path::PropertyTool", "Tool", "Base", QtCore.QT_TRANSLATE_NOOP("PathToolController", "The tool used by this controller"))
+            else:
+                obj.addProperty("App::PropertyLink", "Tool", "Base", QtCore.QT_TRANSLATE_NOOP("PathToolController", "The tool used by this controller"))
 
 def Create(name = 'Default Tool', tool=None, toolNumber=1, assignViewProvider=True):
-    PathLog.track(tool, toolNumber)
+    legacyTool = PathPreferences.toolsReallyUseLegacyTools() if tool is None else isinstance(tool, Path.Tool)
+
+    PathLog.track(tool, toolNumber, legacyTool)
 
     obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython", name)
     obj.Label = name
-    ToolController(obj)
+    obj.Proxy = ToolController(obj, legacyTool)
+
     if FreeCAD.GuiUp and assignViewProvider:
         ViewProvider(obj.ViewObject)
 
     if tool is None:
-        tool = Path.Tool()
-        tool.Diameter = 5.0
-        tool.Name = "Default Tool"
-        tool.CuttingEdgeHeight = 15.0
-        tool.ToolType = "EndMill"
-        tool.Material = "HighSpeedSteel"
+        if legacyTool:
+            tool = Path.Tool()
+            tool.Diameter = 5.0
+            tool.Name = "Default Tool"
+            tool.CuttingEdgeHeight = 15.0
+            tool.ToolType = "EndMill"
+            tool.Material = "HighSpeedSteel"
+        else:
+            tool = PathToolBit.Factory.Create()
+            if tool.ViewObject:
+                tool.ViewObject.Visibility = False
+
     obj.Tool = tool
     obj.ToolNumber = toolNumber
     return obj
 
 def FromTemplate(template, assignViewProvider=True):
+    # pylint: disable=unused-argument
     PathLog.track()
 
     name = template.get(ToolControllerTemplate.Name, ToolControllerTemplate.Label)
-    obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython", name)
-    tc  = ToolController(obj)
-    if FreeCAD.GuiUp and assignViewProvider:
-        ViewProvider(obj.ViewObject)
-
-    tc.setFromTemplate(obj, template)
+    obj = Create(name, assignViewProvider=True)
+    obj.Proxy.setFromTemplate(obj, template)
 
     return obj
 
-
-class CommandPathToolController:
-    def GetResources(self):
-        return {'Pixmap': 'Path-LengthOffset',
-                'MenuText': QtCore.QT_TRANSLATE_NOOP("Path_ToolController", "Add Tool Controller to the Job"),
-                'ToolTip': QtCore.QT_TRANSLATE_NOOP("Path_ToolController", "Add Tool Controller")}
-
-    def IsActive(self):
-        if FreeCAD.ActiveDocument is not None:
-            for o in FreeCAD.ActiveDocument.Objects:
-                if o.Name[:3] == "Job":
-                        return True
-        return False
-
-    def Activated(self):
-        PathLog.track()
-        Create()
-
-class ToolControllerEditor:
-
-    def __init__(self, obj, asDialog):
-        self.form = FreeCADGui.PySideUic.loadUi(":/panels/DlgToolControllerEdit.ui")
-        if not asDialog:
-            self.form.buttonBox.hide()
-        self.obj = obj
-
-        self.vertFeed = PathGui.QuantitySpinBox(self.form.vertFeed, obj, 'VertFeed')
-        self.horizFeed = PathGui.QuantitySpinBox(self.form.horizFeed, obj, 'HorizFeed')
-        self.vertRapid = PathGui.QuantitySpinBox(self.form.vertRapid, obj, 'VertRapid')
-        self.horizRapid = PathGui.QuantitySpinBox(self.form.horizRapid, obj, 'HorizRapid')
-
-        self.toolDiameter = PathGui.QuantitySpinBox(self.form.toolDiameter, obj, 'Tool.Diameter')
-        self.toolLengthOffset = PathGui.QuantitySpinBox(self.form.toolLengthOffset, obj, 'Tool.LengthOffset')
-        self.toolFlatRadius = PathGui.QuantitySpinBox(self.form.toolFlatRadius, obj, 'Tool.FlatRadius')
-        self.toolCornerRadius = PathGui.QuantitySpinBox(self.form.toolCornerRadius, obj, 'Tool.CornerRadius')
-        self.toolCuttingEdgeAngle = PathGui.QuantitySpinBox(self.form.toolCuttingEdgeAngle, obj, 'Tool.CuttingEdgeAngle')
-        self.toolCuttingEdgeHeight = PathGui.QuantitySpinBox(self.form.toolCuttingEdgeHeight, obj, 'Tool.CuttingEdgeHeight')
-
-    def getType(self, tooltype):
-        "gets a combobox index number for a given type or viceversa"
-        toolslist = ["Drill", "CenterDrill", "CounterSink", "CounterBore",
-                     "Reamer", "Tap", "EndMill", "SlotCutter", "BallEndMill",
-                     "ChamferMill", "CornerRound", "Engraver"]
-        if isinstance(tooltype, str):
-            if tooltype in toolslist:
-                return toolslist.index(tooltype)
-            else:
-                return 0
-        else:
-            return toolslist[tooltype]
-
-    def getMaterial(self, material):
-        "gets a combobox index number for a given material or viceversa"
-        matslist = ["HighSpeedSteel", "HighCarbonToolSteel", "CastAlloy",
-                    "Carbide", "Ceramics", "Diamond", "Sialon"]
-        if isinstance(material, str):
-            if material in matslist:
-                return matslist.index(material)
-            else:
-                return 0
-        else:
-            return matslist[material]
-
-    def updateUi(self):
-        tc = self.obj
-        self.form.tcName.setText(tc.Label)
-        self.form.tcNumber.setValue(tc.ToolNumber)
-        self.horizFeed.updateSpinBox()
-        self.horizRapid.updateSpinBox()
-        self.vertFeed.updateSpinBox()
-        self.vertRapid.updateSpinBox()
-        self.form.spindleSpeed.setValue(tc.SpindleSpeed)
-        index = self.form.spindleDirection.findText(tc.SpindleDir, QtCore.Qt.MatchFixedString)
-        if index >= 0:
-            self.form.spindleDirection.setCurrentIndex(index)
-
-        self.form.toolName.setText(tc.Tool.Name)
-        self.form.toolType.setCurrentIndex(self.getType(tc.Tool.ToolType))
-        self.form.toolMaterial.setCurrentIndex(self.getMaterial(tc.Tool.Material))
-        self.toolDiameter.updateSpinBox()
-        self.toolLengthOffset.updateSpinBox()
-        self.toolFlatRadius.updateSpinBox()
-        self.toolCornerRadius.updateSpinBox()
-        self.toolCuttingEdgeAngle.updateSpinBox()
-        self.toolCuttingEdgeHeight.updateSpinBox()
-
-    def updateToolController(self):
-        tc = self.obj
-        try:
-            tc.Label = self.form.tcName.text()
-            tc.ToolNumber = self.form.tcNumber.value()
-            self.horizFeed.updateProperty()
-            self.vertFeed.updateProperty()
-            self.horizRapid.updateProperty()
-            self.vertRapid.updateProperty()
-            tc.SpindleSpeed = self.form.spindleSpeed.value()
-            tc.SpindleDir = self.form.spindleDirection.currentText()
-
-            tc.Tool.Name = str(self.form.toolName.text())
-            tc.Tool.ToolType = self.getType(self.form.toolType.currentIndex())
-            tc.Tool.Material = self.getMaterial(self.form.toolMaterial.currentIndex())
-            self.toolDiameter.updateProperty()
-            self.toolLengthOffset.updateProperty()
-            self.toolFlatRadius.updateProperty()
-            self.toolCornerRadius.updateProperty()
-            self.toolCuttingEdgeAngle.updateProperty()
-            self.toolCuttingEdgeHeight.updateProperty()
-        except Exception as e:
-            PathLog.error(translate("PathToolController", "Error updating TC: %s") % e)
-
-
-    def refresh(self):
-        self.form.blockSignals(True)
-        self.updateToolController()
-        self.updateUi()
-        self.form.blockSignals(False)
-
-    def setupUi(self):
-        self.form.tcName.editingFinished.connect(self.refresh)
-        self.form.horizFeed.editingFinished.connect(self.refresh)
-        self.form.vertFeed.editingFinished.connect(self.refresh)
-        self.form.horizRapid.editingFinished.connect(self.refresh)
-        self.form.vertRapid.editingFinished.connect(self.refresh)
-
-        self.form.toolName.editingFinished.connect(self.refresh)
-        self.form.toolDiameter.editingFinished.connect(self.refresh)
-        self.form.toolLengthOffset.editingFinished.connect(self.refresh)
-        self.form.toolFlatRadius.editingFinished.connect(self.refresh)
-        self.form.toolCornerRadius.editingFinished.connect(self.refresh)
-        self.form.toolCuttingEdgeAngle.editingFinished.connect(self.refresh)
-        self.form.toolCuttingEdgeHeight.editingFinished.connect(self.refresh)
-
-class TaskPanel:
-
-    def __init__(self, obj):
-        self.editor = ToolControllerEditor(obj, False)
-        self.form = self.editor.form
-        self.updating = False
-        self.toolrep = None
-        self.obj = obj
-
-    def accept(self):
-        self.getFields()
-
-        FreeCADGui.ActiveDocument.resetEdit()
-        FreeCADGui.Control.closeDialog()
-        if self.toolrep is not None:
-            FreeCAD.ActiveDocument.removeObject(self.toolrep.Name)
-        FreeCAD.ActiveDocument.recompute()
-
-    def reject(self):
-        FreeCADGui.Control.closeDialog()
-        if self.toolrep is not None:
-            FreeCAD.ActiveDocument.removeObject(self.toolrep.Name)
-        FreeCAD.ActiveDocument.recompute()
-
-    def getFields(self):
-        self.editor.updateToolController()
-        self.obj.Proxy.execute(self.obj)
-
-    def setFields(self):
-        self.editor.updateUi()
-
-        tool = self.obj.Tool
-        radius = tool.Diameter / 2
-        length = tool.CuttingEdgeHeight
-        t = Part.makeCylinder(radius, length)
-        self.toolrep.Shape = t
-
-    def edit(self, item, column):
-        if not self.updating:
-            self.resetObject()
-
-    def resetObject(self, remove=None):
-        "transfers the values from the widget to the object"
-        FreeCAD.ActiveDocument.recompute()
-
-    def setupUi(self):
-        t = Part.makeCylinder(1, 1)
-        self.toolrep = FreeCAD.ActiveDocument.addObject("Part::Feature", "tool")
-        self.toolrep.Shape = t
-
-        self.setFields()
-        self.editor.setupUi()
-
-
-class DlgToolControllerEdit:
-    def __init__(self, obj):
-        self.editor = ToolControllerEditor(obj, True)
-        self.editor.updateUi()
-        self.editor.setupUi()
-        self.obj = obj
-
-    def exec_(self):
-        restoreTC   = self.obj.Proxy.templateAttrs(self.obj)
-
-        rc = False
-        if not self.editor.form.exec_():
-            PathLog.info("revert")
-            self.obj.Proxy.setFromTemplate(self.obj, restoreTC)
-            rc = True
-        return rc
-
 if FreeCAD.GuiUp:
-    # register the FreeCAD command
-    FreeCADGui.addCommand('Path_ToolController', CommandPathToolController())
+    # need ViewProvider class in this file to support loading of old files
+    from PathScripts.PathToolControllerGui import ViewProvider
 
 FreeCAD.Console.PrintLog("Loading PathToolController... done\n")

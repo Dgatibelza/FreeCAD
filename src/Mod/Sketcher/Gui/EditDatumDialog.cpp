@@ -27,13 +27,12 @@
 # include <QApplication>
 # include <QDialog>
 # include <QMessageBox>
-#endif
-
 # include <Inventor/sensors/SoSensor.h>
+#endif
 
 #include <Base/Tools.h>
 #include <Gui/Application.h>
-#include <Gui/Command.h>
+#include <Gui/CommandT.h>
 #include <Gui/Document.h>
 #include <Gui/View3DInventor.h>
 #include <Gui/View3DInventorViewer.h>
@@ -73,12 +72,7 @@ void EditDatumDialog::customEvent(QEvent*)
 void EditDatumDialog::exec(bool atCursor)
 {
     // Return if constraint doesn't have editable value
-    if (Constr->Type == Sketcher::Distance ||
-        Constr->Type == Sketcher::DistanceX || 
-        Constr->Type == Sketcher::DistanceY ||
-        Constr->Type == Sketcher::Radius || 
-        Constr->Type == Sketcher::Angle ||
-        Constr->Type == Sketcher::SnellsLaw) {
+    if (Constr->isDimensional()) {
 
         if (sketch->hasConflicts()) {
             QMessageBox::critical(qApp->activeWindow(), QObject::tr("Distance constraint"),
@@ -87,9 +81,7 @@ void EditDatumDialog::exec(bool atCursor)
         }
 
         Gui::MDIView *mdi = Gui::Application::Instance->activeDocument()->getActiveView();
-        Gui::View3DInventorViewer *viewer = static_cast<Gui::View3DInventor *>(mdi)->getViewer();
-
-        QDialog dlg(viewer->getGLWidget());
+        QDialog dlg(mdi);
 
         Ui::InsertDatum ui_ins_datum;
         ui_ins_datum.setupUi(&dlg);
@@ -107,6 +99,12 @@ void EditDatumDialog::exec(bool atCursor)
             dlg.setWindowTitle(tr("Insert radius"));
             init_val.setUnit(Base::Unit::Length);
             ui_ins_datum.label->setText(tr("Radius:"));
+            ui_ins_datum.labelEdit->setParamGrpPath(QByteArray("User parameter:BaseApp/History/SketcherLength"));
+        }
+        else if (Constr->Type == Sketcher::Diameter) {
+            dlg.setWindowTitle(tr("Insert diameter"));
+            init_val.setUnit(Base::Unit::Length);
+            ui_ins_datum.label->setText(tr("Diameter:"));
             ui_ins_datum.labelEdit->setParamGrpPath(QByteArray("User parameter:BaseApp/History/SketcherLength"));
         }
         else if (Constr->Type == Sketcher::SnellsLaw) {
@@ -137,32 +135,31 @@ void EditDatumDialog::exec(bool atCursor)
         if (atCursor)
             dlg.setGeometry(QCursor::pos().x() - dlg.geometry().width() / 2, QCursor::pos().y(), dlg.geometry().width(), dlg.geometry().height());
 
+        Gui::Command::openCommand("Modify sketch constraints");
+
         if (dlg.exec()) {
             Base::Quantity newQuant = ui_ins_datum.labelEdit->value();
             if (newQuant.isQuantity() || (Constr->Type == Sketcher::SnellsLaw && newQuant.isDimensionless())) {
-                // save the value for the history 
+                // save the value for the history
                 ui_ins_datum.labelEdit->pushToHistory();
 
                 double newDatum = newQuant.getValue();
 
                 try {
-                    Gui::Command::openCommand("Modify sketch constraints");
 
                     if (Constr->isDriving) {
                         if (ui_ins_datum.labelEdit->hasExpression())
                             ui_ins_datum.labelEdit->apply();
                         else
-                            Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.setDatum(%i,App.Units.Quantity('%f %s'))",
-                                                    sketch->getNameInDocument(),
-                                                    ConstrNbr, newDatum, (const char*)newQuant.getUnit().getString().toUtf8());
+                            Gui::cmdAppObjectArgs(sketch, "setDatum(%i,App.Units.Quantity('%f %s'))",
+                                                  ConstrNbr, newDatum, (const char*)newQuant.getUnit().getString().toUtf8());
                     }
 
                     QString constraintName = ui_ins_datum.name->text().trimmed();
                     if (Base::Tools::toStdString(constraintName) != sketch->Constraints[ConstrNbr]->Name) {
                         std::string escapedstr = Base::Tools::escapedUnicodeFromUtf8(constraintName.toUtf8().constData());
-                        Gui::Command::doCommand(Gui::Command::Doc,"App.ActiveDocument.%s.renameConstraint(%d, u'%s')",
-                                                sketch->getNameInDocument(),
-                                                ConstrNbr, escapedstr.c_str());
+                        Gui::cmdAppObjectArgs(sketch, "renameConstraint(%d, u'%s')",
+                                              ConstrNbr, escapedstr.c_str());
                     }
 
                     Gui::Command::commitCommand();
@@ -172,13 +169,15 @@ void EditDatumDialog::exec(bool atCursor)
                         sketch->solve();
                     }
 
-                    tryAutoRecompute();
+                    tryAutoRecompute(sketch);
                 }
                 catch (const Base::Exception& e) {
                     QMessageBox::critical(qApp->activeWindow(), QObject::tr("Dimensional constraint"), QString::fromUtf8(e.what()));
                     Gui::Command::abortCommand();
                 }
             }
+        } else {
+            Gui::Command::abortCommand();
         }
     }
 }

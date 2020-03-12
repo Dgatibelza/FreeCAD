@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Konstantinos Poulios      (logari81@gmail.com) 2011     *
+ *   Copyright (c) 2011 Konstantinos Poulios <logari81@gmail.com>          *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -39,6 +39,7 @@ namespace GCS
     {
     public:
         Point(){x = 0; y = 0;}
+        Point(double *px, double *py) {x=px; y=py;}
         double *x;
         double *y;
     };

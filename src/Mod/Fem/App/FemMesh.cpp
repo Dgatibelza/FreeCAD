@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Jürgen Riegel          (juergen.riegel@web.de) 2009     *
+ *   Copyright (c) 2009 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -33,6 +33,35 @@
 # include <TopoDS_Vertex.hxx>
 # include <BRepBuilderAPI_MakeVertex.hxx>
 # include <gp_Pnt.hxx>
+# include <TopoDS_Face.hxx>
+# include <TopoDS_Solid.hxx>
+# include <TopoDS_Shape.hxx>
+# include <ShapeAnalysis_ShapeTolerance.hxx>
+
+# include <boost/assign/list_of.hpp>
+# include <boost/tokenizer.hpp> //to simplify parsing input files we use the boost lib
+
+# include <SMESH_Gen.hxx>
+# include <SMESH_Mesh.hxx>
+# include <SMESH_MeshEditor.hxx>
+# include <SMESH_Group.hxx>
+# include <SMDS_MeshGroup.hxx>
+# include <SMESHDS_GroupBase.hxx>
+# include <SMESHDS_Group.hxx>
+# include <SMESHDS_Mesh.hxx>
+# include <SMDS_PolyhedralVolumeOfNodes.hxx>
+# include <SMDS_VolumeTool.hxx>
+# include <StdMeshers_MaxLength.hxx>
+# include <StdMeshers_LocalLength.hxx>
+# include <StdMeshers_MaxElementArea.hxx>
+# include <StdMeshers_NumberOfSegments.hxx>
+# include <StdMeshers_Deflection1D.hxx>
+# include <StdMeshers_Regular_1D.hxx>
+# include <StdMeshers_StartEndLength.hxx>
+# include <StdMeshers_QuadranglePreference.hxx>
+# include <StdMeshers_Quadrangle_2D.hxx>
+# include <StdMeshers_QuadraticMesh.hxx>
+
 #endif
 
 #include <Base/Writer.h>
@@ -42,6 +71,7 @@
 #include <Base/FileInfo.h>
 #include <Base/TimeInfo.h>
 #include <Base/Console.h>
+#include <Base/Interpreter.h>
 #include <App/Application.h>
 
 #include <Mod/Mesh/App/Core/MeshKernel.h>
@@ -53,36 +83,9 @@
 #include "FemVTKTools.h"
 #endif
 
-#include <boost/assign/list_of.hpp>
-#include <SMESH_Gen.hxx>
-#include <SMESH_Mesh.hxx>
-#include <SMESH_MeshEditor.hxx>
-#include <SMESH_Group.hxx>
-#include <SMDS_MeshGroup.hxx>
-#include <SMESHDS_GroupBase.hxx>
-#include <SMESHDS_Group.hxx>
-#include <SMESHDS_Mesh.hxx>
-#include <SMDS_PolyhedralVolumeOfNodes.hxx>
-#include <SMDS_VolumeTool.hxx>
-#include <StdMeshers_MaxLength.hxx>
-#include <StdMeshers_LocalLength.hxx>
-#include <StdMeshers_MaxElementArea.hxx>
-#include <StdMeshers_NumberOfSegments.hxx>
-#include <StdMeshers_Deflection1D.hxx>
-#include <StdMeshers_Regular_1D.hxx>
-#include <StdMeshers_StartEndLength.hxx>
-#include <StdMeshers_QuadranglePreference.hxx>
-#include <StdMeshers_Quadrangle_2D.hxx>
-#include <StdMeshers_QuadraticMesh.hxx>
+# include <FemMeshPy.h>
 
-# include <TopoDS_Face.hxx>
-# include <TopoDS_Solid.hxx>
-# include <TopoDS_Shape.hxx>
 
-# include <ShapeAnalysis_ShapeTolerance.hxx>
-
-//to simplify parsing input files we use the boost lib
-#include <boost/tokenizer.hpp>
 
 
 using namespace Fem;
@@ -90,11 +93,10 @@ using namespace Base;
 using namespace boost;
 
 static int StatCount = 0;
-#if SMESH_VERSION_MAJOR >= 7
-    SMESH_Gen* FemMesh::_mesh_gen = 0;
-#endif
 
-TYPESYSTEM_SOURCE(Fem::FemMesh , Base::Persistence);
+SMESH_Gen* FemMesh::_mesh_gen = 0;
+
+TYPESYSTEM_SOURCE(Fem::FemMesh , Base::Persistence)
 
 FemMesh::FemMesh()
 {
@@ -493,13 +495,9 @@ SMESH_Mesh* FemMesh::getSMesh()
 
 SMESH_Gen * FemMesh::getGenerator()
 {
-#if SMESH_VERSION_MAJOR < 7
-    return SMESH_Gen::get();
-#else
     if (!FemMesh::_mesh_gen)
         FemMesh::_mesh_gen = new SMESH_Gen();
     return FemMesh::_mesh_gen;
-#endif
 }
 
 void FemMesh::addHypothesis(const TopoDS_Shape & aSubShape, SMESH_HypothesisPtr hyp)
@@ -597,7 +595,7 @@ std::list<std::pair<int, int> > FemMesh::getVolumesByFace(const TopoDS_Face &fac
 
             // For curved faces it is possible that a volume contributes more than one face
             if (element_face_nodes.size() == static_cast<std::size_t>(numNodes)) {
-                result.push_back(std::make_pair(vol->GetID(), face->GetID()));
+                result.emplace_back(vol->GetID(), face->GetID());
             }
         }
     }
@@ -631,6 +629,34 @@ std::list<int> FemMesh::getFacesByFace(const TopoDS_Face &face) const
         // For curved faces it is possible that a volume contributes more than one face
         if (element_face_nodes.size() == static_cast<std::size_t>(numNodes)) {
             result.push_back(face->GetID());
+        }
+    }
+
+    result.sort();
+    return result;
+}
+
+std::list<int> FemMesh::getEdgesByEdge(const TopoDS_Edge &edge) const
+{
+    std::list<int> result;
+    std::set<int> nodes_on_edge = getNodesByEdge(edge);
+
+    SMDS_EdgeIteratorPtr edge_iter = myMesh->GetMeshDS()->edgesIterator();
+    while (edge_iter->more()) {
+        const SMDS_MeshEdge* edge = static_cast<const SMDS_MeshEdge*>(edge_iter->next());
+        int numNodes = edge->NbNodes();
+
+        std::set<int> edge_nodes;
+        for (int i=0; i<numNodes; i++) {
+            edge_nodes.insert(edge->GetNode(i)->GetID());
+        }
+
+        std::vector<int> element_edge_nodes;
+        std::set_intersection(nodes_on_edge.begin(), nodes_on_edge.end(), edge_nodes.begin(), edge_nodes.end(),
+            std::back_insert_iterator<std::vector<int> >(element_edge_nodes));
+
+        if (element_edge_nodes.size() == static_cast<std::size_t>(numNodes)) {
+            result.push_back(edge->GetID());
         }
     }
 
@@ -920,10 +946,10 @@ std::set<int> FemMesh::getFacesOnly(void) const
     //         get the volume nodes
     //         if the face nodes are a subset of the volume nodes
     //             add the face to the volume faces and break
-    //     if face not belongs to a volume
+    //     if face doesn't belong to a volume
     //         add it to faces only
     //
-    // This means it is iterated over a lot of volumes many times, this is quite expensive !
+    // This means it is iterated over a lot of volumes many times, this is quite expensive!
     //
     // TODO make this faster
     // Idea:
@@ -933,7 +959,7 @@ std::set<int> FemMesh::getFacesOnly(void) const
     //     if not in volume faces
     //     add it to the faces only
     //
-    // but the volume faces does not seam know their global mesh ID, I could not found any method in SMESH
+    // but the volume faces do not seem to know their global mesh ID, I could not find any method in SMESH
 
     std::set<int> resultIDs;
 
@@ -997,7 +1023,7 @@ void FemMesh::readNastran(const std::string &Filename)
     {
         std::getline(inputfile,line1);
         if (line1.size() == 0) continue;
-        if (!nastran_free_format && line1.find(",")!= std::string::npos)
+        if (!nastran_free_format && line1.find(',')!= std::string::npos)
             nastran_free_format = true;
         if (!nastran_free_format && line1.find("GRID*")!= std::string::npos ) //We found a Grid line
         {
@@ -1109,8 +1135,9 @@ void FemMesh::readNastran(const std::string &Filename)
 
     for(unsigned int i=0;i<all_elements.size();i++)
     {
-        //Die Reihenfolge wie hier die Elemente hinzugefügt werden ist sehr wichtig.
-        //Ansonsten ist eine konsistente Datenstruktur nicht möglich
+        // an consistent data structure is only possible
+        // if the elements are added in the right order
+        // thus the order is very important
         //meshds->AddVolumeWithID
         //(
         //    meshds->FindNode(all_elements[i][0]),
@@ -1144,6 +1171,77 @@ void FemMesh::readNastran(const std::string &Filename)
 
 }
 
+void FemMesh::readAbaqus(const std::string &FileName)
+{
+    Base::TimeInfo Start;
+    Base::Console().Log("Start: FemMesh::readAbaqus() =================================\n");
+
+    /*
+    Python command to read Abaqus inp mesh file from test suite:
+    from feminout.importInpMesh import read as read_inp
+    femmesh = read_inp(FreeCAD.ConfigGet("AppHomePath") + 'Mod/Fem/femtest/data/mesh/tetra10_mesh.inp')
+    */
+
+    PyObject* module = PyImport_ImportModule("feminout.importInpMesh");
+    if (!module)
+        return;
+    try {
+        Py::Module abaqusmod(module, true);
+        Py::Callable method(abaqusmod.getAttr("read"));
+        Py::Tuple args(1);
+        args.setItem(0, Py::String(FileName));
+        Py::Object mesh(method.apply(args));
+        if (PyObject_TypeCheck(mesh.ptr(), &FemMeshPy::Type)) {
+            FemMeshPy* fempy = static_cast<FemMeshPy*>(mesh.ptr());
+            FemMesh* fem = fempy->getFemMeshPtr();
+            *this = *fem; // the deep copy should be avoided, a pointer swap method could be implemented
+                          // see https://forum.freecadweb.org/viewtopic.php?f=10&t=31999&start=10#p274241
+        }
+        else {
+            throw Base::FileException("Problems reading file");
+        }
+    }
+    catch (Py::Exception& e) {
+        e.clear();
+    }
+    Base::Console().Log("    %f: Done \n",Base::TimeInfo::diffTimeF(Start,Base::TimeInfo()));
+}
+
+void FemMesh::readZ88(const std::string &FileName)
+{
+    Base::TimeInfo Start;
+    Base::Console().Log("Start: FemMesh::readZ88() =================================\n");
+
+    /*
+    Python command to read Z88 mesh file from test suite:
+    from feminout.importZ88Mesh import read as read_z88
+    femmesh = read_z88(FreeCAD.ConfigGet("AppHomePath") + 'Mod/Fem/femtest/data/mesh/tetra10_mesh.z88')
+    */
+
+    PyObject* module = PyImport_ImportModule("feminout.importZ88Mesh");
+    if (!module)
+        return;
+    try {
+        Py::Module z88mod(module, true);
+        Py::Callable method(z88mod.getAttr("read"));
+        Py::Tuple args(1);
+        args.setItem(0, Py::String(FileName));
+        Py::Object mesh(method.apply(args));
+        if (PyObject_TypeCheck(mesh.ptr(), &FemMeshPy::Type)) {
+            FemMeshPy* fempy = static_cast<FemMeshPy*>(mesh.ptr());
+            FemMesh* fem = fempy->getFemMeshPtr();
+            *this = *fem; // the deep copy should be avoided, a pointer swap method could be implemented
+                          // see https://forum.freecadweb.org/viewtopic.php?f=10&t=31999&start=10#p274241
+        }
+        else {
+            throw Base::FileException("Problems reading file");
+        }
+    }
+    catch (Py::Exception& e) {
+        e.clear();
+    }
+    Base::Console().Log("    %f: Done \n",Base::TimeInfo::diffTimeF(Start,Base::TimeInfo()));
+}
 
 void FemMesh::read(const char *FileName)
 {
@@ -1152,7 +1250,7 @@ void FemMesh::read(const char *FileName)
 
     // checking on the file
     if (!File.isReadable())
-        throw Base::Exception("File to load not existing or not readable");
+        throw Base::FileException("File to load not existing or not readable", File);
 
     if (File.hasExtension("unv") ) {
         // read UNV file
@@ -1161,6 +1259,10 @@ void FemMesh::read(const char *FileName)
     else if (File.hasExtension("med") ) {
         myMesh->MEDToMesh(File.filePath().c_str(),File.fileNamePure().c_str());
     }
+    else if (File.hasExtension("inp") ) {
+        // read Abaqus inp mesh file
+        readAbaqus(File.filePath());
+    }
     else if (File.hasExtension("stl") ) {
         // read brep-file
         myMesh->STLToMesh(File.filePath().c_str());
@@ -1168,7 +1270,7 @@ void FemMesh::read(const char *FileName)
 #if SMESH_VERSION_MAJOR < 7
     else if (File.hasExtension("dat") ) {
         // read brep-file
-    // vejmarie disable
+        // vejmarie disable
         myMesh->DATToMesh(File.filePath().c_str());
     }
 #endif
@@ -1182,8 +1284,12 @@ void FemMesh::read(const char *FileName)
         FemVTKTools::readVTKMesh(File.filePath().c_str(), this);
     }
 #endif
+    else if (File.hasExtension("z88") ) {
+        // read Z88 mesh file
+        readZ88(File.filePath());
+    }
     else{
-        throw Base::Exception("Unknown extension");
+        throw Base::FileException("Unknown extension");
     }
 }
 
@@ -1419,8 +1525,9 @@ void FemMesh::writeABAQUS(const std::string &Filename, int elemParam, bool group
     }
 
     // write all data to file
-    std::ofstream anABAQUS_Output;
-    anABAQUS_Output.open(Filename.c_str());
+    // take also care of special characters in path https://forum.freecadweb.org/viewtopic.php?f=10&t=37436
+    Base::FileInfo fi(Filename);
+    Base::ofstream anABAQUS_Output(fi);
     anABAQUS_Output.precision(13);  // https://forum.freecadweb.org/viewtopic.php?f=18&t=22759#p176669
 
     // add some text and make sure one of the known elemParam values is used
@@ -1577,6 +1684,36 @@ void FemMesh::writeABAQUS(const std::string &Filename, int elemParam, bool group
     }
 }
 
+
+void FemMesh::writeZ88(const std::string &FileName) const
+{
+    Base::TimeInfo Start;
+    Base::Console().Log("Start: FemMesh::writeZ88() =================================\n");
+
+    /*
+    Python command to export FemMesh from StartWB FEM 3D example:
+    import feminout.importZ88Mesh
+    feminout.importZ88Mesh.write(App.ActiveDocument.Box_Mesh.FemMesh, '/tmp/mesh.z88')
+    */
+
+    PyObject* module = PyImport_ImportModule("feminout.importZ88Mesh");
+    if (!module)
+        return;
+    try {
+        Py::Module z88mod(module, true);
+        Py::Object mesh = Py::asObject(new FemMeshPy(const_cast<FemMesh*>(this)));
+        Py::Callable method(z88mod.getAttr("write"));
+        Py::Tuple args(2);
+        args.setItem(0, mesh);
+        args.setItem(1, Py::String(FileName));
+        method.apply(args);
+    }
+    catch (Py::Exception& e) {
+        e.clear();
+    }
+}
+
+
 void FemMesh::write(const char *FileName) const
 {
     Base::FileInfo File(FileName);
@@ -1616,8 +1753,13 @@ void FemMesh::write(const char *FileName) const
         FemVTKTools::writeVTKMesh(File.filePath().c_str(), this);
     }
 #endif
+    else if (File.hasExtension("z88") ) {
+        Base::Console().Log("FEM mesh object will be exported to z88 format.\n");
+        // write z88 file
+        writeZ88(File.filePath());
+    }
     else{
-        throw Base::Exception("An unknown file extension was added!");
+        throw Base::FileException("An unknown file extension was added!");
     }
 }
 
@@ -1656,7 +1798,7 @@ void FemMesh::Restore(Base::XMLReader &reader)
     std::string file (reader.getAttribute("file") );
 
     if (!file.empty()) {
-        // initate a file read
+        // initiate a file read
         reader.addFile(file.c_str(),this);
     }
     if( reader.hasAttribute("a11")){
@@ -1810,8 +1952,9 @@ struct Fem::FemMesh::FemMeshInfo FemMesh::getInfo(void) const{
 }
 //    for(unsigned int i=0;i<all_elements.size();i++)
 //        {
-//            //Die Reihenfolge wie hier die Elemente hinzugefügt werden ist sehr wichtig.
-//            //Ansonsten ist eine konsistente Datenstruktur nicht möglich
+//                // an consistent data structure is only possible
+//                // if the elements are added in the right order
+//                // thus the order is very important
 //                meshds->AddVolumeWithID(
 //                meshds->FindNode(all_elements[i][0]),
 //                meshds->FindNode(all_elements[i][2]),
@@ -1910,4 +2053,3 @@ Base::Quantity FemMesh::getVolume(void)const
 
 
 }
-

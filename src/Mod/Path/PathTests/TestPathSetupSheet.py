@@ -23,7 +23,6 @@
 # ***************************************************************************
 
 import FreeCAD
-import Path
 import PathScripts.PathSetupSheet as PathSetupSheet
 import PathScripts.PathLog as PathLog
 import sys
@@ -56,9 +55,9 @@ class TestPathSetupSheet(PathTestBase):
         self.assertEqualLocale(attrs[PathSetupSheet.Template.HorizRapid], '0.00 mm/s')
         self.assertEqualLocale(attrs[PathSetupSheet.Template.VertRapid], '0.00 mm/s')
         self.assertEqualLocale(attrs[PathSetupSheet.Template.SafeHeightOffset], '3.00 mm')
-        self.assertEqual(attrs[PathSetupSheet.Template.SafeHeightExpression], 'StartDepth+SetupSheet.SafeHeightOffset')
+        self.assertEqual(attrs[PathSetupSheet.Template.SafeHeightExpression], 'OpStockZMax+SetupSheet.SafeHeightOffset')
         self.assertEqualLocale(attrs[PathSetupSheet.Template.ClearanceHeightOffset], '5.00 mm')
-        self.assertEqual(attrs[PathSetupSheet.Template.ClearanceHeightExpression], 'StartDepth+SetupSheet.ClearanceHeightOffset')
+        self.assertEqual(attrs[PathSetupSheet.Template.ClearanceHeightExpression], 'OpStockZMax+SetupSheet.ClearanceHeightOffset')
 
     def test01(self):
         '''Verify SetupSheet template attributes roundtrip.'''

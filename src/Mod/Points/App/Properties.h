@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) Juergen Riegel         <juergen.riegel@web.de>          *
+ *   Copyright (c) 2011 Jürgen Riegel <juergen.riegel@web.de>              *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -204,6 +204,9 @@ public:
     const std::vector<CurvatureInfo> &getValues(void) const {
         return _lValueList;
     }
+
+    virtual PyObject *getPyObject(void);
+    virtual void setPyObject(PyObject *);
 
     /** @name Save/restore */
     //@{

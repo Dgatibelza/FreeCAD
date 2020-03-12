@@ -1,5 +1,5 @@
 /******************************************************************************
- *   Copyright (c)2012 Jan Rheinlaender <jrheinlaender@users.sourceforge.net> *
+ *   Copyright (c) 2012 Jan Rheinländer <jrheinlaender@users.sourceforge.net> *
  *                                                                            *
  *   This file is part of the FreeCAD CAx development system.                 *
  *                                                                            *
@@ -50,6 +50,7 @@ void ViewProviderGroove::setupContextMenu(QMenu* menu, QObject* receiver, const 
     QAction* act;
     act = menu->addAction(QObject::tr("Edit groove"), receiver, member);
     act->setData(QVariant((int)ViewProvider::Default));
+    PartDesignGui::ViewProviderSketchBased::setupContextMenu(menu, receiver, member);
 }
 
 TaskDlgFeatureParameters *ViewProviderGroove::getEditDialog()

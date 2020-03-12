@@ -37,6 +37,34 @@ using namespace FemGui;
 #if 0 // needed for Qt's lupdate utility
     qApp->translate("Workbench", "FEM");
     qApp->translate("Workbench", "&FEM");
+    //
+    qApp->translate("Workbench", "Model");
+    qApp->translate("Workbench", "M&odel");
+    qApp->translate("Workbench", "Materials");
+    qApp->translate("Workbench", "&Materials");
+    qApp->translate("Workbench", "Element Geometry");
+    qApp->translate("Workbench", "&Element Geometry");
+    qApp->translate("Workbench", "Electrostatic Constraints");
+    qApp->translate("Workbench", "&Electrostatic Constraints");
+    qApp->translate("Workbench", "Fluid Constraints");
+    qApp->translate("Workbench", "&Fluid Constraints");
+    qApp->translate("Workbench", "Mechanical Constraints");
+    qApp->translate("Workbench", "&Mechanical Constraints");
+    qApp->translate("Workbench", "Thermal Constraints");
+    qApp->translate("Workbench", "&Thermal Constraints");
+    //
+    qApp->translate("Workbench", "Mesh");
+    qApp->translate("Workbench", "M&esh");
+    //
+    qApp->translate("Workbench", "Solve");
+    qApp->translate("Workbench", "&Solve");
+    //
+    qApp->translate("Workbench", "Results");
+    qApp->translate("Workbench", "&Results");
+    qApp->translate("Workbench", "Filter functions");
+    qApp->translate("Workbench", "&Filter functions");
+    //
+    qApp->translate("Workbench", "Utilities");
 #endif
 
 /// @namespace FemGui @class Workbench
@@ -55,7 +83,7 @@ void Workbench::setupContextMenu(const char* recipient, Gui::MenuItem* item) con
      StdWorkbench::setupContextMenu( recipient, item );
      *item << "Separator"
            << "FEM_MeshClear"
-           << "FEM_MeshPrintInfo";
+           << "FEM_MeshDisplayInfo";
 }
 
 Gui::ToolBarItem* Workbench::setupToolBars() const
@@ -68,6 +96,9 @@ Gui::ToolBarItem* Workbench::setupToolBars() const
            << "FEM_MaterialSolid"
            << "FEM_MaterialFluid"
            << "FEM_MaterialMechanicalNonlinear"
+           << "FEM_MaterialReinforced"
+           << "FEM_MaterialEditor"
+           << "Separator"
            << "FEM_ElementGeometry1D"
            << "FEM_ElementRotation1D"
            << "FEM_ElementGeometry2D"
@@ -79,6 +110,7 @@ Gui::ToolBarItem* Workbench::setupToolBars() const
           << "FEM_ConstraintDisplacement"
           << "FEM_ConstraintPlaneRotation"
           << "FEM_ConstraintContact"
+          << "FEM_ConstraintTie"
           << "FEM_ConstraintTransform"
           << "Separator"
           << "FEM_ConstraintForce"
@@ -135,22 +167,26 @@ Gui::ToolBarItem* Workbench::setupToolBars() const
      results->setCommand("Results");
      *results << "FEM_ResultsPurge"
               << "FEM_ResultShow";
-
 #ifdef FC_USE_VTK
      *results << "Separator"
               << "FEM_PostApplyChanges"
               << "FEM_PostPipelineFromResult"
               << "Separator"
-              << "FEM_PostCreateClipFilter"
-              << "FEM_PostCreateScalarClipFilter"
-              << "FEM_PostCreateCutFilter"
-              << "FEM_PostCreateWarpVectorFilter"
-              << "FEM_PostCreateDataAlongLineFilter"
-              << "FEM_PostCreateLinearizedStressesFilter"
-              << "FEM_PostCreateDataAtPointFilter"
+              << "FEM_PostFilterWarp"
+              << "FEM_PostFilterClipScalar"
+              << "FEM_PostFilterCutFunction"
+              << "FEM_PostFilterClipRegion"
+              << "FEM_PostFilterDataAlongLine"
+              << "FEM_PostFilterLinearizedStresses"
+              << "FEM_PostFilterDataAtPoint"
               << "Separator"
               << "FEM_PostCreateFunctions";
 #endif
+
+     Gui::ToolBarItem* utils = new Gui::ToolBarItem(root);
+     utils->setCommand("Utilities");
+     *utils << "FEM_ClippingPlaneAdd"
+            << "FEM_ClippingPlaneRemoveAll";
 
     return root;
 }
@@ -165,11 +201,19 @@ Gui::MenuItem* Workbench::setupMenuBar() const
     *material << "FEM_MaterialSolid"
               << "FEM_MaterialFluid"
               << "FEM_MaterialMechanicalNonlinear"
+              << "FEM_MaterialReinforced"
               << "FEM_MaterialEditor";
 
     Gui::MenuItem* elec = new Gui::MenuItem;
     elec->setCommand("&Electrostatic Constraints");
     *elec << "FEM_ConstraintElectrostaticPotential";
+
+    Gui::MenuItem* elegeom = new Gui::MenuItem;
+    elegeom->setCommand("&Element Geometry");
+    *elegeom << "FEM_ElementGeometry1D"
+             << "FEM_ElementRotation1D"
+             << "FEM_ElementGeometry2D"
+             << "FEM_ElementFluid1D";
 
     Gui::MenuItem* mech = new Gui::MenuItem;
     mech->setCommand("&Mechanical Constraints");
@@ -177,6 +221,7 @@ Gui::MenuItem* Workbench::setupMenuBar() const
           << "FEM_ConstraintDisplacement"
           << "FEM_ConstraintPlaneRotation"
           << "FEM_ConstraintContact"
+          << "FEM_ConstraintTie"
           << "FEM_ConstraintTransform"
           << "Separator"
           << "FEM_ConstraintForce"
@@ -208,11 +253,7 @@ Gui::MenuItem* Workbench::setupMenuBar() const
     *model << "FEM_Analysis"
            << "Separator"
            << material
-           << "Separator"
-           << "FEM_ElementGeometry1D"
-           << "FEM_ElementRotation1D"
-           << "FEM_ElementGeometry2D"
-           << "FEM_ElementFluid1D"
+           << elegeom
            << "Separator"
            << elec
            << fluid
@@ -256,22 +297,27 @@ Gui::MenuItem* Workbench::setupMenuBar() const
     results->setCommand("&Results");
     *results << "FEM_ResultsPurge"
              << "FEM_ResultShow";
-
 #ifdef FC_USE_VTK
     *results << "Separator"
              << "FEM_PostApplyChanges"
              << "FEM_PostPipelineFromResult"
              << "Separator"
-             << "FEM_PostCreateClipFilter"
-             << "FEM_PostCreateScalarClipFilter"
-             << "FEM_PostCreateCutFilter"
-             << "FEM_PostCreateWarpVectorFilter"
-             << "FEM_PostCreateDataAlongLineFilter"
-             << "FEM_PostCreateLinearizedStressesFilter"
-             << "FEM_PostCreateDataAtPointFilter"
+             << "FEM_PostFilterWarp"
+             << "FEM_PostFilterClipScalar"
+             << "FEM_PostFilterCutFunction"
+             << "FEM_PostFilterClipRegion"
+             << "FEM_PostFilterDataAlongLine"
+             << "FEM_PostFilterLinearizedStresses"
+             << "FEM_PostFilterDataAtPoint"
              << "Separator"
              << "FEM_PostCreateFunctions";
 #endif
+
+    Gui::MenuItem* utils = new Gui::MenuItem;
+    root->insertItem(item, utils);
+    utils->setCommand("Utilities");
+    *utils << "FEM_ClippingPlaneAdd"
+           << "FEM_ClippingPlaneRemoveAll";
 
     return root;
 }

@@ -167,6 +167,9 @@ public:
 #endif
         setFormat(surfaceFormat);
     }
+    ~CustomGLWidget()
+    {
+    }
     void initializeGL()
     {
         QOpenGLContext *context = QOpenGLContext::currentContext();
@@ -185,8 +188,30 @@ public:
         }
         connect(this, &CustomGLWidget::resized, this, &CustomGLWidget::slotResized);
     }
+    // paintGL() is invoked when e.g. using the method grabFramebuffer of this class
+    // \code
+    // from PySide2 import QtWidgets
+    // mw = Gui.getMainWindow()
+    // mdi = mw.findChild(QtWidgets.QMdiArea)
+    // gl = mdi.findChild(QtWidgets.QOpenGLWidget)
+    // img = gl.grabFramebuffer()
+    // \endcode
+    void paintGL()
+    {
+        QuarterWidget* qw = qobject_cast<QuarterWidget*>(parentWidget());
+        if (qw) {
+            qw->redraw();
+        }
+    }
     void aboutToDestroyGLContext()
     {
+#if QT_VERSION >= 0x050900
+        // With Qt 5.9 a signal is emitted while the QuarterWidget is being destroyed.
+        // At this state its type is a QWidget, not a QuarterWidget any more.
+        QuarterWidget* qw = qobject_cast<QuarterWidget*>(parent());
+        if (!qw)
+            return;
+#endif
         QMetaObject::invokeMethod(parent(), "aboutToDestroyGLContext",
             Qt::DirectConnection,
             QGenericReturnArgument());
@@ -876,7 +901,11 @@ void QuarterWidget::paintEvent(QPaintEvent* event)
     glMatrixMode(GL_PROJECTION);
 
     QtGLWidget* w = static_cast<QtGLWidget*>(this->viewport());
-    assert(w->isValid() && "No valid GL context found!");
+    if (!w->isValid()) {
+        qWarning() << "No valid GL context found!";
+        return;
+    }
+    //assert(w->isValid() && "No valid GL context found!");
     // We might have to process the delay queue here since we don't know
     // if paintGL() is called from Qt, and we might have some sensors
     // waiting to trigger (the redraw sensor has a lower priority than a

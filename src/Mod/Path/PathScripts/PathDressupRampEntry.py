@@ -22,19 +22,21 @@
 # *                                                                         *
 # ***************************************************************************
 import FreeCAD
-import FreeCADGui
 import Path
 import Part
 import PathScripts.PathDressup as PathDressup
+import PathScripts.PathGeom as PathGeom
 import PathScripts.PathLog as PathLog
 import math
 
 from PathScripts import PathUtils
-from PathScripts.PathGeom import PathGeom
 from PySide import QtCore
 
+if FreeCAD.GuiUp:
+    import FreeCADGui
 
-# Qt tanslation handling
+
+# Qt translation handling
 def translate(text, context="Path_DressupRampEntry", disambig=None):
     return QtCore.QCoreApplication.translate(context, text, disambig)
 
@@ -50,13 +52,22 @@ class ObjectDressup:
         obj.addProperty("App::PropertyAngle", "Angle", "Path", QtCore.QT_TRANSLATE_NOOP("Path_DressupRampEntry", "Angle of ramp."))
         obj.addProperty("App::PropertyEnumeration", "Method", "Path", QtCore.QT_TRANSLATE_NOOP("App::Property", "Ramping Method"))
         obj.addProperty("App::PropertyEnumeration", "RampFeedRate", "FeedRate", QtCore.QT_TRANSLATE_NOOP("App::Property", "Which feed rate to use for ramping"))
-        obj.addProperty("App::PropertySpeed", "CustomFeedRate", "FeedRate", QtCore.QT_TRANSLATE_NOOP("App::Property", "Custom feedrate"))
+        obj.addProperty("App::PropertySpeed", "CustomFeedRate", "FeedRate", QtCore.QT_TRANSLATE_NOOP("App::Property", "Custom feed rate"))
         obj.addProperty("App::PropertyBool", "UseStartDepth", "StartDepth", QtCore.QT_TRANSLATE_NOOP("App::Property", "Should the dressup ignore motion commands above DressupStartDepth"))
         obj.addProperty("App::PropertyDistance", "DressupStartDepth", "StartDepth", QtCore.QT_TRANSLATE_NOOP("App::Property", "The depth where the ramp dressup is enabled. Above this ramps are not generated, but motion commands are passed through as is."))
         obj.Method = ['RampMethod1', 'RampMethod2', 'RampMethod3', 'Helix']
-        obj.RampFeedRate = ['Horizontal Feed Rate', 'Vertical Feed Rate', 'Custom']
+        obj.RampFeedRate = ['Horizontal Feed Rate', 'Vertical Feed Rate', 'Ramp Feed Rate', 'Custom']
         obj.Proxy = self
         self.setEditorProperties(obj)
+
+        # initialized later
+        self.wire = None
+        self.angle = None
+        self.rapids = None
+        self.method = None
+        self.outedges = None
+        self.ignoreAboveEnabled = None
+        self.ignoreAbove = None
 
     def __getstate__(self):
         return None
@@ -79,6 +90,9 @@ class ObjectDressup:
             obj.setEditorMode('CustomFeedRate', 0)
         else:
             obj.setEditorMode('CustomFeedRate', 2)
+
+    def onDocumentRestored(self, obj):
+        self.setEditorProperties(obj)
 
     def setup(self, obj):
         obj.Angle = 60
@@ -203,6 +217,7 @@ class ObjectDressup:
     def generateHelix(self):
         edges = self.wire.Edges
         minZ = self.findMinZ(edges)
+        PathLog.debug("Minimum Z in this path is {}".format(minZ))
         outedges = []
         i = 0
         while i < len(edges):
@@ -331,7 +346,7 @@ class ObjectDressup:
 
     def findMinZ(self, edges):
         minZ = 99999999999
-        for edge in edges:
+        for edge in edges[1:]:
             for v in edge.Vertexes:
                 if v.Point.z < minZ:
                     minZ = v.Point.z
@@ -360,6 +375,7 @@ class ObjectDressup:
         curPoint = p0  # start from the upper point of plunge
         done = False
         goingForward = True
+        i = 0
         while not done:
             for i, redge in enumerate(rampedges):
                 if redge.Length >= rampremaining:
@@ -426,6 +442,7 @@ class ObjectDressup:
         curPoint = p0  # start from the upper point of plunge
         done = False
 
+        i = 0
         while not done:
             for i, redge in enumerate(rampedges):
                 if redge.Length >= rampremaining:
@@ -484,7 +501,7 @@ class ObjectDressup:
         1. Start from the original startpoint of the plunge
         2. Calculate the distance on the path which is needed to implement the ramp
            and travel that distance while maintaining start depth
-        3. Start ramping while travelling the original path backwards until reaching the
+        3. Start ramping while traveling the original path backwards until reaching the
            original plunge end point
         4. Continue with the original path
         """
@@ -524,7 +541,7 @@ class ObjectDressup:
                     curPoint = newPoint
 
                 else:
-                    # we are travelling on start depth
+                    # we are traveling on start depth
                     newPoint = FreeCAD.Base.Vector(redge.valueAt(redge.LastParameter).x, redge.valueAt(redge.LastParameter).y, p0.z)
                     outedges.append(self.createRampEdge(redge, curPoint, newPoint))
                     curPoint = newPoint
@@ -565,12 +582,16 @@ class ObjectDressup:
 
         horizFeed = tc.HorizFeed.Value
         vertFeed = tc.VertFeed.Value
+
         if obj.RampFeedRate == "Horizontal Feed Rate":
             rampFeed = tc.HorizFeed.Value
         elif obj.RampFeedRate == "Vertical Feed Rate":
             rampFeed = tc.VertFeed.Value
+        elif obj.RampFeedRate == 'Ramp Feed Rate':
+            rampFeed = math.sqrt(pow(tc.VertFeed.Value, 2) + pow(tc.HorizFeed.Value, 2))
         else:
             rampFeed = obj.CustomFeedRate.Value
+
         horizRapid = tc.HorizRapid.Value
         vertRapid = tc.VertRapid.Value
 
@@ -615,7 +636,7 @@ class ObjectDressup:
 class ViewProviderDressup:
 
     def __init__(self, vobj):
-        vobj.Proxy = self
+        self.obj = vobj.Object
 
     def attach(self, vobj):
         self.obj = vobj.Object
@@ -634,12 +655,15 @@ class ViewProviderDressup:
         return [self.obj.Base]
 
     def onDelete(self, arg1=None, arg2=None):
-        PathLog.debug("Deleting Dressup")
         '''this makes sure that the base operation is added back to the project and visible'''
-        FreeCADGui.ActiveDocument.getObject(arg1.Object.Base.Name).Visibility = True
-        job = PathUtils.findParentJob(self.obj)
-        job.Proxy.addOperation(arg1.Object.Base)
-        arg1.Object.Base = None
+        # pylint: disable=unused-argument
+        PathLog.debug("Deleting Dressup")
+        if arg1.Object and arg1.Object.Base:
+            FreeCADGui.ActiveDocument.getObject(arg1.Object.Base.Name).Visibility = True
+            job = PathUtils.findParentJob(self.obj)
+            if job:
+                job.Proxy.addOperation(arg1.Object.Base, arg1.Object)
+            arg1.Object.Base = None
         return True
 
     def __getstate__(self):
@@ -650,6 +674,7 @@ class ViewProviderDressup:
 
 
 class CommandPathDressupRampEntry:
+    # pylint: disable=no-init
 
     def GetResources(self):
         return {'Pixmap': 'Path-Dressup',
@@ -683,10 +708,12 @@ class CommandPathDressupRampEntry:
         FreeCADGui.addModule("PathScripts.PathUtils")
         FreeCADGui.doCommand('obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython", "RampEntryDressup")')
         FreeCADGui.doCommand('dbo = PathScripts.PathDressupRampEntry.ObjectDressup(obj)')
-        FreeCADGui.doCommand('obj.Base = FreeCAD.ActiveDocument.' + selection[0].Name)
-        FreeCADGui.doCommand('PathScripts.PathDressupRampEntry.ViewProviderDressup(obj.ViewObject)')
-        FreeCADGui.doCommand('PathScripts.PathUtils.addToJob(obj)')
-        FreeCADGui.doCommand('Gui.ActiveDocument.getObject(obj.Base.Name).Visibility = False')
+        FreeCADGui.doCommand('base = FreeCAD.ActiveDocument.' + selection[0].Name)
+        FreeCADGui.doCommand('job = PathScripts.PathUtils.findParentJob(base)')
+        FreeCADGui.doCommand('obj.Base = base')
+        FreeCADGui.doCommand('job.Proxy.addOperation(obj, base)')
+        FreeCADGui.doCommand('obj.ViewObject.Proxy = PathScripts.PathDressupRampEntry.ViewProviderDressup(obj.ViewObject)')
+        FreeCADGui.doCommand('Gui.ActiveDocument.getObject(base.Name).Visibility = False')
         FreeCADGui.doCommand('dbo.setup(obj)')
         FreeCAD.ActiveDocument.commitTransaction()
         FreeCAD.ActiveDocument.recompute()

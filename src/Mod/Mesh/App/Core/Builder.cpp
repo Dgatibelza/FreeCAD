@@ -32,6 +32,8 @@
 
 #include "Builder.h"
 #include "MeshKernel.h"
+#include "Functional.h"
+#include <QVector>
 
 using namespace MeshCore;
 
@@ -52,7 +54,7 @@ void MeshBuilder::SetTolerance(float fTol)
     MeshDefinitions::_fMinPointDistanceD1 = fTol;
 }
 
-void MeshBuilder::Initialize (unsigned long ctFacets, bool deletion)
+void MeshBuilder::Initialize (size_t ctFacets, bool deletion)
 {
     if (deletion)
     {
@@ -69,8 +71,8 @@ void MeshBuilder::Initialize (unsigned long ctFacets, bool deletion)
         // Usually the number of vertices is the half of the number of facets. So we reserve this memory with 10% surcharge
         // To save memory we hold an array with iterators that point to the right vertex (insertion order) in the set, instead of
         // holding the vertex array twice.
-        unsigned long ctPoints = ctFacets / 2;
-        _pointsIterator.reserve((unsigned long)(float(ctPoints)*1.10f));
+        size_t ctPoints = ctFacets / 2;
+        _pointsIterator.reserve(static_cast<size_t>(float(ctPoints)*1.10f));
         _ptIdx = 0;
     }
     else
@@ -86,10 +88,10 @@ void MeshBuilder::Initialize (unsigned long ctFacets, bool deletion)
         // memory as we reuse it later on anyway.
         _meshKernel._aclPointArray.clear();
         // additional memory
-        unsigned long newCtFacets = _meshKernel._aclFacetArray.size()+ctFacets;
+        size_t newCtFacets = _meshKernel._aclFacetArray.size()+ctFacets;
         _meshKernel._aclFacetArray.reserve(newCtFacets);
-        unsigned long ctPoints = newCtFacets / 2;
-        _pointsIterator.reserve((unsigned long)(float(ctPoints)*1.10f));
+        size_t ctPoints = newCtFacets / 2;
+        _pointsIterator.reserve(static_cast<size_t>(float(ctPoints)*1.10f));
     }
 
     this->_seq = new Base::SequencerLauncher("create mesh structure...", ctFacets * 2);
@@ -154,7 +156,7 @@ void MeshBuilder::AddFacet (Base::Vector3f* facetPoints, unsigned char flag, uns
 void MeshBuilder::SetNeighbourhood ()
 {
     std::set<Edge> edges;
-    int facetIdx = 0;
+    unsigned long facetIdx = 0;
 
     for (MeshFacetArray::_TIterator it = _meshKernel._aclFacetArray.begin(); it != _meshKernel._aclFacetArray.end(); ++it)
     {
@@ -234,8 +236,8 @@ void MeshBuilder::Finish (bool freeMemory)
     // if AddFacet() has been called more often (or even less) as specified in Initialize() we have a wastage of memory
     if ( freeMemory )
     {
-        unsigned long cap = _meshKernel._aclFacetArray.capacity();
-        unsigned long siz = _meshKernel._aclFacetArray.size();
+        size_t cap = _meshKernel._aclFacetArray.capacity();
+        size_t siz = _meshKernel._aclFacetArray.size();
         // wastage of more than 5%
         if ( cap > siz+siz/20 )
         {
@@ -252,4 +254,110 @@ void MeshBuilder::Finish (bool freeMemory)
     }
 
     _meshKernel.RecalcBoundBox();
+}
+
+// ----------------------------------------------------------------------------
+
+struct MeshFastBuilder::Private {
+    struct Vertex
+    {
+        Vertex() : x(0), y(0), z(0), i(0) {}
+        Vertex(float x, float y, float z) : x(x), y(y), z(z), i(0) {}
+
+        float x, y, z;
+        size_type i;
+
+        bool operator!=(const Vertex& rhs) const
+        {
+            return x != rhs.x || y != rhs.y || z != rhs.z;
+        }
+        bool operator<(const Vertex& rhs) const
+        {
+            if      (x != rhs.x)    return x < rhs.x;
+            else if (y != rhs.y)    return y < rhs.y;
+            else if (z != rhs.z)    return z < rhs.z;
+            else                    return false;
+        }
+    };
+
+    // Hint: Using a QVector instead of std::vector is a bit faster
+    QVector<Vertex> verts;
+};
+
+MeshFastBuilder::MeshFastBuilder(MeshKernel &rclM) : _meshKernel(rclM), p(new Private)
+{
+}
+
+MeshFastBuilder::~MeshFastBuilder(void)
+{
+    delete p;
+}
+
+void MeshFastBuilder::Initialize (size_type ctFacets)
+{
+    p->verts.reserve(ctFacets * 3);
+}
+
+void MeshFastBuilder::AddFacet (const Base::Vector3f* facetPoints)
+{
+    Private::Vertex v;
+    for (int i=0; i<3; i++) {
+        v.x = facetPoints[i].x;
+        v.y = facetPoints[i].y;
+        v.z = facetPoints[i].z;
+        p->verts.push_back(v);
+    }
+}
+
+void MeshFastBuilder::AddFacet (const MeshGeomFacet& facetPoints)
+{
+    Private::Vertex v;
+    for (int i=0; i<3; i++) {
+        v.x = facetPoints._aclPoints[i].x;
+        v.y = facetPoints._aclPoints[i].y;
+        v.z = facetPoints._aclPoints[i].z;
+        p->verts.push_back(v);
+    }
+}
+
+void MeshFastBuilder::Finish ()
+{
+    typedef QVector<Private::Vertex>::size_type size_type;
+    QVector<Private::Vertex>& verts = p->verts;
+    size_type ulCtPts = verts.size();
+    for (size_type i=0; i < ulCtPts; ++i) {
+        verts[i].i = i;
+    }
+
+    //std::sort(verts.begin(), verts.end());
+    int threads = std::max(1, QThread::idealThreadCount());
+    MeshCore::parallel_sort(verts.begin(), verts.end(), std::less<Private::Vertex>(), threads);
+
+    QVector<unsigned long> indices(ulCtPts);
+
+    size_type vertex_count = 0;
+    for (QVector<Private::Vertex>::iterator v = verts.begin(); v != verts.end(); ++v) {
+        if (!vertex_count || *v != verts[vertex_count-1])
+            verts[vertex_count++] = *v;
+
+        indices[v->i] = static_cast<unsigned long>(vertex_count - 1);
+    }
+
+    size_type ulCt = verts.size()/3;
+    MeshFacetArray rFacets(static_cast<unsigned long>(ulCt));
+    for (size_type i=0; i < ulCt; ++i) {
+        rFacets[static_cast<size_t>(i)]._aulPoints[0] = indices[3*i];
+        rFacets[static_cast<size_t>(i)]._aulPoints[1] = indices[3*i + 1];
+        rFacets[static_cast<size_t>(i)]._aulPoints[2] = indices[3*i + 2];
+    }
+
+    verts.resize(vertex_count);
+
+    MeshPointArray rPoints;
+    rPoints.reserve(static_cast<size_t>(vertex_count));
+    for (QVector<Private::Vertex>::iterator v = verts.begin(); v != verts.end(); ++v) {
+        rPoints.push_back(MeshPoint(v->x, v->y, v->z));
+    }
+
+    _meshKernel.Adopt(rPoints, rFacets, true);
 }

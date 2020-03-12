@@ -1,7 +1,5 @@
 #***************************************************************************
-#*                                                                         *
-#*   Copyright (c) 2015                                                    *  
-#*   Yorik van Havre <yorik@uncreated.net>                                 *  
+#*   Copyright (c) 2015 Yorik van Havre <yorik@uncreated.net>              *
 #*                                                                         *
 #*   This program is free software; you can redistribute it and/or modify  *
 #*   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -89,7 +87,7 @@ def export(objectslist,filename):
             # spaces
             for space in Draft.getObjectsOfType(Draft.getGroupContents(building.Group,addgroups=True),"Space"):
                 if not space.Zone:
-                    FreeCAD.Console.PrintError(translate("Arch","Error: Space '%s' has no Zone. Aborting.")+ "\n" + % space.Label)
+                    FreeCAD.Console.PrintError(translate("Arch","Error: Space '%s' has no Zone. Aborting.") % space.Label + "\n")
                     return
                 filestream.write( '        <Space id="%s" spaceType="%s" zoneIdRef="%s" conditionType="%f">\n' % (space.Name, space.SpaceType, space.Zone.Name, space.Conditioning) )
                 #filestream.write( '            <CADObjectId>%s</CADObjectId>\n' % space.Name ) # not sure what this is used for?

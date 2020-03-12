@@ -1,6 +1,7 @@
 # ***************************************************************************
+# *   Copyright (c) 2017 Bernd Hahnebach <bernd@bimstatik.org>              *
 # *                                                                         *
-# *   Copyright (c) 2017 - Bernd Hahnebach <bernd@bimstatik.org>            *
+# *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -20,22 +21,37 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__ = "FemElementRotation1D"
+__title__ = "FreeCAD FEM element rotation 1D document object"
 __author__ = "Bernd Hahnebach"
-__url__ = "http://www.freecadweb.org"
+__url__ = "https://www.freecadweb.org"
 
 ## @package FemElementRotation1D
 #  \ingroup FEM
+#  \brief FreeCAD FEM element rotation 1D object
+
+from . import FemConstraint
 
 
-class _FemElementRotation1D:
-    "The FemElementRotation1D object"
+class _FemElementRotation1D(FemConstraint.Proxy):
+    """
+    The FemElementRotation1D object
+    """
+
+    Type = "Fem::ElementRotation1D"
 
     def __init__(self, obj):
-        obj.addProperty("App::PropertyAngle", "Rotation", "BeamRotation", "Set the rotation of beam elements")
-        obj.addProperty("App::PropertyLinkSubList", "References", "BeamRotation", "List of beam rotation shapes")
-        obj.Proxy = self
-        self.Type = "Fem::FemElementRotation1D"
+        super(_FemElementRotation1D, self).__init__(obj)
 
-    def execute(self, obj):
-        return
+        obj.addProperty(
+            "App::PropertyAngle",
+            "Rotation",
+            "BeamRotation",
+            "Set the rotation of beam elements"
+        )
+
+        obj.addProperty(
+            "App::PropertyLinkSubList",
+            "References",
+            "BeamRotation",
+            "List of beam rotation shapes"
+        )

@@ -75,6 +75,8 @@ public:
 
     QModelIndex currentIndex() const;
 
+    void deleteSelection();
+
     PyObject *getPyObject(void);
 
     virtual void deleteSelf();
@@ -89,6 +91,7 @@ protected Q_SLOTS:
     void modelUpdated(const QModelIndex & topLeft, const QModelIndex & bottomRight);
 protected:
     void updateContentLine();
+    void updateAliasLine();
     void setCurrentCell(QString str);
     void keyPressEvent(QKeyEvent *event);
     void resizeColumn(int col, int newSize);
@@ -98,12 +101,12 @@ protected:
     Spreadsheet::Sheet * sheet;
     SpreadsheetDelegate * delegate;
     SheetModel * model;
-    boost::BOOST_SIGNALS_NAMESPACE::scoped_connection columnWidthChangedConnection;
-    boost::BOOST_SIGNALS_NAMESPACE::scoped_connection rowHeightChangedConnection;
-    boost::BOOST_SIGNALS_NAMESPACE::scoped_connection positionChangedConnection;
+    boost::signals2::scoped_connection columnWidthChangedConnection;
+    boost::signals2::scoped_connection rowHeightChangedConnection;
+    boost::signals2::scoped_connection positionChangedConnection;
 
-    QMap<int, int> newColumnSizes;
-    QMap<int, int> newRowSizes;
+    std::map<int, int> newColumnSizes;
+    std::map<int, int> newRowSizes;
 };
 
 } // namespace SpreadsheetModGui
