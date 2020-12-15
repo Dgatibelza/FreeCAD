@@ -28,9 +28,9 @@ types of objects it contains, helper for executing a simulation.
 """
 
 
-__title__ = "FEM analysis tools"
+__title__  = "FEM analysis tools"
 __author__ = "Markus Hovorka, Bernd Hahnebach"
-__url__ = "http://www.freecadweb.org"
+__url__    = "https://www.freecadweb.org"
 
 
 from . import femutils
@@ -142,7 +142,7 @@ def get_mesh_to_solve(analysis):
         if (
             m.isDerivedFrom("Fem::FemMeshObject")
             # the next line should not be needed as the result mesh is not a analysis member
-            and not femutils.is_of_type(m, "Fem::FemMeshResult")
+            and not femutils.is_of_type(m, "Fem::MeshResult")
         ):
             if not mesh_to_solve:
                 mesh_to_solve = m
@@ -238,9 +238,14 @@ class AnalysisMember():
         """
 
         # get member
+        # constants
+        self.cota_vacuumpermittivity = self.get_several_member(
+            "Fem::ConstantVacuumPermittivity"
+        )
+
         # materials
         std_mats = self.get_several_member(
-            "Fem::Material"
+            "Fem::MaterialCommon"
         )
         rei_mats = self.get_several_member(
             "Fem::MaterialReinforced"
@@ -289,6 +294,9 @@ class AnalysisMember():
         )
         self.cons_pressure = self.get_several_member(
             "Fem::ConstraintPressure"
+        )
+        self.cons_sectionprint = self.get_several_member(
+            "Fem::ConstraintSectionPrint"
         )
         self.cons_selfweight = self.get_several_member(
             "Fem::ConstraintSelfWeight"

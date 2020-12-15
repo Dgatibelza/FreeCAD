@@ -20,8 +20,7 @@ include_directories(
 if(MSVC)
     set(FreeCADBase_LIBS
         ${Boost_LIBRARIES}
-        debug ${XercesC_DEBUG_LIBRARIES}
-        optimized ${XercesC_LIBRARIES}
+        ${XercesC_LIBRARIES}
         ${ZLIB_LIBRARIES}
         debug MSVCRTD.LIB
         debug MSVCPRTD.LIB
@@ -202,6 +201,8 @@ SET(FreeCADBase_UNITAPI_SRCS
     UnitsSchemaCentimeters.cpp
     UnitsSchemaMmMin.h
     UnitsSchemaMmMin.cpp
+    UnitsSchemaFemMilliMeterNewton.h
+    UnitsSchemaFemMilliMeterNewton.cpp
     Quantity.h
     Quantity.cpp
     QuantityPyImp.cpp

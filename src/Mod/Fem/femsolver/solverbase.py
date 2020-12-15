@@ -22,9 +22,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__ = "FreeCAD FEM solver base object"
+__title__  = "FreeCAD FEM solver base object"
 __author__ = "Markus Hovorka"
-__url__ = "http://www.freecadweb.org"
+__url__    = "https://www.freecadweb.org"
 
 ## \addtogroup FEM
 #  @{
@@ -39,7 +39,7 @@ from femtools.errors import DirectoryDoesNotExistError
 if App.GuiUp:
     from PySide import QtGui
     import FreeCADGui as Gui
-    from femguiobjects import _TaskPanelFemSolverControl
+    from . import solver_taskpanel
 
 
 class Proxy(object):
@@ -105,7 +105,7 @@ class ViewProxy(object):
                 error_message
             )
             return False
-        task = _TaskPanelFemSolverControl.ControlTaskPanel(machine)
+        task = solver_taskpanel.ControlTaskPanel(machine)
         Gui.Control.showDialog(task)
         return True
 
@@ -115,7 +115,7 @@ class ViewProxy(object):
     def doubleClicked(self, vobj):
         if Gui.Control.activeDialog():
             Gui.Control.closeDialog()
-        Gui.ActiveDocument.setEdit(vobj.Object.Name)
+        vobj.Document.setEdit(vobj.Object.Name)
         return True
 
     def attach(self, vobj):

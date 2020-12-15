@@ -43,9 +43,9 @@ else:
 #  Rebars (or Reinforcing Bars) are metallic bars placed
 #  inside concrete structures to reinforce them.
 
-__title__="FreeCAD Rebar"
+__title__  = "FreeCAD Rebar"
 __author__ = "Yorik van Havre"
-__url__ = "http://www.freecadweb.org"
+__url__    = "https://www.freecadweb.org"
 
 
 def makeRebar(baseobj=None,sketch=None,diameter=None,amount=1,offset=None,name="Rebar"):
@@ -92,6 +92,7 @@ def makeRebar(baseobj=None,sketch=None,diameter=None,amount=1,offset=None,name="
     else:
         obj.OffsetStart = p.GetFloat("RebarOffset",30)
         obj.OffsetEnd = p.GetFloat("RebarOffset",30)
+    obj.Mark = obj.Label
     return obj
 
 
@@ -198,6 +199,13 @@ class _Rebar(ArchComponent.Component):
         if not "TotalLength" in pl:
             obj.addProperty("App::PropertyDistance", "TotalLength", "Rebar", QT_TRANSLATE_NOOP("App::Property","Total length of all rebars"))
             obj.setEditorMode("TotalLength", 1)
+        if not "Mark" in pl:
+            obj.addProperty(
+                "App::PropertyString",
+                "Mark",
+                "Rebar",
+                QT_TRANSLATE_NOOP("App::Property", "The rebar mark"),
+            )
         self.Type = "Rebar"
 
     def onDocumentRestored(self,obj):
@@ -271,7 +279,7 @@ class _Rebar(ArchComponent.Component):
                 baseoffset = DraftVecUtils.scaleTo(axis,obj.OffsetStart.Value)
             else:
                 baseoffset = None
-            if obj.ViewObject.RebarShape == "Stirrup":
+            if hasattr(obj, "RebarShape") and obj.RebarShape == "Stirrup":
                 interval = size - (obj.OffsetStart.Value + obj.OffsetEnd.Value + obj.Diameter.Value)
             else:
                 interval = size - (obj.OffsetStart.Value + obj.OffsetEnd.Value)
@@ -301,14 +309,40 @@ class _Rebar(ArchComponent.Component):
         if self.clone(obj):
             return
         if not obj.Base:
+            FreeCAD.Console.PrintError(
+                "No Base, return without a rebar shape for {}.\n"
+                .format(obj.Name)
+            )
             return
         if not obj.Base.Shape:
+            FreeCAD.Console.PrintError(
+                "No Shape in Base, return without a rebar shape for {}.\n"
+                .format(obj.Name)
+            )
             return
-        if not obj.Base.Shape.Wires:
+        if obj.Base.Shape.Faces:
+            FreeCAD.Console.PrintError(
+                "Faces in Shape of Base, return without a rebar shape for {}.\n"
+                .format(obj.Name)
+            )
+            return
+        if not obj.Base.Shape.Edges:
+            FreeCAD.Console.PrintError(
+                "No Edges in Shape of Base, return without a rebar shape for {}.\n"
+                .format(obj.Name)
+            )
             return
         if not obj.Diameter.Value:
+            FreeCAD.Console.PrintError(
+                "No Diameter Value, return without a rebar shape for {}.\n"
+                .format(obj.Name)
+            )
             return
         if not obj.Amount:
+            FreeCAD.Console.PrintError(
+                "No Amount, return without a rebar shape for {}.\n"
+                .format(obj.Name)
+            )
             return
         father = obj.Host
         fathershape = None
@@ -322,13 +356,22 @@ class _Rebar(ArchComponent.Component):
             if hasattr(father,'Shape'):
                 fathershape = father.Shape
 
-        wire = obj.Base.Shape.Wires[0]
+        import Part
+        # corner cases:
+        #    compound from more Wires
+        #    compound without Wires but with multiple Edges
+        # Does they make sense? If yes handle them.
+        # Does it makes sense to handle Shapes with Faces or even Solids?
+        if not obj.Base.Shape.Wires and len(obj.Base.Shape.Edges) == 1:
+            wire = Part.Wire(obj.Base.Shape.Edges[0])
+        else:
+            wire = obj.Base.Shape.Wires[0]
         if hasattr(obj,"Rounding"):
             #print(obj.Rounding)
             if obj.Rounding:
                 radius = obj.Rounding * obj.Diameter.Value
-                import DraftGeomUtils
-                wire = DraftGeomUtils.filletWire(wire,radius)
+                from DraftGeomUtils import filletWire
+                wire = filletWire(wire,radius)
         bpoint, bvec = self.getBaseAndAxis(wire)
         if not bpoint:
             return
@@ -362,7 +405,6 @@ class _Rebar(ArchComponent.Component):
             if length:
                 obj.Length = length
         pl = obj.Placement
-        import Part
         circle = Part.makeCircle(obj.Diameter.Value/2,bpoint,bvec)
         circle = Part.Wire(circle)
         try:
@@ -377,8 +419,8 @@ class _Rebar(ArchComponent.Component):
         self.wires = []
         rot = FreeCAD.Rotation()
         if obj.Amount == 1:
-            if obj.ViewObject:
-                barplacement = CalculatePlacement(obj.Amount, 1, obj.Diameter.Value, size, axis, rot, obj.OffsetStart.Value, obj.OffsetEnd.Value, obj.ViewObject.RebarShape)
+            if hasattr(obj, "RebarShape"):
+                barplacement = CalculatePlacement(obj.Amount, 1, obj.Diameter.Value, size, axis, rot, obj.OffsetStart.Value, obj.OffsetEnd.Value, obj.RebarShape)
             else:
                 barplacement = CalculatePlacement(obj.Amount, 1, obj.Diameter.Value, size, axis, rot, obj.OffsetStart.Value, obj.OffsetEnd.Value)
             placementlist.append(barplacement)
@@ -389,14 +431,14 @@ class _Rebar(ArchComponent.Component):
                 baseoffset = DraftVecUtils.scaleTo(axis,obj.OffsetStart.Value)
             else:
                 baseoffset = None
-            if obj.ViewObject and obj.ViewObject.RebarShape == "Stirrup":
+            if hasattr(obj, "RebarShape") and obj.RebarShape == "Stirrup":
                 interval = size - (obj.OffsetStart.Value + obj.OffsetEnd.Value + obj.Diameter.Value)
             else:
                 interval = size - (obj.OffsetStart.Value + obj.OffsetEnd.Value)
             interval = interval / (obj.Amount - 1)
             for i in range(obj.Amount):
-                if obj.ViewObject:
-                    barplacement = CalculatePlacement(obj.Amount, i+1, obj.Diameter.Value, size, axis, rot, obj.OffsetStart.Value, obj.OffsetEnd.Value, obj.ViewObject.RebarShape)
+                if hasattr(obj, "RebarShape"):
+                    barplacement = CalculatePlacement(obj.Amount, i+1, obj.Diameter.Value, size, axis, rot, obj.OffsetStart.Value, obj.OffsetEnd.Value, obj.RebarShape)
                 else:
                     barplacement = CalculatePlacement(obj.Amount, i+1, obj.Diameter.Value, size, axis, rot, obj.OffsetStart.Value, obj.OffsetEnd.Value)
                 placementlist.append(barplacement)
@@ -405,7 +447,7 @@ class _Rebar(ArchComponent.Component):
         # Calculate placement of bars from custom spacing.
         if spacinglist:
             placementlist[:] = []
-            if obj.ViewObject.RebarShape == "Stirrup":
+            if hasattr(obj, "RebarShape") and obj.RebarShape == "Stirrup":
                 reqInfluenceArea = size - (obj.OffsetStart.Value + obj.OffsetEnd.Value + obj.Diameter.Value)
             else:
                 reqInfluenceArea = size - (obj.OffsetStart.Value + obj.OffsetEnd.Value)
@@ -472,7 +514,15 @@ class _ViewProviderRebar(ArchComponent.ViewProviderComponent):
     def setEdit(self, vobj, mode):
 
         if mode == 0:
-            if vobj.RebarShape:
+            if hasattr(vobj.Object, "RebarShape"):
+                try:
+                    # Import module of RebarShape
+                    module = __import__(vobj.Object.RebarShape)
+                except ImportError:
+                    FreeCAD.Console.PrintError("Unable to import RebarShape module\n")
+                    return
+                module.editDialog(vobj)
+            elif vobj.RebarShape:
                 try:
                     # Import module of RebarShape
                     module = __import__(vobj.RebarShape)
@@ -612,6 +662,8 @@ def getLengthOfRebar(rebar):
         for geo in base.Geometry:
             length += geo.length()
         return length
+    elif base.isDerivedFrom("Part::Helix"):
+        return base.Shape.Wires[0].Length
     else:
         FreeCAD.Console.PrintError("Cannot calculate rebar length from its base object\n")
         return None

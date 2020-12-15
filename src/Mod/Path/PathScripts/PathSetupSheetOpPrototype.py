@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 # ***************************************************************************
-# *                                                                         *
 # *   Copyright (c) 2018 sliptonic <shopinthewoods@gmail.com>               *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
@@ -26,7 +24,7 @@ import PathScripts.PathLog as PathLog
 
 __title__ = "Setup Sheet for a Job."
 __author__ = "sliptonic (Brad Collette)"
-__url__ = "http://www.freecadweb.org"
+__url__ = "https://www.freecadweb.org"
 __doc__ = "Prototype objects to allow extraction of setup sheet values and editing."
 
 
@@ -142,6 +140,13 @@ class PropertyString(Property):
     def typeString(self):
         return "String"
 
+class PropertyMap(Property):
+    def typeString(self):
+        return "Map"
+
+    def displayString(self, value):
+        return str(value)
+
 class OpPrototype(object):
 
     PropertyType = {
@@ -149,6 +154,7 @@ class OpPrototype(object):
             'App::PropertyBool':                PropertyBool,
             'App::PropertyDistance':            PropertyDistance,
             'App::PropertyEnumeration':         PropertyEnumeration,
+            'App::PropertyFile':                PropertyString,
             'App::PropertyFloat':               PropertyFloat,
             'App::PropertyFloatConstraint':     Property,
             'App::PropertyFloatList':           Property,
@@ -158,6 +164,7 @@ class OpPrototype(object):
             'App::PropertyLink':                Property,
             'App::PropertyLinkList':            Property,
             'App::PropertyLinkSubListGlobal':   Property,
+            'App::PropertyMap':                 PropertyMap,
             'App::PropertyPercent':             PropertyPercent,
             'App::PropertyString':              PropertyString,
             'App::PropertyStringList':          Property,

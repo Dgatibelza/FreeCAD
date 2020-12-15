@@ -1,14 +1,24 @@
 /***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU Library General Public License as       *
- *   published by the Free Software Foundation; either version 2 of the    *
- *   License, or (at your option) any later version.                       *
- *   for detail see the LICENCE text file.                                 *
- *   Jürgen Riegel 2002                                                    *
+ *   Copyright (c) 2002 Jürgen Riegel <juergen.riegel@web.de>              *
  *   Copyright (c) 2014 Luke Parry <l.parry@warwick.ac.uk>                 *
  *                                                                         *
+ *   This library is free software; you can redistribute it and/or         *
+ *   modify it under the terms of the GNU Library General Public           *
+ *   License as published by the Free Software Foundation; either          *
+ *   version 2 of the License, or (at your option) any later version.      *
+ *                                                                         *
+ *   This library  is distributed in the hope that it will be useful,      *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU Library General Public License for more details.                  *
+ *                                                                         *
+ *   You should have received a copy of the GNU Library General Public     *
+ *   License along with this library; see the file COPYING.LIB. If not,    *
+ *   write to the Free Software Foundation, Inc., 59 Temple Place,         *
+ *   Suite 330, Boston, MA  02111-1307, USA                                *
+ *                                                                         *
  ***************************************************************************/
+
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
@@ -30,28 +40,30 @@
 
 #include <vector>
 
-#include <Base/Exception.h>
-#include <Base/Tools.h>
-#include <Base/PyObjectBase.h>
 #include <App/Application.h>
 #include <App/Document.h>
-#include <App/DocumentObject.h>
 #include <App/DocumentObjectGroup.h>
+#include <App/DocumentObject.h>
 #include <App/FeaturePython.h>
-#include <App/PropertyGeo.h>
 #include <App/GeoFeature.h>
+#include <App/Link.h>
+#include <App/PropertyGeo.h>
+#include <App/PropertyLinks.h>
 #include <Base/Console.h>
 #include <Base/Exception.h>
+#include <Base/Exception.h>
 #include <Base/Parameter.h>
+#include <Base/PyObjectBase.h>
+#include <Base/Tools.h>
 #include <Gui/Action.h>
 #include <Gui/Application.h>
 #include <Gui/BitmapFactory.h>
 #include <Gui/Command.h>
 #include <Gui/Control.h>
 #include <Gui/Document.h>
-#include <Gui/Selection.h>
-#include <Gui/MainWindow.h>
 #include <Gui/FileDialog.h>
+#include <Gui/MainWindow.h>
+#include <Gui/Selection.h>
 #include <Gui/ViewProvider.h>
 #include <Gui/WaitCursor.h>
 
@@ -75,15 +87,17 @@
 #include <Mod/TechDraw/Gui/QGVPage.h>
 
 #include "DrawGuiUtil.h"
+#include "PreferencesGui.h"
 #include "MDIViewPage.h"
 #include "TaskProjGroup.h"
 #include "TaskSectionView.h"
 #include "TaskActiveView.h"
+#include "TaskDetail.h"
 #include "ViewProviderPage.h"
 
 using namespace TechDrawGui;
+using namespace TechDraw;
 using namespace std;
-
 
 //===========================================================================
 // TechDraw_PageDefault
@@ -106,15 +120,8 @@ CmdTechDrawPageDefault::CmdTechDrawPageDefault()
 void CmdTechDrawPageDefault::activated(int iMsg)
 {
     Q_UNUSED(iMsg);
-    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
-        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/Files");
 
-    std::string defaultDir = App::Application::getResourceDir() + "Mod/TechDraw/Templates/";
-    std::string defaultFileName = defaultDir + "A4_LandscapeTD.svg";
-    QString templateFileName = QString::fromStdString(hGrp->GetASCII("TemplateFile",defaultFileName.c_str()));
-    if (templateFileName.isEmpty()) {
-        templateFileName = QString::fromStdString(defaultFileName);
-    }
+    QString templateFileName = Preferences::defaultTemplate();
 
     std::string PageName = getUniqueObjectName("Page");
     std::string TemplateName = getUniqueObjectName("Template");
@@ -122,7 +129,7 @@ void CmdTechDrawPageDefault::activated(int iMsg)
     QFileInfo tfi(templateFileName);
     if (tfi.isReadable()) {
         Gui::WaitCursor wc;
-        openCommand("Drawing create page");
+        openCommand(QT_TRANSLATE_NOOP("Command", "Drawing create page"));
         doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawPage','%s')",PageName.c_str());
         doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawSVGTemplate','%s')",TemplateName.c_str());
 
@@ -176,11 +183,7 @@ CmdTechDrawPageTemplate::CmdTechDrawPageTemplate()
 void CmdTechDrawPageTemplate::activated(int iMsg)
 {
     Q_UNUSED(iMsg);
-    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
-        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/Files");
-
-    std::string defaultDir = App::Application::getResourceDir() + "Mod/TechDraw/Templates";
-    QString templateDir = QString::fromStdString(hGrp->GetASCII("TemplateDir", defaultDir.c_str()));
+    QString templateDir = Preferences::defaultTemplateDir();
     QString templateFileName = Gui::FileDialog::getOpenFileName(Gui::getMainWindow(),
                                                    QString::fromUtf8(QT_TR_NOOP("Select a Template File")),
                                                    templateDir,
@@ -196,7 +199,7 @@ void CmdTechDrawPageTemplate::activated(int iMsg)
     QFileInfo tfi(templateFileName);
     if (tfi.isReadable()) {
         Gui::WaitCursor wc;
-        openCommand("Drawing create page");
+        openCommand(QT_TRANSLATE_NOOP("Command", "Drawing create page"));
         doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawPage','%s')",PageName.c_str());
 
         // Create the Template Object to attach to the page
@@ -303,6 +306,7 @@ void CmdTechDrawView::activated(int iMsg)
     //set projection direction from selected Face
     //use first object with a face selected
     std::vector<App::DocumentObject*> shapes;
+    std::vector<App::DocumentObject*> xShapes;
     App::DocumentObject* partObj = nullptr;
     std::string faceName;
     int resolve = 1;                                //mystery
@@ -316,40 +320,51 @@ void CmdTechDrawView::activated(int iMsg)
         if (obj->isDerivedFrom(TechDraw::DrawPage::getClassTypeId()) ) {
             continue;
         }
-        if (obj != nullptr) {                       //can this happen?
-            shapes.push_back(obj);
+        if ( obj->isDerivedFrom(App::LinkElement::getClassTypeId()) ||
+             obj->isDerivedFrom(App::LinkGroup::getClassTypeId())   ||
+             obj->isDerivedFrom(App::Link::getClassTypeId()) ) {
+            xShapes.push_back(obj);
+            continue;
         }
+        //not a Link and not null.  assume to be drawable.  Undrawables will be 
+        // skipped later.
+        shapes.push_back(obj);
         if(partObj != nullptr) {
             continue;
         }
+        //don't know if this works for an XLink
         for(auto& sub : sel.getSubNames()) {
             if (TechDraw::DrawUtil::getGeomTypeFromName(sub) == "Face") {
                 faceName = sub;
+                //
                 partObj = obj;
                 break;
             }
         }
     }
 
-    if ((shapes.empty())) {
+    if ( shapes.empty() &&
+         xShapes.empty() ) {
         QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("No Shapes or Groups in this selection"));
+            QObject::tr("No Shapes, Groups or Links in this selection"));
         return;
     }
 
     Base::Vector3d projDir;
 
     Gui::WaitCursor wc;
-    openCommand("Create view");
+    openCommand(QT_TRANSLATE_NOOP("Command", "Create view"));
     std::string FeatName = getUniqueObjectName("View");
     doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewPart','%s')",FeatName.c_str());
+    doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",PageName.c_str(),FeatName.c_str());
+
     App::DocumentObject *docObj = getDocument()->getObject(FeatName.c_str());
     TechDraw::DrawViewPart* dvp = dynamic_cast<TechDraw::DrawViewPart *>(docObj);
     if (!dvp) {
         throw Base::TypeError("CmdTechDrawView DVP not found\n");
     }
     dvp->Source.setValues(shapes);
-    doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",PageName.c_str(),FeatName.c_str());
+    dvp->XSource.setValues(xShapes);
     if (faceName.size()) {
         std::pair<Base::Vector3d,Base::Vector3d> dirs = DrawGuiUtil::getProjDirFromFace(partObj,faceName);
         projDir = dirs.first;
@@ -449,26 +464,6 @@ void CmdTechDrawSectionView::activated(int iMsg)
         return;
     }
     TechDraw::DrawViewPart* dvp = static_cast<TechDraw::DrawViewPart*>(*baseObj.begin());
-//    std::string BaseName = dvp->getNameInDocument();
-//    std::string PageName = page->getNameInDocument();
-//    double baseScale = dvp->getScale();
-
-//    Gui::WaitCursor wc;
-//    openCommand("Create view");
-//    std::string FeatName = getUniqueObjectName("Section");
-
-//    doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewSection','%s')",FeatName.c_str());
-
-//    App::DocumentObject *docObj = getDocument()->getObject(FeatName.c_str());
-//    TechDraw::DrawViewSection* dsv = dynamic_cast<TechDraw::DrawViewSection *>(docObj);
-//    if (!dsv) {
-//        throw Base::TypeError("CmdTechDrawSectionView DVS not found\n");
-//    }
-//    dsv->Source.setValues(dvp->Source.getValues());
-//    doCommand(Doc,"App.activeDocument().%s.BaseView = App.activeDocument().%s",FeatName.c_str(),BaseName.c_str());
-//    doCommand(Doc,"App.activeDocument().%s.ScaleType = App.activeDocument().%s.ScaleType",FeatName.c_str(),BaseName.c_str());
-//    doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",PageName.c_str(),FeatName.c_str());
-//    doCommand(Doc,"App.activeDocument().%s.Scale = %0.6f",FeatName.c_str(),baseScale);
     Gui::Control().showDialog(new TaskDlgSectionView(dvp));
 
     updateActive();             //ok here since dialog doesn't call doc.recompute()
@@ -512,7 +507,8 @@ void CmdTechDrawDetailView::activated(int iMsg)
         return;
     }
 
-    std::vector<App::DocumentObject*> baseObj = getSelection().getObjectsOfType(TechDraw::DrawViewPart::getClassTypeId());
+    std::vector<App::DocumentObject*> baseObj =  getSelection().
+                            getObjectsOfType(TechDraw::DrawViewPart::getClassTypeId());
     if (baseObj.empty()) {
         QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
             QObject::tr("Select at least 1 DrawViewPart object as Base."));
@@ -520,27 +516,7 @@ void CmdTechDrawDetailView::activated(int iMsg)
     }
     TechDraw::DrawViewPart* dvp = static_cast<TechDraw::DrawViewPart*>(*(baseObj.begin()));
 
-    std::string PageName = page->getNameInDocument();
-
-    Gui::WaitCursor wc;
-    openCommand("Create view");
-
-    std::string FeatName = getUniqueObjectName("Detail");
-    doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewDetail','%s')",FeatName.c_str());
-    App::DocumentObject *docObj = getDocument()->getObject(FeatName.c_str());
-    TechDraw::DrawViewDetail* dvd = dynamic_cast<TechDraw::DrawViewDetail *>(docObj);
-    if (!dvd) {
-        throw Base::TypeError("CmdTechDrawDetailView DVD not found\n");
-    }
-    dvd->Source.setValues(dvp->Source.getValues());
-
-    doCommand(Doc,"App.activeDocument().%s.BaseView = App.activeDocument().%s",FeatName.c_str(),dvp->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.Direction = App.activeDocument().%s.Direction",FeatName.c_str(),dvp->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.XDirection = App.activeDocument().%s.XDirection",FeatName.c_str(),dvp->getNameInDocument());
-    doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",PageName.c_str(),FeatName.c_str());
-
-    updateActive();            //ok here, no preceding recompute
-    commitCommand();
+    Gui::Control().showDialog(new TaskDlgDetail(dvp));
 }
 
 bool CmdTechDrawDetailView::isActive(void)
@@ -586,6 +562,7 @@ void CmdTechDrawProjectionGroup::activated(int iMsg)
     //set projection direction from selected Face
     //use first object with a face selected
     std::vector<App::DocumentObject*> shapes;
+    std::vector<App::DocumentObject*> xShapes;
     App::DocumentObject* partObj = nullptr;
     std::string faceName;
     int resolve = 1;                                //mystery
@@ -595,16 +572,19 @@ void CmdTechDrawProjectionGroup::activated(int iMsg)
                                                    resolve,
                                                    single);
     for (auto& sel: selection) {
-//    for(auto &sel : getSelection().getSelectionEx(0,App::DocumentObject::getClassTypeId(),false)) {
         auto obj = sel.getObject();
         if (obj->isDerivedFrom(TechDraw::DrawPage::getClassTypeId()) ) {
             continue;
         }
-//        if(!obj || inlist.count(obj))             //??????
-//            continue;
-        if (obj != nullptr) {                       //can this happen?
-            shapes.push_back(obj);
+        if ( obj->isDerivedFrom(App::LinkElement::getClassTypeId()) ||
+             obj->isDerivedFrom(App::LinkGroup::getClassTypeId())   ||
+             obj->isDerivedFrom(App::Link::getClassTypeId()) ) {
+            xShapes.push_back(obj);
+            continue;
         }
+        //not a Link and not null.  assume to be drawable.  Undrawables will be 
+        // skipped later.
+        shapes.push_back(obj);
         if(partObj != nullptr) {
             continue;
         }
@@ -616,16 +596,17 @@ void CmdTechDrawProjectionGroup::activated(int iMsg)
             }
         }
     }
-    if (shapes.empty()) {
+    if ( shapes.empty() &&
+         xShapes.empty() ) {
         QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("No Shapes or Groups in this selection"));
+            QObject::tr("No Shapes, Groups or Links in this selection"));
         return;
     }
 
     Base::Vector3d projDir;
     Gui::WaitCursor wc;
 
-    openCommand("Create Projection Group");
+    openCommand(QT_TRANSLATE_NOOP("Command", "Create Projection Group"));
 
     std::string multiViewName = getUniqueObjectName("ProjGroup");
     doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawProjGroup','%s')",
@@ -636,6 +617,7 @@ void CmdTechDrawProjectionGroup::activated(int iMsg)
     App::DocumentObject *docObj = getDocument()->getObject(multiViewName.c_str());
     auto multiView( static_cast<TechDraw::DrawProjGroup *>(docObj) );
     multiView->Source.setValues(shapes);
+    multiView->XSource.setValues(xShapes);
     doCommand(Doc,"App.activeDocument().%s.addProjection('Front')",multiViewName.c_str());
 
     if (faceName.size()) {
@@ -715,7 +697,7 @@ bool CmdTechDrawProjectionGroup::isActive(void)
 
 //    Gui::WaitCursor wc;
 
-//    openCommand("Create view");
+//    openCommand(QT_TRANSLATE_NOOP("Command", "Create view"));
 //    std::string FeatName = getUniqueObjectName("MultiView");
 //    doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewMulti','%s')",FeatName.c_str());
 //    App::DocumentObject *docObj = getDocument()->getObject(FeatName.c_str());
@@ -830,7 +812,7 @@ CmdTechDrawClipGroup::CmdTechDrawClipGroup()
     // setting the
     sGroup        = QT_TR_NOOP("TechDraw");
     sMenuText     = QT_TR_NOOP("Insert Clip Group");
-    sToolTipText  = sToolTipText;
+    sToolTipText  = sMenuText;
     sWhatsThis    = "TechDraw_ClipGroup";
     sStatusTip    = sToolTipText;
     sPixmap       = "actions/techdraw-ClipGroup";
@@ -846,7 +828,7 @@ void CmdTechDrawClipGroup::activated(int iMsg)
     std::string PageName = page->getNameInDocument();
 
     std::string FeatName = getUniqueObjectName("Clip");
-    openCommand("Create Clip");
+    openCommand(QT_TRANSLATE_NOOP("Command", "Create Clip"));
     doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewClip','%s')",FeatName.c_str());
     doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",PageName.c_str(),FeatName.c_str());
     updateActive();
@@ -919,7 +901,7 @@ void CmdTechDrawClipGroupAdd::activated(int iMsg)
     std::string ClipName = clip->getNameInDocument();
     std::string ViewName = view->getNameInDocument();
 
-    openCommand("ClipGroupAdd");
+    openCommand(QT_TRANSLATE_NOOP("Command", "ClipGroupAdd"));
     doCommand(Doc,"App.activeDocument().%s.ViewObject.Visibility = False",ViewName.c_str());
     doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",ClipName.c_str(),ViewName.c_str());
     doCommand(Doc,"App.activeDocument().%s.ViewObject.Visibility = True",ViewName.c_str());
@@ -992,7 +974,7 @@ void CmdTechDrawClipGroupRemove::activated(int iMsg)
     std::string ClipName = clip->getNameInDocument();
     std::string ViewName = view->getNameInDocument();
 
-    openCommand("ClipGroupRemove");
+    openCommand(QT_TRANSLATE_NOOP("Command", "ClipGroupRemove"));
     doCommand(Doc,"App.activeDocument().%s.ViewObject.Visibility = False",ViewName.c_str());
     doCommand(Doc,"App.activeDocument().%s.removeView(App.activeDocument().%s)",ClipName.c_str(),ViewName.c_str());
     doCommand(Doc,"App.activeDocument().%s.ViewObject.Visibility = True",ViewName.c_str());
@@ -1027,7 +1009,7 @@ CmdTechDrawSymbol::CmdTechDrawSymbol()
     // setting the Gui eye-candy
     sGroup        = QT_TR_NOOP("TechDraw");
     sMenuText     = QT_TR_NOOP("Insert SVG Symbol");
-    sToolTipText  = QT_TR_NOOP("Insert symbol from a SVG file");
+    sToolTipText  = QT_TR_NOOP("Insert symbol from an SVG file");
     sWhatsThis    = "TechDraw_Symbol";
     sStatusTip    = sToolTipText;
     sPixmap       = "actions/techdraw-symbol";
@@ -1043,13 +1025,17 @@ void CmdTechDrawSymbol::activated(int iMsg)
     std::string PageName = page->getNameInDocument();
 
     // Reading an image
-    QString filename = Gui::FileDialog::getOpenFileName(Gui::getMainWindow(), QObject::tr("Choose an SVG file to open"), QString::null,
-        QString::fromLatin1("%1 (*.svg *.svgz)").arg(QObject::tr("Scalable Vector Graphic")));
+    QString filename = Gui::FileDialog::getOpenFileName(Gui::getMainWindow(), 
+        QObject::tr("Choose an SVG file to open"), QString(),
+        QString::fromLatin1("%1 (*.svg *.svgz);;%2 (*.*)").
+        arg(QObject::tr("Scalable Vector Graphic")).
+        arg(QObject::tr("All Files")));
+
     if (!filename.isEmpty())
     {
         std::string FeatName = getUniqueObjectName("Symbol");
         filename = Base::Tools::escapeEncodeFilename(filename);
-        openCommand("Create Symbol");
+        openCommand(QT_TRANSLATE_NOOP("Command", "Create Symbol"));
 #if PY_MAJOR_VERSION < 3
         doCommand(Doc,"f = open(unicode(\"%s\",'utf-8'),'r')",(const char*)filename.toUtf8());
 #else
@@ -1095,26 +1081,39 @@ void CmdTechDrawDraftView::activated(int iMsg)
     if (!page) {
         return;
     }
+    std::string PageName = page->getNameInDocument();
 
-//TODO: shouldn't this be checking for a Draft object only?
-//      there is no obvious way of check for a Draft object.  Could be App::FeaturePython, Part::Part2DObject, ???
-    std::vector<App::DocumentObject*> objects = getSelection().getObjectsOfType(App::DocumentObject::getClassTypeId());
+    std::vector<App::DocumentObject*> objects = getSelection().
+                                            getObjectsOfType(App::DocumentObject::getClassTypeId());
+
     if (objects.empty()) {
         QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
             QObject::tr("Select at least one object."));
         return;
     }
-    std::string PageName = page->getNameInDocument();
 
+    std::pair<Base::Vector3d,Base::Vector3d> dirs = DrawGuiUtil::get3DDirAndRot();
+    int draftItemsFound = 0;
     for (std::vector<App::DocumentObject*>::iterator it = objects.begin(); it != objects.end(); ++it) {
-        std::string FeatName = getUniqueObjectName("DraftView");
-        std::string SourceName = (*it)->getNameInDocument();
-        openCommand("Create DraftView");
-        doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewDraft','%s')",FeatName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.Source = App.activeDocument().%s",FeatName.c_str(),SourceName.c_str());
-        doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",PageName.c_str(),FeatName.c_str());
-        updateActive();
-        commitCommand();
+        if (DrawGuiUtil::isDraftObject((*it)))  {
+            draftItemsFound++;
+            std::string FeatName = getUniqueObjectName("DraftView");
+            std::string SourceName = (*it)->getNameInDocument();
+            openCommand(QT_TRANSLATE_NOOP("Command", "Create DraftView"));
+            doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewDraft','%s')",FeatName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.Source = App.activeDocument().%s",
+                            FeatName.c_str(),SourceName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",
+                            PageName.c_str(),FeatName.c_str());
+            doCommand(Doc,"App.activeDocument().%s.Direction = FreeCAD.Vector(%.3f,%.3f,%.3f)",
+                          FeatName.c_str(), dirs.first.x, dirs.first.y, dirs.first.z);
+            updateActive();
+            commitCommand();
+        }
+    }
+    if (draftItemsFound == 0) { 
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+            QObject::tr("There were no DraftWB objects in the selection."));
     }
 }
 
@@ -1147,57 +1146,35 @@ void CmdTechDrawArchView::activated(int iMsg)
     TechDraw::DrawPage* page = DrawGuiUtil::findPage(this);
     if (!page) {
         return;
-    }
-
-    const std::vector<App::DocumentObject*> objects = getSelection().getObjectsOfType(App::DocumentObject::getClassTypeId());
-    if (objects.size() != 1) {
-        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("Select exactly one object."));
-        return;
-    }
-    //if the docObj doesn't have a Proxy property, it definitely isn't an ArchSection
-    App::DocumentObject* frontObj = objects.front();
-    App::Property* proxy = frontObj->getPropertyByName("Proxy");
-    if (proxy == nullptr) {
-        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("Selected object is not ArchSection."));
-        return;
-    }
-    App::PropertyPythonObject* proxyPy = dynamic_cast<App::PropertyPythonObject*>(proxy);
-    Py::Object proxyObj = proxyPy->getValue();
-    std::stringstream ss;
-    bool proceed = false;
-    if (proxyPy != nullptr) {
-        Base::PyGILStateLocker lock;
-        try {
-            if (proxyObj.hasAttr("__module__")) {
-                Py::String mod(proxyObj.getAttr("__module__"));
-                ss <<  (std::string)mod; 
-            }
-            if (ss.str() == "ArchSectionPlane") {
-                proceed = true;
-            }
-        }
-        catch (Py::Exception&) {
-            Base::PyException e; // extract the Python error text
-            e.ReportException();
-            proceed = false;
-        }
-    } else {
-        proceed = false;
-    }
-    
-    if (!proceed) {
-        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
-            QObject::tr("Selected object is not ArchSection."));
-        return;
-    }
-
+   }
     std::string PageName = page->getNameInDocument();
 
+
+    const std::vector<App::DocumentObject*> objects =  getSelection().
+                                                       getObjectsOfType(App::DocumentObject::getClassTypeId());
+    App::DocumentObject* archObject = nullptr;
+    int archCount = 0;
+    for (auto& obj : objects) {
+        if (DrawGuiUtil::isArchSection(obj) ) {
+            archCount++;
+            archObject = obj;
+        }
+    }
+    if ( archCount > 1 ) {
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+            QObject::tr("Please select only 1 Arch Section."));
+        return;
+    }
+
+    if (archObject == nullptr) {
+        QMessageBox::warning(Gui::getMainWindow(), QObject::tr("Wrong selection"),
+            QObject::tr("No Arch Sections in selection."));
+        return;
+    }
+
     std::string FeatName = getUniqueObjectName("ArchView");
-    std::string SourceName = objects.front()->getNameInDocument();
-    openCommand("Create ArchView");
+    std::string SourceName = archObject->getNameInDocument();
+    openCommand(QT_TRANSLATE_NOOP("Command", "Create ArchView"));
     doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewArch','%s')",FeatName.c_str());
     doCommand(Doc,"App.activeDocument().%s.Source = App.activeDocument().%s",FeatName.c_str(),SourceName.c_str());
     doCommand(Doc,"App.activeDocument().%s.addView(App.activeDocument().%s)",PageName.c_str(),FeatName.c_str());
@@ -1245,7 +1222,7 @@ void CmdTechDrawSpreadsheetView::activated(int iMsg)
     }
     std::string PageName = page->getNameInDocument();
 
-    openCommand("Create spreadsheet view");
+    openCommand(QT_TRANSLATE_NOOP("Command", "Create spreadsheet view"));
     std::string FeatName = getUniqueObjectName("Sheet");
     doCommand(Doc,"App.activeDocument().addObject('TechDraw::DrawViewSpreadsheet','%s')",FeatName.c_str());
     doCommand(Doc,"App.activeDocument().%s.Source = App.activeDocument().%s",FeatName.c_str(),SpreadName.c_str());
@@ -1366,7 +1343,7 @@ void CmdTechDrawExportPageDXF::activated(int iMsg)
     }
 
     std::string PageName = page->getNameInDocument();
-    openCommand("Save page to dxf");
+    openCommand(QT_TRANSLATE_NOOP("Command", "Save page to dxf"));
     doCommand(Doc,"import TechDraw");
     fileName = Base::Tools::escapeEncodeFilename(fileName);
     doCommand(Doc,"TechDraw.writeDXFPage(App.activeDocument().%s,u\"%s\")",PageName.c_str(),(const char*)fileName.toUtf8());

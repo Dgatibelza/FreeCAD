@@ -230,7 +230,7 @@ def buildCard(filename,method,arg=None):
 
     result = encode("")
     if os.path.exists(filename) and isOpenableByFreeCAD(filename):
-        basename = os.path.basename(filename)
+        basename = encode(os.path.basename(filename))
         if not arg:
             arg = basename
         finfo = getInfo(filename)
@@ -299,9 +299,32 @@ def handle():
     if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Start").GetBool("UseStyleSheet",False):
         qssfile = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/MainWindow").GetString("StyleSheet","")
         if qssfile:
-            with open(qssfile, 'r') as f:
-                ALTCSS = encode(f.read())
-            HTML = HTML.replace("<!--QSS-->","<style type=\"text/css\">"+ALTCSS+"</style>")
+            # Search for stylesheet in user, system and resources locations
+            user = os.path.join(FreeCAD.getUserAppDataDir(), "Gui", "Stylesheets")
+            system = os.path.join(FreeCAD.getResourceDir(), "Gui", "Stylesheets")
+            resources = ":/stylesheets"
+
+            res = False
+            if QtCore.QFile.exists(os.path.join(user, qssfile)):
+                path = os.path.join(user, qssfile)
+            elif QtCore.QFile.exists(os.path.join(system, qssfile)):
+                path = os.path.join(system, qssfile)
+            elif QtCore.QFile.exists(os.path.join(resources, qssfile)):
+                res = True
+                path = os.path.join(resources, qssfile)
+            else:
+                path = None
+
+            if path:
+                if res:
+                    f = QtCore.QFile(path)
+                    if f.open(QtCore.QIODevice.ReadOnly | QtCore.QFile.Text):
+                        ALTCSS = encode(QtCore.QTextStream(f).readAll())
+                        HTML = HTML.replace("<!--QSS-->","<style type=\"text/css\">"+ALTCSS+"</style>")
+                else:
+                    with open(path, 'r') as f:
+                        ALTCSS = encode(f.read())
+                        HTML = HTML.replace("<!--QSS-->","<style type=\"text/css\">"+ALTCSS+"</style>")
 
     # turn tips off if needed
 
@@ -379,18 +402,21 @@ def handle():
     # build SECTION_CUSTOM
 
     SECTION_CUSTOM = encode("")
-    cfolder = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Start").GetString("ShowCustomFolder","")
-    if cfolder:
-        if not os.path.isdir(cfolder):
-            cfolder = os.path.dirname(cfolder)
-        SECTION_CUSTOM = encode("<h2>"+os.path.basename(os.path.normpath(cfolder))+"</h2>")
-        SECTION_CUSTOM += "<ul>"
-        for basename in os.listdir(cfolder):
-            filename = os.path.join(cfolder,basename)
-            SECTION_CUSTOM += encode(buildCard(filename,method="LoadCustom.py?filename="))
-        SECTION_CUSTOM += "</ul>"
-        # hide the custom section tooltip if custom section is set (users know about it if they enabled it)
-        HTML = HTML.replace("id=\"customtip\"","id=\"customtip\" style=\"display:none;\"")
+    cfolders = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Start").GetString("ShowCustomFolder","")
+    if cfolders:
+        dn = 0
+        for cfolder in cfolders.split(";;"): # allow several paths separated by ;;
+            if not os.path.isdir(cfolder):
+                cfolder = os.path.dirname(cfolder)
+            SECTION_CUSTOM += encode("<h2>"+os.path.basename(os.path.normpath(cfolder))+"</h2>")
+            SECTION_CUSTOM += "<ul>"
+            for basename in os.listdir(cfolder):
+                filename = os.path.join(cfolder,basename)
+                SECTION_CUSTOM += encode(buildCard(filename,method="LoadCustom.py?filename="+str(dn)+"_"))
+            SECTION_CUSTOM += "</ul>"
+            # hide the custom section tooltip if custom section is set (users know about it if they enabled it)
+            HTML = HTML.replace("id=\"customtip\"","id=\"customtip\" style=\"display:none;\"")
+            dn += 1
     HTML = HTML.replace("SECTION_CUSTOM",SECTION_CUSTOM)
 
     # build IMAGE_SRC paths

@@ -20,9 +20,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__ = "Tools for the work with Gmsh mesher"
+__title__  = "Tools for the work with Gmsh mesher"
 __author__ = "Bernd Hahnebach"
-__url__ = "http://www.freecadweb.org"
+__url__    = "https://www.freecadweb.org"
 
 ## \addtogroup FEM
 #  @{
@@ -37,6 +37,7 @@ from FreeCAD import Units
 import Fem
 from . import meshtools
 from femtools import femutils
+from femtools import geomtools
 
 
 class GmshTools():
@@ -337,7 +338,10 @@ class GmshTools():
             "User parameter:BaseApp/Preferences/Mod/Fem/General"
         ).GetBool("AnalysisGroupMeshing", False)
         if self.analysis and analysis_group_meshing:
-            Console.PrintMessage("  Group meshing for analysis.\n")
+            Console.PrintWarning(
+                "  Group meshing for analysis is set to true in FEM General Preferences. "
+                "Are you really sure about this? You could run into trouble!\n"
+            )
             self.group_nodes_export = True
             new_group_elements = meshtools.get_analysis_group_elements(
                 self.analysis,
@@ -413,8 +417,8 @@ class GmshTools():
                                     # Shape to mesh and use the found element as elems
                                     # the method getElement(element)
                                     # does not return Solid elements
-                                    ele_shape = meshtools.get_element(sub[0], elems)
-                                    found_element = meshtools.find_element_in_shape(
+                                    ele_shape = geomtools.get_element(sub[0], elems)
+                                    found_element = geomtools.find_element_in_shape(
                                         self.part_obj.Shape, ele_shape
                                     )
                                     if found_element:
@@ -450,8 +454,8 @@ class GmshTools():
                     )
             for eleml in self.ele_length_map:
                 # the method getElement(element) does not return Solid elements
-                ele_shape = meshtools.get_element(self.part_obj, eleml)
-                ele_vertexes = meshtools.get_vertexes_by_element(self.part_obj.Shape, ele_shape)
+                ele_shape = geomtools.get_element(self.part_obj, eleml)
+                ele_vertexes = geomtools.get_vertexes_by_element(self.part_obj.Shape, ele_shape)
                 self.ele_node_map[eleml] = ele_vertexes
             Console.PrintMessage("  {}\n".format(self.ele_length_map))
             Console.PrintMessage("  {}\n".format(self.ele_node_map))
@@ -501,8 +505,8 @@ class GmshTools():
                                     # we try to find the element it in the Shape to mesh
                                     # and use the found element as elems
                                     # the method getElement(element) does not return Solid elements
-                                    ele_shape = meshtools.get_element(sub[0], elems)
-                                    found_element = meshtools.find_element_in_shape(
+                                    ele_shape = geomtools.get_element(sub[0], elems)
+                                    found_element = geomtools.find_element_in_shape(
                                         self.part_obj.Shape,
                                         ele_shape
                                     )
@@ -827,7 +831,7 @@ class GmshTools():
             # but the warnings are in stderr and thus printed :-)
             # print(output)
             # print(error)
-        except:
+        except Exception:
             error = "Error executing: {}\n".format(" ".join(comandlist))
             Console.PrintError(error)
             self.error = True

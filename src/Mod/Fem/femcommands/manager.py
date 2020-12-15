@@ -1,6 +1,8 @@
 # ***************************************************************************
-# *   Copyright (c) 2015 FreeCAD Developers                                 *
 # *   Copyright (c) 2015 Przemo Fiszt <przemo@firszt.eu>                    *
+# *   Copyright (c) 2016 Bernd Hahnebach <bernd@bimstatik.org>              *
+# *                                                                         *
+# *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
 # *   it under the terms of the GNU Lesser General Public License (LGPL)    *
@@ -20,12 +22,13 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__ = "Fem Commands"
-__author__ = "Przemo Firszt"
-__url__ = "http://www.freecadweb.org"
+__title__  = "FreeCAD FEM command base class"
+__author__ = "Przemo Firszt, Bernd Hahnebach"
+__url__    = "https://www.freecadweb.org"
 
-## \addtogroup FEM
-#  @{
+## @package manager
+#  \ingroup FEM
+#  \brief FreeCAD FEM command base class
 
 import FreeCAD
 
@@ -84,8 +87,8 @@ class CommandManager(object):
             )
         elif self.is_active == "with_selresult":
             active = (
-                FemGui.getActiveAnalysis() is not None
-                and self.active_analysis_in_active_doc()
+                # on import of Frd file in a empty document not Analysis will be there
+                FreeCADGui.ActiveDocument is not None
                 and self.result_selected()
             )
         elif self.is_active == "with_part_feature":
@@ -163,17 +166,15 @@ class CommandManager(object):
         result_mesh = False
         analysis_members = FemGui.getActiveAnalysis().Group
         for o in analysis_members:
-            if is_of_type(o, "Fem::FemMeshResult"):
+            if is_of_type(o, "Fem::MeshResult"):
                 result_mesh = True
         return result_mesh
 
     def result_selected(self):
         sel = FreeCADGui.Selection.getSelection()
         if len(sel) == 1 and sel[0].isDerivedFrom("Fem::FemResultObject"):
-            for o in FemGui.getActiveAnalysis().Group:
-                if o == sel[0]:
-                    self.selobj = o
-                    return True
+            self.selobj = sel[0]
+            return True
         return False
 
     def part_feature_selected(self):
@@ -263,7 +264,7 @@ class CommandManager(object):
 
     def solver_elmer_selected(self):
         sel = FreeCADGui.Selection.getSelection()
-        if len(sel) == 1 and is_of_type(sel[0], "Fem::FemSolverObjectElmer"):
+        if len(sel) == 1 and is_of_type(sel[0], "Fem::SolverElmer"):
             self.selobj = sel[0]
             return True
         else:
@@ -301,6 +302,9 @@ class CommandManager(object):
         FreeCADGui.addModule(
             "ObjectsFem"
         )
+        FreeCADGui.addModule(
+            "FemGui"
+        )
         FreeCADGui.doCommand(
             "FemGui.getActiveAnalysis().addObject(ObjectsFem."
             "make{}(FreeCAD.ActiveDocument))"
@@ -320,6 +324,9 @@ class CommandManager(object):
         )
         FreeCADGui.addModule(
             "ObjectsFem"
+        )
+        FreeCADGui.addModule(
+            "FemGui"
         )
         FreeCADGui.doCommand(
             "FemGui.getActiveAnalysis().addObject(ObjectsFem."
@@ -364,6 +371,3 @@ class CommandManager(object):
         )
         FreeCADGui.Selection.clearSelection()
         FreeCAD.ActiveDocument.recompute()
-
-
-##  @}

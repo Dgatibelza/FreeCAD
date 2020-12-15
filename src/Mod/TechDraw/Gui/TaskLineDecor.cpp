@@ -69,10 +69,10 @@ TaskLineDecor::TaskLineDecor(TechDraw::DrawViewPart* partFeat,
     getDefaults();
     ui->setupUi(this);
 
-    connect(ui->cb_Style, SIGNAL(currentIndexChanged( int )), this, SLOT(onStyleChanged(void)));
-    connect(ui->cc_Color, SIGNAL(changed(  )), this, SLOT(onColorChanged(void)));
-    connect(ui->dsb_Weight, SIGNAL(valueChanged( double  )), this, SLOT(onWeightChanged( void )));
-    connect(ui->cb_Visible, SIGNAL(currentIndexChanged( int )), this, SLOT(onVisibleChanged( void )));
+    connect(ui->cb_Style, SIGNAL(currentIndexChanged(int)), this, SLOT(onStyleChanged(void)));
+    connect(ui->cc_Color, SIGNAL(changed()), this, SLOT(onColorChanged(void)));
+    connect(ui->dsb_Weight, SIGNAL(valueChanged(double)), this, SLOT(onWeightChanged(void)));
+    connect(ui->cb_Visible, SIGNAL(currentIndexChanged(int)), this, SLOT(onVisibleChanged(void)));
 
     initUi();
 }
@@ -101,6 +101,7 @@ void TaskLineDecor::initUi()
     ui->cb_Style->setCurrentIndex(m_style - 1);          //combobox does not have 0:NoLine choice
     ui->cc_Color->setColor(m_color.asValue<QColor>());
     ui->dsb_Weight->setValue(m_weight);
+    ui->dsb_Weight->setSingleStep(0.1);
     ui->cb_Visible->setCurrentIndex(m_visible);
 }
 
@@ -142,7 +143,7 @@ void TaskLineDecor::getDefaults(void)
                 } else {
                     Gui::ViewProvider* vp = QGIView::getViewProvider(m_partFeat);
                     auto partVP = dynamic_cast<ViewProviderViewPart*>(vp);
-                    if ( vp != nullptr ) {
+                    if ( partVP != nullptr ) {
                         m_weight = partVP->LineWidth.getValue();
                         m_style = Qt::SolidLine;                  // = 1
                         m_color = LineFormat::getDefEdgeColor();
@@ -157,25 +158,29 @@ void TaskLineDecor::getDefaults(void)
 void TaskLineDecor::onStyleChanged(void)
 {
     m_style = ui->cb_Style->currentIndex() + 1;
-    //livePreview(); 
+    applyDecorations();
+    m_partFeat->requestPaint();
 }
 
 void TaskLineDecor::onColorChanged(void)
 {
     m_color.setValue<QColor>(ui->cc_Color->color());
-    //livePreview(); 
+    applyDecorations();
+    m_partFeat->requestPaint();
 }
 
 void TaskLineDecor::onWeightChanged(void)
 {
-    m_weight = ui->dsb_Weight->value();
-    //livePreview();
+    m_weight = ui->dsb_Weight->value().getValue();
+    applyDecorations();
+    m_partFeat->requestPaint();
 }
 
 void TaskLineDecor::onVisibleChanged(void)
 {
     m_visible = ui->cb_Visible->currentIndex();
-    //livePreview();
+    applyDecorations();
+    m_partFeat->requestPaint();
 }
 
 void TaskLineDecor::applyDecorations(void)

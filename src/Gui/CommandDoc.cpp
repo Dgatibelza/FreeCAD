@@ -179,7 +179,7 @@ StdCmdImport::StdCmdImport()
     sToolTipText  = QT_TR_NOOP("Import a file in the active document");
     sWhatsThis    = "Std_Import";
     sStatusTip    = QT_TR_NOOP("Import a file in the active document");
-    //sPixmap       = "Open";
+    sPixmap       = "Std_Import";
     sAccel        = "Ctrl+I";
 }
 
@@ -267,6 +267,7 @@ StdCmdExport::StdCmdExport()
     sStatusTip    = QT_TR_NOOP("Export an object in the active document");
     //sPixmap       = "Open";
     sAccel        = "Ctrl+E";
+    sPixmap       = "Std_Export";
     eType         = 0;
 }
 
@@ -331,6 +332,7 @@ StdCmdMergeProjects::StdCmdMergeProjects()
     sToolTipText  = QT_TR_NOOP("Merge project");
     sWhatsThis    = "Std_MergeProjects";
     sStatusTip    = QT_TR_NOOP("Merge project");
+    sPixmap       = "Std_MergeProjects";
 }
 
 void StdCmdMergeProjects::activated(int iMsg)
@@ -369,33 +371,34 @@ bool StdCmdMergeProjects::isActive(void)
 }
 
 //===========================================================================
-// Std_ExportGraphviz
+// Std_DependencyGraph
 //===========================================================================
 
-DEF_STD_CMD_A(StdCmdExportGraphviz)
+DEF_STD_CMD_A(StdCmdDependencyGraph)
 
-StdCmdExportGraphviz::StdCmdExportGraphviz()
-  : Command("Std_ExportGraphviz")
+StdCmdDependencyGraph::StdCmdDependencyGraph()
+  : Command("Std_DependencyGraph")
 {
     // setting the
     sGroup        = QT_TR_NOOP("Tools");
     sMenuText     = QT_TR_NOOP("Dependency graph...");
     sToolTipText  = QT_TR_NOOP("Show the dependency graph of the objects in the active document");
     sStatusTip    = QT_TR_NOOP("Show the dependency graph of the objects in the active document");
-    sWhatsThis    = "Std_ExportGraphviz";
+    sWhatsThis    = "Std_DependencyGraph";
     eType         = 0;
+    sPixmap       = "Std_DependencyGraph";
 }
 
-void StdCmdExportGraphviz::activated(int iMsg)
+void StdCmdDependencyGraph::activated(int iMsg)
 {
     Q_UNUSED(iMsg);
     App::Document* doc = App::GetApplication().getActiveDocument();
     Gui::GraphvizView* view = new Gui::GraphvizView(*doc);
-    view->setWindowTitle(qApp->translate("Std_ExportGraphviz","Dependency graph"));
+    view->setWindowTitle(qApp->translate("Std_DependencyGraph","Dependency graph"));
     getMainWindow()->addWindow(view);
 }
 
-bool StdCmdExportGraphviz::isActive(void)
+bool StdCmdDependencyGraph::isActive(void)
 {
     return (getActiveGuiDocument() ? true : false);
 }
@@ -527,7 +530,7 @@ StdCmdSaveCopy::StdCmdSaveCopy()
   sToolTipText  = QT_TR_NOOP("Save a copy of the active document under a new file name");
   sWhatsThis    = "Std_SaveCopy";
   sStatusTip    = QT_TR_NOOP("Save a copy of the active document under a new file name");
-  //sPixmap       = "document-save-as";
+  sPixmap       = "Std_SaveCopy";
 }
 
 void StdCmdSaveCopy::activated(int iMsg)
@@ -560,11 +563,12 @@ StdCmdSaveAll::StdCmdSaveAll()
   sToolTipText  = QT_TR_NOOP("Save all opened document");
   sWhatsThis    = "Std_SaveAll";
   sStatusTip    = QT_TR_NOOP("Save all opened document");
+  sPixmap       = "Std_SaveAll";
 }
 
 void StdCmdSaveAll::activated(int iMsg)
 {
-    Q_UNUSED(iMsg); 
+    Q_UNUSED(iMsg);
     Gui::Document::saveAll();
 }
 
@@ -587,7 +591,7 @@ StdCmdRevert::StdCmdRevert()
     sToolTipText  = QT_TR_NOOP("Reverts to the saved version of this file");
     sWhatsThis    = "Std_Revert";
     sStatusTip    = QT_TR_NOOP("Reverts to the saved version of this file");
-  //sPixmap       = "document-revert";
+    sPixmap       = "Std_Revert";
     eType         = NoTransaction;
 }
 
@@ -658,6 +662,7 @@ StdCmdProjectUtil::StdCmdProjectUtil()
     sMenuText     = QT_TR_NOOP("Project utility...");
     sToolTipText  = QT_TR_NOOP("Utility to extract or create project files");
     sStatusTip    = QT_TR_NOOP("Utility to extract or create project files");
+    sPixmap       = "Std_ProjectUtil";
 }
 
 void StdCmdProjectUtil::activated(int iMsg)
@@ -687,6 +692,7 @@ StdCmdPrint::StdCmdPrint()
     sStatusTip    = QT_TR_NOOP("Print the document");
     sPixmap       = "document-print";
     sAccel        = keySequenceToAccel(QKeySequence::Print);
+    eType         = 0;
 }
 
 void StdCmdPrint::activated(int iMsg)
@@ -717,6 +723,7 @@ StdCmdPrintPreview::StdCmdPrintPreview()
     sWhatsThis    = "Std_PrintPreview";
     sStatusTip    = QT_TR_NOOP("Print preview");
     sPixmap       = "document-print-preview";
+    eType         = 0;
 }
 
 void StdCmdPrintPreview::activated(int iMsg)
@@ -745,6 +752,8 @@ StdCmdPrintPdf::StdCmdPrintPdf()
     sToolTipText  = QT_TR_NOOP("Export the document as PDF");
     sWhatsThis    = "Std_PrintPdf";
     sStatusTip    = QT_TR_NOOP("Export the document as PDF");
+    sPixmap       = "Std_PrintPdf";
+    eType         = 0;
 }
 
 void StdCmdPrintPdf::activated(int iMsg)
@@ -992,6 +1001,7 @@ StdCmdDuplicateSelection::StdCmdDuplicateSelection()
     sToolTipText  = QT_TR_NOOP("Put duplicates of the selected objects to the active document");
     sWhatsThis    = "Std_DuplicateSelection";
     sStatusTip    = QT_TR_NOOP("Put duplicates of the selected objects to the active document");
+    sPixmap       = "Std_DuplicateSelection";
 }
 
 void StdCmdDuplicateSelection::activated(int iMsg)
@@ -1044,7 +1054,7 @@ void StdCmdDuplicateSelection::activated(int iMsg)
                 "To link to external objects, the document must be saved at least once.\n"
                 "Do you want to save the document now?"),
                 QMessageBox::Yes,QMessageBox::No);
-            if(ret == QMessageBox::Yes) 
+            if(ret == QMessageBox::Yes)
                 proceed = Application::Instance->getDocument(doc)->saveAs();
         }
         if(proceed) {
@@ -1125,7 +1135,7 @@ void StdCmdDelete::activated(int iMsg)
 
     std::set<App::Document*> docs;
     try {
-        openCommand("Delete");
+        openCommand(QT_TRANSLATE_NOOP("Command", "Delete"));
         if (getGuiApplication()->sendHasMsgToFocusView(getName())) {
             commitCommand();
             return;
@@ -1214,8 +1224,8 @@ void StdCmdDelete::activated(int iMsg)
                         bodyMessageStream << "\n";
                     }
                     std::string thisDoc = pGuiDoc->getDocument()->getName();
-                    bodyMessageStream << qApp->translate("Std_Delete", 
-                                            "These items are selected for deletion, but are not in the active document. \n\n"); 
+                    bodyMessageStream << qApp->translate("Std_Delete",
+                                            "These items are selected for deletion, but are not in the active document.");
                     for (const auto &currentLabel : inactiveLabels)
                         bodyMessageStream << currentLabel << " / " << Base::Tools::fromStdString(thisDoc) << '\n';
                 }
@@ -1297,7 +1307,7 @@ StdCmdRefresh::StdCmdRefresh()
     // undoing the last transaction the manual recompute will clear the redo stack.
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath(
             "User parameter:BaseApp/Preferences/Document");
-    bool create = hGrp->GetBool("TransactionOnRecompute", true);
+    bool create = hGrp->GetBool("TransactionOnRecompute", false);
     if (!create)
         eType = eType | NoTransaction;
 }
@@ -1434,6 +1444,7 @@ StdCmdAlignment::StdCmdAlignment()
     sToolTipText  = QT_TR_NOOP("Align the selected objects");
     sStatusTip    = QT_TR_NOOP("Align the selected objects");
     sWhatsThis    = "Std_Alignment";
+    sPixmap       = "Std_Alignment";
 }
 
 void StdCmdAlignment::activated(int iMsg)
@@ -1503,7 +1514,7 @@ StdCmdEdit::StdCmdEdit()
     sToolTipText  = QT_TR_NOOP("Toggles the selected object's edit mode");
     sWhatsThis    = "Std_Edit";
     sStatusTip    = QT_TR_NOOP("Activates or Deactivates the selected object's edit mode");
-    sAccel        = "Shift+E";
+    sAccel        = "";
 #if QT_VERSION >= 0x040200
     sPixmap       = "edit-edit";
 #endif
@@ -1539,6 +1550,10 @@ class StdCmdExpression : public Gui::Command
 {
 public:
     StdCmdExpression() : Command("Std_Expressions")
+                       , pcActionCopyAll(nullptr)
+                       , pcActionCopySel(nullptr)
+                       , pcActionCopyActive(nullptr)
+                       , pcActionPaste(nullptr)
     {
         sGroup        = QT_TR_NOOP("Edit");
         sMenuText     = QT_TR_NOOP("Expression actions");
@@ -1609,7 +1624,7 @@ protected:
                            << " (" << obj->Label.getValue() << ')' << std::endl;
                         ss << "##@@";
                         if(v.second->comment.size()) {
-                            if(v.second->comment[0] == '&' 
+                            if(v.second->comment[0] == '&'
                                     || v.second->comment.find('\n') != std::string::npos
                                     || v.second->comment.find('\r') != std::string::npos)
                             {
@@ -1630,7 +1645,7 @@ protected:
     }
 
     void pasteExpressions() {
-        std::map<App::Document*, std::map<App::PropertyExpressionContainer*, 
+        std::map<App::Document*, std::map<App::PropertyExpressionContainer*,
             std::map<App::ObjectIdentifier, App::ExpressionPtr> > > exprs;
 
         bool failed = false;
@@ -1699,7 +1714,7 @@ protected:
             return;
         }
 
-        openCommand("Paste expressions");
+        openCommand(QT_TRANSLATE_NOOP("Command", "Paste expressions"));
         try {
             for(auto &v : exprs) {
                 for(auto &v2 : v.second) {
@@ -1758,7 +1773,7 @@ void CreateDocCommands(void)
     rcCmdMgr.addCommand(new StdCmdImport());
     rcCmdMgr.addCommand(new StdCmdExport());
     rcCmdMgr.addCommand(new StdCmdMergeProjects());
-    rcCmdMgr.addCommand(new StdCmdExportGraphviz());
+    rcCmdMgr.addCommand(new StdCmdDependencyGraph());
 
     rcCmdMgr.addCommand(new StdCmdSave());
     rcCmdMgr.addCommand(new StdCmdSaveAs());

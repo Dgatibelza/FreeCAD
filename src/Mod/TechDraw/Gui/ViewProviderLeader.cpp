@@ -55,6 +55,7 @@
 #include <Mod/TechDraw/App/DrawRichAnno.h>
 #include <Mod/TechDraw/App/DrawWeldSymbol.h>
 
+#include "PreferencesGui.h"
 #include "MDIViewPage.h"
 #include "QGVPage.h"
 #include "QGIView.h"
@@ -62,11 +63,17 @@
 #include "ViewProviderLeader.h"
 
 using namespace TechDrawGui;
-
-// there are only 5 line styles
-App::PropertyIntegerConstraint::Constraints ViewProviderLeader::LineStyleRange = { 0, 5, 1 };
+using namespace TechDraw;
 
 PROPERTY_SOURCE(TechDrawGui::ViewProviderLeader, TechDrawGui::ViewProviderDrawingView)
+
+const char* ViewProviderLeader::LineStyleEnums[] = { "NoLine",
+                                                  "Continuous",
+                                                  "Dash",
+                                                  "Dot",
+                                                  "DashDot",
+                                                  "DashDotDot",
+                                                  NULL };
 
 //**************************************************************************
 // Construction/Destruction
@@ -78,10 +85,9 @@ ViewProviderLeader::ViewProviderLeader()
     static const char *group = "Line Format";
 
     ADD_PROPERTY_TYPE(LineWidth,(getDefLineWeight()),group,(App::PropertyType)(App::Prop_None),"Line width");
-    ADD_PROPERTY_TYPE(LineStyle,(1),group,(App::PropertyType)(App::Prop_None),"Line style index");
-    ADD_PROPERTY_TYPE(Color,(getDefLineColor()),group,App::Prop_None,"The color of the Markup");
-
-    LineStyle.setConstraints(&LineStyleRange);
+    LineStyle.setEnums(LineStyleEnums);
+    ADD_PROPERTY_TYPE(LineStyle,(1),group,(App::PropertyType)(App::Prop_None),"Line style");
+    ADD_PROPERTY_TYPE(Color,(getDefLineColor()),group,App::Prop_None,"Color of the Markup");
 }
 
 ViewProviderLeader::~ViewProviderLeader()
@@ -191,13 +197,11 @@ TechDraw::DrawLeaderLine* ViewProviderLeader::getFeature() const
     return dynamic_cast<TechDraw::DrawLeaderLine*>(pcObject);
 }
 
-
 double ViewProviderLeader::getDefLineWeight(void)
 {
     double result = 0.0;
-    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter().GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/Decorations");
-    std::string lgName = hGrp->GetASCII("LineGroup","FC 0.70mm");
-    auto lg = TechDraw::LineGroup::lineGroupFactory(lgName);
+    int lgNumber = Preferences::lineGroup();
+    auto lg = TechDraw::LineGroup::lineGroupFactory(lgNumber);
     result = lg->getWeight("Thin");
     delete lg;                                   //Coverity CID 174670
     return result;
@@ -205,11 +209,7 @@ double ViewProviderLeader::getDefLineWeight(void)
 
 App::Color ViewProviderLeader::getDefLineColor(void)
 {
-    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter().
-                                 GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/Markups");
-    App::Color result;
-    result.setPackedValue(hGrp->GetUnsigned("Color", 0x00000000));
-    return result;
+    return PreferencesGui::leaderColor();
 }
 
 void ViewProviderLeader::handleChangedPropertyType(Base::XMLReader &reader, const char *TypeName, App::Property *prop)
@@ -230,6 +230,14 @@ void ViewProviderLeader::handleChangedPropertyType(Base::XMLReader &reader, cons
         LineStyleProperty.Restore(reader);
         LineStyle.setValue(LineStyleProperty.getValue());
     }
+
+    // property LineStyle had the App::PropertyIntegerConstraint and was changed to App::PropertyEnumeration
+    if (prop == &LineStyle && strcmp(TypeName, "App::PropertyIntegerConstraint") == 0) {
+        App::PropertyIntegerConstraint LineStyleProperty;
+        // restore the PropertyIntegerConstraint to be able to set its value
+        LineStyleProperty.Restore(reader);
+        LineStyle.setValue(LineStyleProperty.getValue());
+    }
 }
 
 bool ViewProviderLeader::onDelete(const std::vector<std::string> &)
@@ -243,7 +251,7 @@ bool ViewProviderLeader::onDelete(const std::vector<std::string> &)
         QString bodyMessage;
         QTextStream bodyMessageStream(&bodyMessage); 
         bodyMessageStream << qApp->translate("Std_Delete",
-            "You cannot delete this leader line because\n it has a weld symbol that would become broken.");
+            "You cannot delete this leader line because\nit has a weld symbol that would become broken.");
         QMessageBox::warning(Gui::getMainWindow(),
             qApp->translate("Std_Delete", "Object dependencies"), bodyMessage,
             QMessageBox::Ok);

@@ -43,6 +43,7 @@
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepTools.hxx>
 #include <Standard_PrimitiveTypes.hxx>
 #include <TopoDS_Vertex.hxx>
 #include <TopoDS_Wire.hxx>
@@ -73,7 +74,9 @@
 #include "DrawPage.h"
 #include "DrawViewPart.h"
 #include "DrawViewSection.h"
+#include "DrawViewDetail.h"
 #include "DrawGeomHatch.h"
+#include "GeometryObject.h"
 
 #include <Mod/TechDraw/App/DrawGeomHatchPy.h>  // generated from DrawGeomHatchPy.xml
 
@@ -93,17 +96,15 @@ DrawGeomHatch::DrawGeomHatch(void)
 
     ADD_PROPERTY_TYPE(Source,(0),vgroup,(App::PropertyType)(App::Prop_None),"The View + Face to be crosshatched");
     Source.setScope(App::LinkScope::Global);
-    ADD_PROPERTY_TYPE(FilePattern ,(""),vgroup,App::Prop_None,"The crosshatch pattern file for this area");
+    ADD_PROPERTY_TYPE(FilePattern ,(prefGeomHatchFile()),vgroup,App::Prop_None,"The crosshatch pattern file for this area");
     ADD_PROPERTY_TYPE(PatIncluded, (""), vgroup,App::Prop_None,
                                             "Embedded Pat hatch file. System use only.");   // n/a to end users
-    ADD_PROPERTY_TYPE(NamePattern,(""),vgroup,App::Prop_None,"The name of the pattern");
+    ADD_PROPERTY_TYPE(NamePattern,(prefGeomHatchName()),vgroup,App::Prop_None,"The name of the pattern");
     ADD_PROPERTY_TYPE(ScalePattern,(1.0),vgroup,App::Prop_None,"GeomHatch pattern size adjustment");
     ScalePattern.setConstraints(&scaleRange);
 
     m_saveFile = "";
     m_saveName = "";
-
-    getParameters();
 
     std::string patFilter("pat files (*.pat *.PAT);;All files (*)");
     FilePattern.setFilter(patFilter);
@@ -229,9 +230,51 @@ std::vector<LineSet>  DrawGeomHatch::getTrimmedLines(int i)   //get the trimmed 
 }
 
 /* static */
+std::vector<LineSet>  DrawGeomHatch::getTrimmedLinesSection(DrawViewSection* source,
+                                                            std::vector<LineSet> lineSets,
+                                                            TopoDS_Face f,
+                                                            double scale )
+{
+    std::vector<LineSet> result;
+    gp_Pln p;
+    Base::Vector3d vfc = DrawUtil::getFaceCenter(f);
+    gp_Pnt fc(vfc.x, vfc.y, vfc.z); 
+    double dir = -1.0;
+    if (fc.Z() < 0.0) {
+        dir = -dir;
+    }
+    Base::Vector3d stdZ(0.0, 0.0, 1.0);
+    Base::Vector3d offset = stdZ * p.Distance(fc) * dir;
+
+    //f may be above or below paper plane and must be moved so Common operation in 
+    //getTrimmedLines succeeds
+    TopoDS_Shape moved = TechDraw::moveShape(f,
+                                              offset);
+    TopoDS_Face fMoved = TopoDS::Face(GeometryObject::invertGeometry(moved));
+    result = getTrimmedLines(source,
+                             lineSets,
+                             fMoved,
+                             scale );
+    return result;
+}
+
 //! get hatch lines trimmed to face outline
 std::vector<LineSet> DrawGeomHatch::getTrimmedLines(DrawViewPart* source, std::vector<LineSet> lineSets, int iface, double scale )
 {
+    TopoDS_Face face = extractFace(source,iface);
+    std::vector<LineSet> result = getTrimmedLines(source,
+                                               lineSets,
+                                               face,
+                                               scale );
+    return result;
+}
+
+std::vector<LineSet> DrawGeomHatch::getTrimmedLines(DrawViewPart* source,
+                                                    std::vector<LineSet> lineSets,
+                                                    TopoDS_Face f,
+                                                    double scale )
+{
+    (void)source;
     std::vector<LineSet> result;
 
     if (lineSets.empty()) {
@@ -239,7 +282,7 @@ std::vector<LineSet> DrawGeomHatch::getTrimmedLines(DrawViewPart* source, std::v
         return result;
     }
 
-    TopoDS_Face face = extractFace(source,iface);
+    TopoDS_Face face = f;
 
     Bnd_Box bBox;
     BRepBndLib::Add(face, bBox);
@@ -251,14 +294,14 @@ std::vector<LineSet> DrawGeomHatch::getTrimmedLines(DrawViewPart* source, std::v
 
         //make Compound for this linespec
         BRep_Builder builder;
-        TopoDS_Compound Comp;
-        builder.MakeCompound(Comp);
+        TopoDS_Compound grid;
+        builder.MakeCompound(grid);
         for (auto& c: candidates) {
-           builder.Add(Comp, c);
+           builder.Add(grid, c);
         }
 
         //Common(Compound,Face)
-        BRepAlgoAPI_Common mkCommon(face, Comp);
+        BRepAlgoAPI_Common mkCommon(face, grid);
         if ((!mkCommon.IsDone())  ||
             (mkCommon.Shape().IsNull()) ) {
             Base::Console().Log("INFO - DGH::getTrimmedLines - Common creation failed\n");
@@ -302,6 +345,7 @@ std::vector<LineSet> DrawGeomHatch::getTrimmedLines(DrawViewPart* source, std::v
     }
     return result;
 }
+
 /* static */
 std::vector<TopoDS_Edge> DrawGeomHatch::makeEdgeOverlay(PATLineSpec hl, Bnd_Box b, double scale)
 {
@@ -458,19 +502,7 @@ TopoDS_Face DrawGeomHatch::extractFace(DrawViewPart* source, int iface )
 {
     TopoDS_Face result;
 
-    //is source a section?
-    DrawViewSection* section = dynamic_cast<DrawViewSection*>(source);
-    bool usingSection = false;
-    if (section != nullptr) {
-        usingSection = true;
-    }
-
-    std::vector<TopoDS_Wire> faceWires;
-    if (usingSection) {
-        faceWires = section->getWireForFace(iface);
-    } else {
-        faceWires = source->getWireForFace(iface);
-    }
+    std::vector<TopoDS_Wire> faceWires = source->getWireForFace(iface);
 
     //build face(s) from geometry
     gp_Pnt gOrg(0.0,0.0,0.0);
@@ -504,31 +536,6 @@ TopoDS_Face DrawGeomHatch::extractFace(DrawViewPart* source, int iface )
     return result;
 }
 
-void DrawGeomHatch::getParameters(void)
-{
-    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
-        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/PAT");
-
-    std::string defaultDir = App::Application::getResourceDir() + "Mod/TechDraw/PAT/";
-    std::string defaultFileName = defaultDir + "FCPAT.pat";
-    QString patternFileName = QString::fromStdString(hGrp->GetASCII("FilePattern",defaultFileName.c_str()));
-    if (patternFileName.isEmpty()) {
-        patternFileName = QString::fromStdString(defaultFileName);
-    }
-    QFileInfo tfi(patternFileName);
-        if (tfi.isReadable()) {
-            FilePattern.setValue(patternFileName.toUtf8().constData());
-        } else {
-            Base::Console().Error("DrawGeomHatch: PAT file: %s Not Found\n",patternFileName.toUtf8().constData());
-        }
-    hGrp = App::GetApplication().GetUserParameter()
-        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/PAT");
-    std::string defaultNamePattern = "Diamond";
-    NamePattern.setValue(hGrp->GetASCII("NamePattern",defaultNamePattern.c_str()));
-
-}
-
-
 PyObject *DrawGeomHatch::getPyObject(void)
 {
     if (PythonObject.is(Py::_None())) {
@@ -544,7 +551,7 @@ void DrawGeomHatch::replacePatIncluded(std::string newPatFile)
         setupPatIncluded();
     } else {
         std::string tempName = PatIncluded.getExchangeTempFile();
-        copyFile(newPatFile, tempName);
+        DrawUtil::copyFile(newPatFile, tempName);
         PatIncluded.setValue(tempName.c_str());
     }
 }
@@ -557,9 +564,7 @@ void DrawGeomHatch::onDocumentRestored()
             std::string patFileName = FilePattern.getValue();
             Base::FileInfo tfi(patFileName);
             if (tfi.isReadable()) {
-                if (PatIncluded.isEmpty()) {
-                    setupPatIncluded();
-                }
+                setupPatIncluded();
             }
         }
     }
@@ -585,28 +590,14 @@ void DrawGeomHatch::setupPatIncluded(void)
     std::string patName = dir + special;
 
     if (PatIncluded.isEmpty()) {
-        copyFile(std::string(), patName);
+        DrawUtil::copyFile(std::string(), patName);
         PatIncluded.setValue(patName.c_str());
     }
 
     if (!FilePattern.isEmpty()) {
         std::string exchName = PatIncluded.getExchangeTempFile();
-        copyFile(FilePattern.getValue(), exchName);
+        DrawUtil::copyFile(FilePattern.getValue(), exchName);
         PatIncluded.setValue(exchName.c_str(), special.c_str());
-    }
-}
-
-//TODO: replace with FileInfo copy
-//copy whole text file from inSpec to outSpec
-void DrawGeomHatch::copyFile(std::string inSpec, std::string outSpec)
-{
-//    Base::Console().Message("DGH::copyFile(%s, %s)\n", inSpec.c_str(), outSpec.c_str());
-    if (inSpec.empty()) {
-        std::ofstream  dst(outSpec);   //make an empty file
-    } else {
-        std::ifstream  src(inSpec);
-        std::ofstream  dst(outSpec);
-        dst << src.rdbuf();
     }
 }
 
@@ -619,6 +610,44 @@ void DrawGeomHatch::unsetupObject(void)
         dv->requestPaint();
     }
     App::DocumentObject::unsetupObject();
+}
+
+std::string DrawGeomHatch::prefGeomHatchFile(void)
+{
+    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
+        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/PAT");
+
+    std::string defaultDir = App::Application::getResourceDir() + "Mod/TechDraw/PAT/";
+    std::string defaultFileName = defaultDir + "FCPAT.pat";
+    std::string prefHatchFile = hGrp->GetASCII("FilePattern", defaultFileName.c_str());
+    std::string result = prefHatchFile;
+    Base::FileInfo fi(result);
+    if (!fi.isReadable()) {
+        result = defaultFileName;
+        Base::Console().Warning("Pat Hatch File: %s is not readable\n", prefHatchFile.c_str());
+    }
+    return result;
+}
+
+std::string DrawGeomHatch::prefGeomHatchName()
+{
+    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
+        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/PAT");
+    std::string defaultNamePattern = "Diamond";
+    std::string result = hGrp->GetASCII("NamePattern",defaultNamePattern.c_str());
+    if (result.empty()) {
+        result = defaultNamePattern;
+    }
+    return result;
+}
+
+App::Color DrawGeomHatch::prefGeomHatchColor()
+{
+    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
+        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/Colors");
+    App::Color fcColor;
+    fcColor.setPackedValue(hGrp->GetUnsigned("GeomHatch", 0x00FF0000)); 
+    return fcColor;
 }
 
 

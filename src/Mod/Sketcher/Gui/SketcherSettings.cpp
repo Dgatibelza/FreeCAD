@@ -72,6 +72,7 @@ void SketcherSettings::saveSettings()
     ui->checkBoxRecalculateInitialSolutionWhileDragging->onSave();
     ui->checkBoxEnableEscape->onSave();
     ui->checkBoxNotifyConstraintSubstitutions->onSave();
+    ui->checkBoxAutoRemoveRedundants->onSave();
     form->saveSettings();
 }
 
@@ -82,6 +83,7 @@ void SketcherSettings::loadSettings()
     ui->checkBoxRecalculateInitialSolutionWhileDragging->onRestore();
     ui->checkBoxEnableEscape->onRestore();
     ui->checkBoxNotifyConstraintSubstitutions->onRestore();
+    ui->checkBoxAutoRemoveRedundants->onRestore();
     form->loadSettings();
 }
 
@@ -258,6 +260,7 @@ void SketcherSettingsColors::saveSettings()
     ui->ConstructionColor->onSave();
     ui->ExternalColor->onSave();
     ui->FullyConstrainedColor->onSave();
+    ui->InternalAlignedGeoColor->onSave();
 
     ui->ConstrainedColor->onSave();
     ui->NonDrivingConstraintColor->onSave();
@@ -284,6 +287,7 @@ void SketcherSettingsColors::loadSettings()
     ui->ConstructionColor->onRestore();
     ui->ExternalColor->onRestore();
     ui->FullyConstrainedColor->onRestore();
+    ui->InternalAlignedGeoColor->onRestore();
 
     ui->ConstrainedColor->onRestore();
     ui->NonDrivingConstraintColor->onRestore();

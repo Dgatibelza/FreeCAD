@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 # ***************************************************************************
-# *                                                                         *
 # *   Copyright (c) 2015 Dan Falck <ddfalck@gmail.com>                      *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
@@ -21,6 +19,7 @@
 # *   USA                                                                   *
 # *                                                                         *
 # ***************************************************************************
+
 ''' Post Process command that will make use of the Output File and Post Processor entries in PathJob '''
 
 from __future__ import print_function
@@ -37,7 +36,7 @@ import os
 
 from PathScripts.PathPostProcessor import PostProcessor
 from PySide import QtCore, QtGui
-
+from datetime import datetime
 
 LOG_MODULE = PathLog.thisModule()
 
@@ -177,7 +176,7 @@ class CommandPathPost:
         return dlg.exec_()
 
     def GetResources(self):
-        return {'Pixmap': 'Path-Post',
+        return {'Pixmap': 'Path_Post',
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("Path_Post", "Post Process"),
                 'Accel': "P, P",
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("Path_Post", "Post Process the selected Job")}
@@ -210,9 +209,9 @@ class CommandPathPost:
             print("post: %s(%s, %s)" % (postname, filename, postArgs))
             processor = PostProcessor.load(postname)
             gcode = processor.export(objs, filename, postArgs)
-            return (False, gcode)
+            return (False, gcode, filename)
         else:
-            return (True, '')
+            return (True, '', filename)
 
     def Activated(self):
         PathLog.track()
@@ -301,7 +300,7 @@ class CommandPathPost:
                 # Now generate the gcode
                 for obj in job.Operations.Group:
                     tc = PathUtil.toolControllerForOp(obj)
-                    if tc is not None and obj.Active:
+                    if tc is not None and PathUtil.opProperty(obj, 'Active'):
                         if tc.ToolNumber != currTool:
                             sublist.append(tc)
                             PathLog.debug("Appending TC: {}".format(tc.Name))
@@ -331,14 +330,18 @@ class CommandPathPost:
             sublist = []  # list of ops for output splitting
 
             for idx, obj in enumerate(job.Operations.Group):
+
+                # check if the operation is active
+                active =  PathUtil.opProperty(obj, 'Active')
+
                 tc = PathUtil.toolControllerForOp(obj)
-                if tc is None or tc.ToolNumber == currTool or not obj.Active:
+                if tc is None or tc.ToolNumber == currTool and active:
                     curlist.append(obj)
-                elif tc.ToolNumber != currTool and currTool is None and obj.Active:  # first TC
+                elif tc.ToolNumber != currTool and currTool is None and active:  # first TC
                     sublist.append(tc)
                     curlist.append(obj)
                     currTool = tc.ToolNumber
-                elif tc.ToolNumber != currTool and currTool is not None and obj.Active:  # TC
+                elif tc.ToolNumber != currTool and currTool is not None and active:  # TC
                     for fixture in fixturelist:
                         sublist.append(fixture)
                         sublist.extend(curlist)
@@ -362,7 +365,7 @@ class CommandPathPost:
 
             # Now generate the gcode
             for obj in job.Operations.Group:
-                if obj.Active:
+                if PathUtil.opProperty(obj, 'Active'):
                     sublist = []
                     PathLog.debug("obj: {}".format(obj.Name))
                     for f in wcslist:
@@ -387,17 +390,22 @@ class CommandPathPost:
         rc = '' # pylint: disable=unused-variable
         if split:
             for slist in postlist:
-                (fail, rc) = self.exportObjectsWith(slist, job)
+                (fail, rc, filename) = self.exportObjectsWith(slist, job)
         else:
             finalpostlist = [item for slist in postlist for item in slist]
-            (fail, rc) = self.exportObjectsWith(finalpostlist, job)
+            (fail, rc, filename) = self.exportObjectsWith(finalpostlist, job)
 
         self.subpart = 1
 
         if fail:
             FreeCAD.ActiveDocument.abortTransaction()
         else:
+            if hasattr(job, "LastPostProcessDate"):
+                job.LastPostProcessDate = str(datetime.now())
+            if hasattr(job, "LastPostProcessOutput"):
+                job.LastPostProcessOutput = filename
             FreeCAD.ActiveDocument.commitTransaction()
+
         FreeCAD.ActiveDocument.recompute()
 
 

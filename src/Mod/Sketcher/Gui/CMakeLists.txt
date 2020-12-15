@@ -26,6 +26,7 @@ set(SketcherGui_LIBS
 )
 
 set(SketcherGui_MOC_HDRS
+    EditDatumDialog.h
     TaskSketcherConstrains.h
     TaskSketcherElements.h
     TaskSketcherCreateCommands.h
@@ -139,6 +140,8 @@ SET(SketcherGui_SRCS
     TaskDlgEditSketch.h
     ViewProviderPython.cpp
     ViewProviderPython.h
+    ViewProviderSketchGeometryExtension.h
+    ViewProviderSketchGeometryExtension.cpp
 )
 
 if(FREECAD_USE_PCH)

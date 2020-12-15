@@ -44,8 +44,8 @@ using namespace Gui::Dialog;
 /* TRANSLATOR Gui::Dialog::DlgGeneralImp */
 
 /**
- *  Constructs a DlgGeneralImp which is a child of 'parent', with the 
- *  name 'name' and widget flags set to 'f' 
+ *  Constructs a DlgGeneralImp which is a child of 'parent', with the
+ *  name 'name' and widget flags set to 'f'
  *
  *  The dialog will by default be modeless, unless you set 'modal' to
  *  true to construct a modal dialog.
@@ -55,7 +55,7 @@ DlgGeneralImp::DlgGeneralImp( QWidget* parent )
   , ui(new Ui_DlgGeneral)
 {
     ui->setupUi(this);
-    
+
     // fills the combo box with all available workbenches
     // sorted by their menu text
     QStringList work = Application::Instance->workbenches();
@@ -84,7 +84,7 @@ DlgGeneralImp::DlgGeneralImp( QWidget* parent )
     }
 }
 
-/** 
+/**
  *  Destroys the object and frees any allocated resources
  */
 DlgGeneralImp::~DlgGeneralImp()
@@ -115,7 +115,7 @@ void DlgGeneralImp::saveSettings()
     ui->RecentFiles->onSave();
     ui->SplashScreen->onSave();
     ui->PythonWordWrap->onSave();
-  
+
     QWidget* pc = DockWindowManager::instance()->getDockWindow("Python console");
     PythonConsole *pcPython = qobject_cast<PythonConsole*>(pc);
     if (pcPython) {
@@ -131,7 +131,7 @@ void DlgGeneralImp::saveSettings()
 
     setRecentFileSize();
     ParameterGrp::handle hGrp = WindowParameter::getDefaultParameter()->GetGroup("General");
-    QString lang = QLocale::languageToString(QLocale::system().language());
+    QString lang = QLocale::languageToString(QLocale().language());
     QByteArray language = hGrp->GetASCII("Language", (const char*)lang.toLatin1()).c_str();
     QByteArray current = ui->Languages->itemData(ui->Languages->currentIndex()).toByteArray();
     if (current != language) {
@@ -162,60 +162,10 @@ void DlgGeneralImp::saveSettings()
 
     hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/MainWindow");
     hGrp->SetBool("TiledBackground", ui->tiledBackground->isChecked());
-    QMdiArea* mdi = getMainWindow()->findChild<QMdiArea*>();
-    mdi->setProperty("showImage", ui->tiledBackground->isChecked());
 
     QVariant sheet = ui->StyleSheets->itemData(ui->StyleSheets->currentIndex());
-    if (this->selectedStyleSheet != sheet.toString()) {
-        this->selectedStyleSheet = sheet.toString();
-        hGrp->SetASCII("StyleSheet", (const char*)sheet.toByteArray());
-
-        if (!sheet.toString().isEmpty()) {
-            QFile f(sheet.toString());
-            if (f.open(QFile::ReadOnly)) {
-                mdi->setBackground(QBrush(Qt::NoBrush));
-                QTextStream str(&f);
-                qApp->setStyleSheet(str.readAll());
-
-                ActionStyleEvent e(ActionStyleEvent::Clear);
-                qApp->sendEvent(getMainWindow(), &e);
-            }
-        }
-    }
-
-    if (sheet.toString().isEmpty()) {
-        if (ui->tiledBackground->isChecked()) {
-            qApp->setStyleSheet(QString());
-            ActionStyleEvent e(ActionStyleEvent::Restore);
-            qApp->sendEvent(getMainWindow(), &e);
-            mdi->setBackground(QPixmap(QLatin1String("images:background.png")));
-        }
-        else {
-            qApp->setStyleSheet(QString());
-            ActionStyleEvent e(ActionStyleEvent::Restore);
-            qApp->sendEvent(getMainWindow(), &e);
-            mdi->setBackground(QBrush(QColor(160,160,160)));
-        }
-
-#if QT_VERSION == 0x050600 && defined(Q_OS_WIN32)
-        // Under Windows the tree indicator branch gets corrupted after a while.
-        // For more details see also https://bugreports.qt.io/browse/QTBUG-52230
-        // and https://codereview.qt-project.org/#/c/154357/2//ALL,unified
-        // A workaround for Qt 5.6.0 is to set a minimal style sheet.
-        QString qss = QString::fromLatin1(
-               "QTreeView::branch:closed:has-children  {\n"
-               "    image: url(:/icons/style/windows_branch_closed.png);\n"
-               "}\n"
-               "\n"
-               "QTreeView::branch:open:has-children  {\n"
-               "    image: url(:/icons/style/windows_branch_open.png);\n"
-               "}\n");
-        qApp->setStyleSheet(qss);
-#endif
-    }
-
-    if (mdi->style())
-        mdi->style()->unpolish(qApp);
+    hGrp->SetASCII("StyleSheet", (const char*)sheet.toByteArray());
+    Application::Instance->setStyleSheet(sheet.toString(), ui->tiledBackground->isChecked());
 }
 
 void DlgGeneralImp::loadSettings()
@@ -232,7 +182,7 @@ void DlgGeneralImp::loadSettings()
 
     // search for the language files
     ParameterGrp::handle hGrp = WindowParameter::getDefaultParameter()->GetGroup("General");
-    QString langToStr = QLocale::languageToString(QLocale::system().language());
+    QString langToStr = QLocale::languageToString(QLocale().language());
     QByteArray language = hGrp->GetASCII("Language", langToStr.toLatin1()).c_str();
 
     int index = 1;
@@ -272,7 +222,7 @@ void DlgGeneralImp::loadSettings()
     if (index < 0) {
         ui->toolbarIconSize->addItem(tr("Custom (%1px)").arg(current), QVariant((int)current));
         index = ui->toolbarIconSize->findData(QVariant(current));
-    } 
+    }
     ui->toolbarIconSize->setCurrentIndex(index);
 
     ui->treeMode->addItem(tr("Combo View"));
@@ -307,7 +257,7 @@ void DlgGeneralImp::loadSettings()
         fileNames = dir.entryInfoList(filter, QDir::Files, QDir::Name);
         for (QFileInfoList::iterator jt = fileNames.begin(); jt != fileNames.end(); ++jt) {
             if (cssFiles.find(jt->baseName()) == cssFiles.end()) {
-                cssFiles[jt->baseName()] = jt->absoluteFilePath();
+                cssFiles[jt->baseName()] = jt->fileName();
             }
         }
     }
@@ -318,8 +268,26 @@ void DlgGeneralImp::loadSettings()
         ui->StyleSheets->addItem(it.key(), it.value());
     }
 
-    this->selectedStyleSheet = QString::fromLatin1(hGrp->GetASCII("StyleSheet").c_str());
-    index = ui->StyleSheets->findData(this->selectedStyleSheet);
+    QString selectedStyleSheet = QString::fromLatin1(hGrp->GetASCII("StyleSheet").c_str());
+    index = ui->StyleSheets->findData(selectedStyleSheet);
+
+    // might be an absolute path name
+    if (index < 0 && !selectedStyleSheet.isEmpty()) {
+        QFileInfo fi(selectedStyleSheet);
+        if (fi.isAbsolute()) {
+            QString path = fi.absolutePath();
+            if (qssPaths.indexOf(path) >= 0) {
+                selectedStyleSheet = fi.fileName();
+            }
+            else {
+                selectedStyleSheet = fi.absoluteFilePath();
+                ui->StyleSheets->addItem(fi.baseName(), selectedStyleSheet);
+            }
+
+            index = ui->StyleSheets->findData(selectedStyleSheet);
+        }
+    }
+
     if (index > -1) ui->StyleSheets->setCurrentIndex(index);
 }
 

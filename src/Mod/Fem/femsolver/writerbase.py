@@ -21,9 +21,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__ = "FreeCAD FEM solver writer base object"
+__title__  = "FreeCAD FEM solver writer base object"
 __author__ = "Bernd Hahnebach"
-__url__ = "http://www.freecadweb.org"
+__url__    = "https://www.freecadweb.org"
 
 ## \addtogroup FEM
 #  @{
@@ -50,6 +50,7 @@ class FemInputWriter():
         self.solver_obj = solver_obj
         self.analysis_type = self.solver_obj.AnalysisType
         self.mesh_object = mesh_obj
+        self.document = self.analysis.Document
         # materials
         self.material_objects = member.mats_linear
         self.material_nonlinear_objects = member.mats_nonlinear
@@ -67,6 +68,7 @@ class FemInputWriter():
         self.initialtemperature_objects = member.cons_initialtemperature
         self.planerotation_objects = member.cons_planerotation
         self.pressure_objects = member.cons_pressure
+        self.sectionprint_objects = member.cons_sectionprint
         self.selfweight_objects = member.cons_selfweight
         self.temperature_objects = member.cons_temperature
         self.tie_objects = member.cons_tie
@@ -76,11 +78,11 @@ class FemInputWriter():
         # if dir_name was not given or if it exists but isn't empty: create a temporary dir
         # Purpose: makes sure the analysis can be run even on wired situation
         if not dir_name:
-            FreeCAD.Console.PrintError(
+            FreeCAD.Console.PrintWarning(
                 "Error: FemInputWriter has no working_dir --> "
                 "we are going to make a temporary one!\n"
             )
-            self.dir_name = FreeCAD.ActiveDocument.TransientDir.replace(
+            self.dir_name = self.document.TransientDir.replace(
                 "\\", "/"
             ) + "/FemAnl_" + analysis_obj.Uid[-4:]
         if not os.path.isdir(self.dir_name):
@@ -99,11 +101,20 @@ class FemInputWriter():
                 self.theshape = self.mesh_object.Shape
             elif hasattr(self.mesh_object, "Part"):
                 self.theshape = self.mesh_object.Part
+            else:
+                FreeCAD.Console.PrintWarning(
+                    "A finite mesh without a link to a Shape was given. "
+                    "Happen on pure mesh objects. "
+                    "Not all methods do work without this link.\n"
+                )
+                # ATM only used in meshtools.get_femelement_direction1D_set
+                # TODO somehow this is not smart, rare meshes might be used often
             self.femmesh = self.mesh_object.FemMesh
         else:
-            FreeCAD.Console.PrintError(
+            FreeCAD.Console.PrintWarning(
                 "No finite element mesh object was given to the writer class. "
-                "In rare cases this might not be an error.\n")
+                "In rare cases this might not be an error. "
+            )
         self.femnodes_mesh = {}
         self.femelement_table = {}
         self.constraint_conflict_nodes = []

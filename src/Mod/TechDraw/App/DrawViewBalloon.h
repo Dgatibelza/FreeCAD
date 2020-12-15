@@ -49,17 +49,17 @@ public:
     DrawViewBalloon();
     virtual ~DrawViewBalloon();
 
-    App::PropertyLink        SourceView;
-    App::PropertyString      Text;
-    App::PropertyEnumeration EndType;
-    App::PropertyEnumeration Symbol;
-    App::PropertyFloatConstraint SymbolScale;
-    App::PropertyDistance    OriginX;
-    App::PropertyDistance    OriginY;
-    App::PropertyBool        OriginIsSet;
-    App::PropertyFloat       TextWrapLen;
-
-    App::PropertyDistance    KinkLength;
+    App::PropertyLink            SourceView;
+    App::PropertyString          Text;
+    App::PropertyEnumeration     EndType;
+    App::PropertyEnumeration     BubbleShape;
+    App::PropertyFloatConstraint ShapeScale;
+    App::PropertyFloatConstraint EndTypeScale;
+    App::PropertyDistance        OriginX;
+    App::PropertyDistance        OriginY;
+    App::PropertyFloat           TextWrapLen;
+    App::PropertyDistance        KinkLength;
+    App::PropertyBool            LineVisible;
 
     short mustExecute() const override;
 

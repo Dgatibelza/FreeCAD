@@ -23,9 +23,10 @@
 #ifndef _TechDraw_DrawHatch_h_
 #define _TechDraw_DrawHatch_h_
 
-# include <App/DocumentObject.h>
-# include <App/FeaturePython.h>
-# include <App/PropertyLinks.h>
+#include <App/DocumentObject.h>
+#include <App/FeaturePython.h>
+#include <App/Material.h>
+#include <App/PropertyLinks.h>
 #include <App/PropertyFile.h>
 
 namespace TechDraw
@@ -40,8 +41,7 @@ public:
     DrawHatch();
     virtual ~DrawHatch();
 
-    App::PropertyVector      DirProjection;                            //Source is only valid for original projection?
-    App::PropertyLinkSub     Source;                                   //the dvp & face this hatch belongs to
+    App::PropertyLinkSub     Source;       // the dvp & face this hatch belongs to
     App::PropertyFile        HatchPattern;
     App::PropertyFileIncluded SvgIncluded;
 
@@ -61,15 +61,15 @@ public:
     bool removeSub(int i);
     bool empty(void);
     static bool faceIsHatched(int i,std::vector<TechDraw::DrawHatch*> hatchObjs);
-
-
+    static std::string prefSvgHatch(void);
+    static App::Color prefSvgHatchColor(void);
+    
 protected:
     void onChanged(const App::Property* prop) override;
     virtual void onDocumentRestored() override;
     virtual void setupObject() override;
     void setupSvgIncluded(void);
     void replaceSvgIncluded(std::string newSvgFile);
-    void copyFile(std::string inSpec, std::string outSpec);
 
 private:
 

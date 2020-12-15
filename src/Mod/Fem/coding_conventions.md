@@ -24,7 +24,7 @@ These coding rules apply to FEM module code only. Other modules or the base syst
     - a .gitattributes file has been added to ensure line endings of text files are LF
     - use `?w=1` in link address to suppress line ending changes on github
 - never use mixed line endings on one file
-- 4 Spaces for indent
+- 4 Spaces for indent (in this file too ;-))
 - no trailing white spaces
 
 
@@ -34,8 +34,22 @@ These coding rules apply to FEM module code only. Other modules or the base syst
 - maximal line length is 100
 - double quotes as string identifier
 
+### Exceptione
+- Do not use bare 'except'.
+- Be more specific. If not possible use:
+- Either use 'except Exception' or if really everything should be caught 'except BaseException'
+- https://stackoverflow.com/a/18982772
+- https://github.com/PyCQA/pycodestyle/issues/703
+
 ### Imports
-- Python imports should be grouped into three groups:
+- Only one import per line.
+- Even on import from some_module import something. There should only be one something per line.
+- Each import group should be sorted alphabetically.
+- First the import some_module ones, afterwards the from some_module import something.
+- First absolute path imports than relative path imports.
+- On relative path imports first the one dot ones, afterwards the two dot ones.
+- Star import should not be used at all (from some_module import *).
+- Python imports should be grouped into groups:
     - Standard library imports
     - One empty line
     - Third-party imports
@@ -52,13 +66,7 @@ These coding rules apply to FEM module code only. Other modules or the base syst
         - Third-party Gui imports
         - FreeCAD-specific imports from module FreeCADGui
         - other FreeCAD Gui imports
-- Each group should be sorted alphabetically
-- First the import imports, than the from imports
-- On from imports firs the one dot, than two dot and so on imports 
-- Only one import per line
-- Even for from mymodule import mymethod should only be one method
-- The above paragraphs highly reduces merge conflicts
-- Star import should not be used at all (from mymodule import *)
+- The above paragraphs highly reduces merge conflicts.
 
 ### Naming policy
 - snake_case_names
@@ -69,7 +77,7 @@ These coding rules apply to FEM module code only. Other modules or the base syst
 ### Python code formatting tools
 - **flake8** in source code directory on Linux shell
 ```bash
-find src/Mod/Fem/ -name "*\.py" | grep -v InitGui.py | xargs -I [] flake8 --ignore=E266,W503 --max-line-length=100 []
+find src/Mod/Fem/ -name "*\.py" | xargs -I [] flake8 --ignore=E266,W503 --max-line-length=100 []
 ```
 - [LGTM](https://lgtm.com/projects/g/FreeCAD/FreeCAD/latest/files/src/Mod/Fem/)
 - TODO: check pylint
@@ -78,15 +86,36 @@ find src/Mod/Fem/ -name "*\.py" | grep -v InitGui.py | xargs -I [] flake8 --igno
 
 ### Coding
 - print() vs. FreeCAD.Console.PrintMessage()
-  - `FreeCAD.Console.PrintMessage()` or Log or Error should be used
-  - `print()` should be used for debugging only
-  - [forum topic](https://forum.freecadweb.org/viewtopic.php?f=10&t=39110) 
-  - BTW: Console prints need a new line where as print does not need one
-
+    - `FreeCAD.Console.PrintMessage()` or Log or Error should be used
+    - `print()` should be used for debugging only
+    - [forum topic](https://forum.freecadweb.org/viewtopic.php?f=10&t=39110) 
+    - BTW: Console prints need a new line where as print does not need one
+- type checking:
+    - do not use hasattr(obj, "Proxy") and obj.Proxy.Type
+    - use method is_of_typ(obj, "TypeString") from module femtool.femutils
+- ActiveDocument
+    - try to avoid the use of App.ActiveDocument or FreeCAD.ActiveDocument
+    - instead try to use some_obj.Document instead
+    - try to avoid the use of Gui.ActiveDocument or FreeCADGui.ActiveDocument
+    - instead try to use some_obj.ViewObject.Document or some_view_obj.Document
+    - activeDocument() is more robust than ActiveDocument
+    - [forum topic](https://forum.freecadweb.org/viewtopic.php?f=10&t=44133)
+    - FreeCAD Python console
+        - in code examples which will be copied in FreeCAD Python console
+        - it is common to use App.ActiveDocument.some_obj or method
+    
 ### Documenting
 Python style is preferred over Doxygen style
-  - see `ccx` tools module in fem tools package
-  - see [forum topic](https://forum.freecadweb.org/viewtopic.php?f=10&t=37094)
+    - see `ccx` tools module in fem tools package
+    - see [forum topic](https://forum.freecadweb.org/viewtopic.php?f=10&t=37094)
+
+### Module structure
+- task panels should go into a separate package too
+    - according pep8 imports should be on module beginning
+    - if task panel class in inside viewprovider module, the imports needed for task panel are module beginning too
+    - might be some special plot module or what ever is needed
+    - if this is not available the object can not even created
+    - if task panel is separate the object can be createdh
 
 ## C++
 ### Naming policy
@@ -100,4 +129,4 @@ Python style is preferred over Doxygen style
 ## Icons
 ### Naming plicy
 - Command icons use the command name.
-- see [Forum topic] (https://forum.freecadweb.org/viewtopic.php?f=18&t=43379)
+- see [forum topic](https://forum.freecadweb.org/viewtopic.php?f=18&t=43379)

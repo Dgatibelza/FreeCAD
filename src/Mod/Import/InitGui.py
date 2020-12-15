@@ -1,12 +1,13 @@
+# -*- coding: utf8 -*-
 # Import gui init module
-# (c) 2003 Jürgen Riegel
+# (c) 2003 Juergen Riegel
 #
 # Gathering all the information to start FreeCAD
 # This is the second one of three init scripts, the third one
 # runs when the gui is up
 
 #***************************************************************************
-#*   Copyright (c) 2002 Jürgen Riegel <juergen.riegel@web.de>              *
+#*   Copyright (c) 2002 Juergen Riegel <juergen.riegel@web.de>             *
 #*                                                                         *
 #*   This file is part of the FreeCAD CAx development system.              *
 #*                                                                         *
@@ -32,6 +33,7 @@
 # Registered in Part's Init.py file
 FreeCAD.changeImportModule("STEP with colors (*.step *.stp)","Import","ImportGui")
 FreeCAD.changeExportModule("STEP with colors (*.step *.stp)","Import","ImportGui")
+FreeCAD.addExportType("glTF (*.gltf *.glb)","ImportGui")
 
 """
 class ImportWorkbench ( Workbench ):

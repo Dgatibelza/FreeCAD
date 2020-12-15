@@ -28,6 +28,7 @@
 #include <Gui/Selection.h>
 #include <boost/signals2.hpp>
 #include <QListWidget>
+#include <QIcon>
 
 namespace App {
 class Property;
@@ -56,41 +57,55 @@ protected:
     void keyPressEvent(QKeyEvent * event);
 
 protected Q_SLOTS:
-    void deleteSelectedItems();
     // Constraints
-    void doHorizontalDistance();
-    void doVerticalDistance();
-    void doHorizontalConstraint();
-    void doVerticalConstraint();
-    void doLockConstraint();
     void doPointCoincidence();
+    void doPointOnObjectConstraint();
+    void doVerticalDistance();
+    void doHorizontalDistance();
     void doParallelConstraint();
     void doPerpendicularConstraint();
+    void doTangentConstraint();
+    void doEqualConstraint();
+    void doSymmetricConstraint();
+    void doBlockConstraint();
+
+    void doLockConstraint();
+    void doHorizontalConstraint();
+    void doVerticalConstraint();
     void doLengthConstraint();
     void doRadiusConstraint();
     void doDiameterConstraint();
     void doAngleConstraint();
-    void doEqualConstraint();
-    void doPointOnObjectConstraint();
-    void doSymmetricConstraint();
-    void doTangentConstraint();
+
     // Other Commands
     void doToggleConstruction();
+
     // Acelerators
     void doCloseShape();
     void doConnect();
+    void doSelectConstraints();
     void doSelectOrigin();
     void doSelectHAxis();
     void doSelectVAxis();
-
-    void doSelectConstraints();
-
+    void deleteSelectedItems();
 };
 
 class TaskSketcherElements : public Gui::TaskView::TaskBox, public Gui::SelectionObserver
 {
     Q_OBJECT
 
+    class MultIcon {
+        
+    public:
+        MultIcon(const char*);
+        
+        QIcon Normal;
+        QIcon Construction;
+        QIcon External;
+        
+        QIcon getIcon(bool construction, bool external) const;
+    };
+    
 public:
     TaskSketcherElements(ViewProviderSketch *sketchView);
     ~TaskSketcherElements();

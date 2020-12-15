@@ -21,9 +21,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__ = "FreeCAD FEM solver Z88 tasks"
+__title__  = "FreeCAD FEM solver Z88 tasks"
 __author__ = "Bernd Hahnebach"
-__url__ = "http://www.freecadweb.org"
+__url__    = "https://www.freecadweb.org"
 
 ## \addtogroup FEM
 #  @{
@@ -116,10 +116,10 @@ class Results(run.Results):
 
     def purge_results(self):
         for m in membertools.get_member(self.analysis, "Fem::FemResultObject"):
-            if femutils.is_of_type(m.Mesh, "Fem::FemMeshResult"):
+            if femutils.is_of_type(m.Mesh, "Fem::MeshResult"):
                 self.analysis.Document.removeObject(m.Mesh.Name)
             self.analysis.Document.removeObject(m.Name)
-        FreeCAD.ActiveDocument.recompute()
+        self.analysis.Document.recompute()
 
     def load_results_z88o2(self):
         disp_result_file = os.path.join(

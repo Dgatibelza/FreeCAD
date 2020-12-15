@@ -27,7 +27,7 @@
 # include <sstream>
 #endif
 
-#include <boost/bind.hpp>
+#include <boost_bind_bind.hpp>
 
 #include <Base/Tools.h>
 #include "Application.h"
@@ -38,6 +38,7 @@
 #include "GeoFeature.h"
 
 using namespace App;
+namespace bp = boost::placeholders;
 
 
 DocumentT::DocumentT()
@@ -52,6 +53,11 @@ DocumentT::DocumentT(Document* doc)
 DocumentT::DocumentT(const std::string& name)
 {
     document = name;
+}
+
+DocumentT::DocumentT(const DocumentT& doc)
+{
+    document = doc.document;
 }
 
 DocumentT::~DocumentT()
@@ -243,7 +249,7 @@ const std::string &DocumentObjectT::getPropertyName() const {
 std::string DocumentObjectT::getPropertyPython() const
 {
     std::stringstream str;
-    str << "FreeCAD.getDocument('" << document 
+    str << "FreeCAD.getDocument('" << document
         << "').getObject('" << object
         << "')";
     if(property.size())
@@ -358,7 +364,7 @@ std::string SubObjectT::getOldElementName(int *index) const {
     if(!obj)
         return std::string();
     GeoFeature::resolveElement(obj,subname.c_str(),element);
-    if(!index) 
+    if(!index)
         return std::move(element.second);
     std::size_t pos = element.second.find_first_of("0123456789");
     if(pos == std::string::npos)
@@ -400,7 +406,7 @@ public:
     Private(App::Document* doc) : _document(doc) {
         if (doc) {
             connectApplicationDeletedDocument = App::GetApplication().signalDeleteDocument.connect(boost::bind
-                (&Private::deletedDocument, this, _1));
+                (&Private::deletedDocument, this, bp::_1));
         }
     }
 
@@ -447,16 +453,7 @@ App::Document* DocumentWeakPtrT::operator->() noexcept
 class DocumentObjectWeakPtrT::Private {
 public:
     Private(App::DocumentObject* obj) : object(obj), indocument(false) {
-        if (obj) {
-            indocument = true;
-            connectApplicationDeletedDocument = App::GetApplication().signalDeleteDocument.connect(boost::bind
-                (&Private::deletedDocument, this, _1));
-            App::Document* doc = obj->getDocument();
-            connectDocumentCreatedObject = doc->signalNewObject.connect(boost::bind
-                (&Private::createdObject, this, _1));
-            connectDocumentDeletedObject = doc->signalDeletedObject.connect(boost::bind
-                (&Private::deletedObject, this, _1));
-        }
+        set(obj);
     }
     void deletedDocument(const App::Document& doc) {
         // When deleting document then there is no way to undo it
@@ -464,13 +461,13 @@ public:
             reset();
         }
     }
-    void createdObject(const App::DocumentObject& obj) {
+    void createdObject(const App::DocumentObject& obj) noexcept {
         // When undoing the removal
         if (object == &obj) {
             indocument = true;
         }
     }
-    void deletedObject(const App::DocumentObject& obj) {
+    void deletedObject(const App::DocumentObject& obj) noexcept {
         if (object == &obj) {
             indocument = false;
         }
@@ -482,7 +479,20 @@ public:
         object = nullptr;
         indocument = false;
     }
-    App::DocumentObject* get() const {
+    void set(App::DocumentObject* obj) {
+        object = obj;
+        if (obj) {
+            indocument = true;
+            connectApplicationDeletedDocument = App::GetApplication().signalDeleteDocument.connect(boost::bind
+            (&Private::deletedDocument, this, bp::_1));
+            App::Document* doc = obj->getDocument();
+            connectDocumentCreatedObject = doc->signalNewObject.connect(boost::bind
+            (&Private::createdObject, this, bp::_1));
+            connectDocumentDeletedObject = doc->signalDeletedObject.connect(boost::bind
+            (&Private::deletedObject, this, bp::_1));
+        }
+    }
+    App::DocumentObject* get() const noexcept {
         return indocument ? object : nullptr;
     }
 
@@ -494,7 +504,7 @@ public:
     Connection connectDocumentDeletedObject;
 };
 
-DocumentObjectWeakPtrT::DocumentObjectWeakPtrT(App::DocumentObject* obj) noexcept
+DocumentObjectWeakPtrT::DocumentObjectWeakPtrT(App::DocumentObject* obj)
   : d(new Private(obj))
 {
 }
@@ -509,7 +519,7 @@ App::DocumentObject* DocumentObjectWeakPtrT::_get() const noexcept
     return d->get();
 }
 
-void DocumentObjectWeakPtrT::reset() noexcept
+void DocumentObjectWeakPtrT::reset()
 {
     d->reset();
 }
@@ -519,28 +529,45 @@ bool DocumentObjectWeakPtrT::expired() const noexcept
     return !d->indocument;
 }
 
+DocumentObjectWeakPtrT& DocumentObjectWeakPtrT::operator= (App::DocumentObject* p)
+{
+    d->reset();
+    d->set(p);
+    return *this;
+}
+
 App::DocumentObject* DocumentObjectWeakPtrT::operator->() noexcept
 {
     return d->get();
 }
 
-// -----------------------------------------------------------------------------
-
-DocumentObserver::DocumentObserver() : _document(0)
+bool DocumentObjectWeakPtrT::operator== (const DocumentObjectWeakPtrT& p) const noexcept
 {
-    this->connectApplicationCreatedDocument = App::GetApplication().signalNewDocument.connect(boost::bind
-        (&DocumentObserver::slotCreatedDocument, this, _1));
-    this->connectApplicationDeletedDocument = App::GetApplication().signalDeleteDocument.connect(boost::bind
-        (&DocumentObserver::slotDeletedDocument, this, _1));
+    return d->get() == p.d->get();
 }
 
-DocumentObserver::DocumentObserver(Document* doc) : _document(0)
+bool DocumentObjectWeakPtrT::operator!= (const DocumentObjectWeakPtrT& p) const noexcept
+{
+    return d->get() != p.d->get();
+}
+
+// -----------------------------------------------------------------------------
+
+DocumentObserver::DocumentObserver() : _document(nullptr)
+{
+    this->connectApplicationCreatedDocument = App::GetApplication().signalNewDocument.connect(boost::bind
+        (&DocumentObserver::slotCreatedDocument, this, bp::_1));
+    this->connectApplicationDeletedDocument = App::GetApplication().signalDeleteDocument.connect(boost::bind
+        (&DocumentObserver::slotDeletedDocument, this, bp::_1));
+}
+
+DocumentObserver::DocumentObserver(Document* doc) : _document(nullptr)
 {
     // Connect to application and given document
     this->connectApplicationCreatedDocument = App::GetApplication().signalNewDocument.connect(boost::bind
-        (&DocumentObserver::slotCreatedDocument, this, _1));
+        (&DocumentObserver::slotCreatedDocument, this, bp::_1));
     this->connectApplicationDeletedDocument = App::GetApplication().signalDeleteDocument.connect(boost::bind
-        (&DocumentObserver::slotDeletedDocument, this, _1));
+        (&DocumentObserver::slotDeletedDocument, this, bp::_1));
     attachDocument(doc);
 }
 
@@ -564,22 +591,22 @@ void DocumentObserver::attachDocument(Document* doc)
         _document = doc;
 
         this->connectDocumentCreatedObject = _document->signalNewObject.connect(boost::bind
-            (&DocumentObserver::slotCreatedObject, this, _1));
+            (&DocumentObserver::slotCreatedObject, this, bp::_1));
         this->connectDocumentDeletedObject = _document->signalDeletedObject.connect(boost::bind
-            (&DocumentObserver::slotDeletedObject, this, _1));
+            (&DocumentObserver::slotDeletedObject, this, bp::_1));
         this->connectDocumentChangedObject = _document->signalChangedObject.connect(boost::bind
-            (&DocumentObserver::slotChangedObject, this, _1, _2));
+            (&DocumentObserver::slotChangedObject, this, bp::_1, bp::_2));
         this->connectDocumentRecomputedObject = _document->signalRecomputedObject.connect(boost::bind
-            (&DocumentObserver::slotRecomputedObject, this, _1));
+            (&DocumentObserver::slotRecomputedObject, this, bp::_1));
         this->connectDocumentRecomputed = _document->signalRecomputed.connect(boost::bind
-            (&DocumentObserver::slotRecomputedDocument, this, _1));
+            (&DocumentObserver::slotRecomputedDocument, this, bp::_1));
     }
 }
 
 void DocumentObserver::detachDocument()
 {
     if (this->_document) {
-        this->_document = 0;
+        this->_document = nullptr;
         this->connectDocumentCreatedObject.disconnect();
         this->connectDocumentDeletedObject.disconnect();
         this->connectDocumentChangedObject.disconnect();

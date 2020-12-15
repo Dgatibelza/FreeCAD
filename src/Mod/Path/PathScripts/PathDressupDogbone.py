@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 # ***************************************************************************
-# *                                                                         *
 # *   Copyright (c) 2014 Yorik van Havre <yorik@uncreated.net>              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
@@ -21,11 +19,10 @@
 # *   USA                                                                   *
 # *                                                                         *
 # ***************************************************************************
+
 from __future__ import print_function
-import DraftGeomUtils
 import FreeCAD
 import math
-import Part
 import Path
 import PathScripts.PathDressup as PathDressup
 import PathScripts.PathGeom as PathGeom
@@ -34,6 +31,11 @@ import PathScripts.PathUtil as PathUtil
 import PathScripts.PathUtils as PathUtils
 
 from PySide import QtCore
+
+# lazily loaded modules
+from lazy_loader.lazy_loader import LazyLoader
+DraftGeomUtils = LazyLoader('DraftGeomUtils', globals(), 'DraftGeomUtils')
+Part = LazyLoader('Part', globals(), 'Part')
 
 LOG_MODULE = PathLog.thisModule()
 
@@ -419,7 +421,7 @@ class ObjectDressup:
 
     def onDocumentRestored(self, obj):
         obj.setEditorMode('BoneBlacklist', 2)  # hide this one
-        
+
     def __getstate__(self):
         return None
 
@@ -1076,7 +1078,7 @@ class CommandDressupDogbone:
     # pylint: disable=no-init
 
     def GetResources(self):
-        return {'Pixmap': 'Path-Dressup',
+        return {'Pixmap': 'Path_Dressup',
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("Path_DressupDogbone", "Dogbone Dress-up"),
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("Path_DressupDogbone", "Creates a Dogbone Dress-up object from a selected path")}
 

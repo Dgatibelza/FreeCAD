@@ -80,6 +80,9 @@ TaskTransformedParameters::TaskTransformedParameters(ViewProviderTransformed *Tr
         Gui::Document* doc = TransformedView->getDocument();
         this->attachDocument(doc);
     }
+
+    // remember initial transaction ID
+    App::GetApplication().getActiveTransaction(&transactionID);
 }
 
 TaskTransformedParameters::TaskTransformedParameters(TaskMultiTransformParameters *parentTask)
@@ -167,13 +170,21 @@ bool TaskTransformedParameters::originalSelected(const Gui::SelectionChanges& ms
     return false;
 }
 
-void TaskTransformedParameters::setupTransaction() {
+void TaskTransformedParameters::setupTransaction()
+{
+    auto obj = getObject();
+    if (!obj)
+        return;
+
     int tid = 0;
-    const char *name = App::GetApplication().getActiveTransaction(&tid);
+    App::GetApplication().getActiveTransaction(&tid);
+    if (tid && tid == transactionID)
+        return;
+
+    // open a transaction if none is active
     std::string n("Edit ");
-    n += getObject()->Label.getValue();
-    if(!name || n != name)
-        App::GetApplication().setActiveTransaction(n.c_str());
+    n += obj->Label.getValue();
+    transactionID = App::GetApplication().setActiveTransaction(n.c_str());
 }
 
 void TaskTransformedParameters::onButtonAddFeature(bool checked)
@@ -351,22 +362,42 @@ App::DocumentObject* TaskTransformedParameters::getSketchObject() const {
 
 void TaskTransformedParameters::hideObject()
 {
-    FCMD_OBJ_HIDE(getTopTransformedObject());
+    try {
+        FCMD_OBJ_HIDE(getTopTransformedObject());
+    }
+    catch (const Base::Exception& e) {
+        e.ReportException();
+    }
 }
 
 void TaskTransformedParameters::showObject()
 {
-    FCMD_OBJ_SHOW(getTopTransformedObject());
+    try {
+        FCMD_OBJ_SHOW(getTopTransformedObject());
+    }
+    catch (const Base::Exception& e) {
+        e.ReportException();
+    }
 }
 
 void TaskTransformedParameters::hideBase()
 {
-    FCMD_OBJ_HIDE(getBaseObject());
+    try {
+        FCMD_OBJ_HIDE(getBaseObject());
+    }
+    catch (const Base::Exception& e) {
+        e.ReportException();
+    }
 }
 
 void TaskTransformedParameters::showBase()
 {
-    FCMD_OBJ_SHOW(getBaseObject());
+    try {
+        FCMD_OBJ_SHOW(getBaseObject());
+    }
+    catch (const Base::Exception& e) {
+        e.ReportException();
+    }
 }
 
 void TaskTransformedParameters::exitSelectionMode()
@@ -387,6 +418,28 @@ void TaskTransformedParameters::addReferenceSelectionGate(bool edge, bool face, 
             new ReferenceSelection(getBaseObject(), edge, face, planar,false,whole));
     std::unique_ptr<Gui::SelectionFilterGate> gateDepPtr(new NoDependentsSelection(getTopTransformedObject()));
     Gui::Selection().addSelectionGate(new CombineSelectionFilterGates(gateRefPtr, gateDepPtr));
+}
+
+void TaskTransformedParameters::indexesMoved()
+{
+    QAbstractItemModel* model = qobject_cast<QAbstractItemModel*>(sender());
+    if (!model)
+        return;
+
+    PartDesign::Transformed* pcTransformed = getObject();
+    std::vector<App::DocumentObject*> originals = pcTransformed->Originals.getValues();
+
+    QByteArray name;
+    int rows = model->rowCount();
+    for (int i = 0; i < rows; i++) {
+        QModelIndex index = model->index(i, 0);
+        name = index.data(Qt::UserRole).toByteArray().constData();
+        originals[i] = pcTransformed->getDocument()->getObject(name.constData());
+    }
+
+    setupTransaction();
+    pcTransformed->Originals.setValues(originals);
+    recomputeFeature();
 }
 
 //**************************************************************************
@@ -417,7 +470,6 @@ bool TaskDlgTransformedParameters::reject()
 {
     // ensure that we are not in selection mode
     parameter->exitSelectionMode();
-
     return TaskDlgFeatureParameters::reject ();
 }
 

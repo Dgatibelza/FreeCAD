@@ -1,5 +1,5 @@
 /****************************************************************************
- *   Copyright (c) 2017 Zheng, Lei (realthunder) <realthunder.dev@gmail.com>*
+ *   Copyright (c) 2017 Zheng Lei (realthunder) <realthunder.dev@gmail.com> *
  *                                                                          *
  *   This file is part of the FreeCAD CAx development system.               *
  *                                                                          *
@@ -61,9 +61,9 @@
  *     <your_build_dir>/src/Mod/Path/App.CMakeFiles/Path.dir/Area.cpp.i
  * \endcode
  *
- * \section Intrudction of Boost.Preprocessor
+ * \section Introduction of Boost.Preprocessor
  *
- * The macros here make heavy use of the awsome
+ * The macros here make heavy use of the awesome
  * [Boost.Preprocessor](http://www.boost.org/libs/preprocessor/) (short for
  * Boost.PP).  Here are is a brief introduction on Boost.PP concept in order to
  * explain why this marco library is designed the way it is.
@@ -119,7 +119,7 @@
  *
  * - \c default is the default value of this parameter. Right now, you must
  *   supply a default value. Boost.PP has trouble dealing with empty values.
- *   Remember that a sequence cannot be empty. Neight can tuple. Only array,
+ *   Remember that a sequence cannot be empty. Neither can tuple. Only array,
  *   something like <tt>(0,())</tt> for an empty array. It is awkward to write,
  *   and didn't add much functionality I want, hence the restriction of
  *   non-empty defaults here.

@@ -1,5 +1,6 @@
 
 SET(Stylesheets_Files
+    "Behave-dark.qss"
     "Dark-blue.qss"
     "Dark-green.qss"
     "Dark-orange.qss"
@@ -9,6 +10,7 @@ SET(Stylesheets_Files
     "Light-blue.qss"
     "Light-green.qss"
     "Light-orange.qss"
+    "Dark-contrast.qss"
 )
 
 # Find all the image files
@@ -21,7 +23,8 @@ ADD_CUSTOM_TARGET(Stylesheets_data ALL
     SOURCES ${Stylesheets_Files} ${Images_Files}
 )
 
-fc_copy_sources(Stylesheets_data "${CMAKE_BINARY_DIR}/data/Gui/Stylesheets" ${Stylesheets_Files} ${Images_Files})
+fc_copy_sources(Stylesheets_data "${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_DATADIR}/Gui/Stylesheets"
+                                  ${Stylesheets_Files} ${Images_Files})
 
 INSTALL(
     FILES

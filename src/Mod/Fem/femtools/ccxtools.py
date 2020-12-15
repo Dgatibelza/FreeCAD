@@ -22,9 +22,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__ = "FemToolsCcx"
+__title__  = "FemToolsCcx"
 __author__ = "Przemo Firszt, Bernd Hahnebach"
-__url__ = "http://www.freecadweb.org"
+__url__    = "https://www.freecadweb.org"
 
 ## \addtogroup FEM
 #  @{
@@ -100,7 +100,7 @@ class FemToolsCcx(QtCore.QRunnable, QtCore.QObject):
                     raise Exception("FEM: No solver found!")
         else:
             if solver:
-                # solver given, searche for the analysis
+                # solver given, search for the analysis
                 self.solver = solver
                 self.find_solver_analysis()
                 if not self.analysis:
@@ -119,6 +119,15 @@ class FemToolsCcx(QtCore.QRunnable, QtCore.QObject):
                 self.find_solver()
                 if not self.solver:
                     raise Exception("FEM: No solver found!")
+
+        if self.analysis.Document is not self.solver.Document:
+            raise Exception(
+                "FEM: The analysis and solver are not in the same document!"
+            )
+        if self.solver not in self.analysis.Group:
+            raise Exception(
+                "FEM: The solver is not part of the analysis Group!"
+            )
 
         # print(self.solver)
         # print(self.analysis)
@@ -169,7 +178,8 @@ class FemToolsCcx(QtCore.QRunnable, QtCore.QObject):
         if self.analysis:
             return
         found_analysis = False
-        for m in FreeCAD.ActiveDocument.Objects:
+        # search in the active document
+        for m in FreeCAD.activeDocument().Objects:
             if femutils.is_of_type(m, "Fem::FemAnalysis"):
                 if not found_analysis:
                     self.analysis = m
@@ -193,7 +203,7 @@ class FemToolsCcx(QtCore.QRunnable, QtCore.QObject):
     def find_solver(self):
         found_solver_for_use = False
         for m in self.analysis.Group:
-            if femutils.is_of_type(m, "Fem::FemSolverCalculixCcxTools"):
+            if femutils.is_of_type(m, "Fem::SolverCcxTools"):
                 # we are going to explicitly check for the ccx tools solver type only,
                 # thus it is possible to have lots of framework solvers inside the analysis anyway
                 # for some methods no solver is needed (purge_results) --> solver could be none
@@ -367,7 +377,7 @@ class FemToolsCcx(QtCore.QRunnable, QtCore.QObject):
                 self.working_dir
             )
             self.inp_file_name = inp_writer.write_calculix_input_file()
-        except:
+        except Exception:
             FreeCAD.Console.PrintError(
                 "Unexpected error when writing CalculiX input file: {}\n"
                 .format(sys.exc_info()[0])
@@ -645,6 +655,7 @@ class FemToolsCcx(QtCore.QRunnable, QtCore.QObject):
                         )
                     return False
                 else:
+                    FreeCAD.Console.PrintMessage("**** try to read result files\n")
                     self.load_results()
                     # TODO: output an error message if there where problems reading the results
         return True
@@ -795,10 +806,20 @@ class FemToolsCcx(QtCore.QRunnable, QtCore.QObject):
         """
         import feminout.importCcxDatResults as importCcxDatResults
         dat_result_file = os.path.splitext(self.inp_file_name)[0] + ".dat"
+
         if os.path.isfile(dat_result_file):
             mode_frequencies = importCcxDatResults.import_dat(dat_result_file, self.analysis)
+
+            obj = FreeCAD.ActiveDocument.addObject("App::TextDocument", "ccx dat file")
+            # TODO this object should be inside analysis or under result object
+            # self.result_object.addObject(obj)
+            file = open(dat_result_file, "r")
+            obj.Text = file.read()
+            file.close()
+            # TODO make the Text of obj read only, or the obj itself
         else:
             raise Exception("FEM: No .dat results found at {}!".format(dat_result_file))
+
         if mode_frequencies:
             # print(mode_frequencies)
             for m in self.analysis.Group:

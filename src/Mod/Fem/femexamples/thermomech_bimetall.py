@@ -1,5 +1,6 @@
 # ***************************************************************************
 # *   Copyright (c) 2020 Bernd Hahnebach <bernd@bimstatik.org>              *
+# *   Copyright (c) 2020 Sudhanshu Dubey <sudhanshu.thethunder@gmail.com    *
 # *                                                                         *
 # *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
@@ -9,24 +10,17 @@
 # *   the License, or (at your option) any later version.                   *
 # *   for detail see the LICENCE text file.                                 *
 # *                                                                         *
-# *   FreeCAD is distributed in the hope that it will be useful,            *
+# *   This program is distributed in the hope that it will be useful,       *
 # *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
 # *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
 # *   GNU Library General Public License for more details.                  *
 # *                                                                         *
 # *   You should have received a copy of the GNU Library General Public     *
-# *   License along with FreeCAD; if not, write to the Free Software        *
+# *   License along with this program; if not, write to the Free Software   *
 # *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
 # *   USA                                                                   *
 # *                                                                         *
 # ***************************************************************************
-
-
-# thermomechanical bimetall
-# https://forum.freecadweb.org/viewtopic.php?f=18&t=43040&start=10#p366664
-# analytical solution 7.05 mm deflection in the invar material direction
-# see post in the forum link
-# this file has 7.15 mm max deflection
 # to run the example use:
 """
 from femexamples.thermomech_bimetall import setup
@@ -34,13 +28,19 @@ setup()
 
 """
 
+# thermomechanical bimetall
+# https://forum.freecadweb.org/viewtopic.php?f=18&t=43040&start=10#p366664
+# analytical solution 7.05 mm deflection in the invar material direction
+# see post in the forum link
+# this file has 7.15 mm max deflection
 
 import FreeCAD
-import ObjectsFem
-import Fem
-from FreeCAD import Vector, Rotation
-import BOPTools.SplitFeatures
+from FreeCAD import Rotation
+from FreeCAD import Vector
 
+import Fem
+import ObjectsFem
+from BOPTools import SplitFeatures
 
 mesh_name = "Mesh"  # needs to be Mesh to work with unit tests
 
@@ -51,13 +51,25 @@ def init_doc(doc=None):
     return doc
 
 
+def get_information():
+    info = {"name": "Thermomech Bimetall",
+            "meshtype": "solid",
+            "meshelement": "Tet10",
+            "constraints": ["fixed", "initial temperature", "temperature"],
+            "solvers": ["calculix", "elmer"],
+            "material": "multimaterial",
+            "equation": "thermomechanical"
+            }
+    return info
+
+
 def setup(doc=None, solvertype="ccxtools"):
     # setup model
 
     if doc is None:
         doc = init_doc()
 
-    # parts
+    # geom objects
     # bottom box
     bottom_box_obj = doc.addObject("Part::Box", "BottomBox")
     bottom_box_obj.Length = 100
@@ -77,17 +89,16 @@ def setup(doc=None, solvertype="ccxtools"):
     doc.recompute()
 
     # all geom boolean fragment
-    all_geom_boolfrag_obj = BOPTools.SplitFeatures.makeBooleanFragments(name='BooleanFragments')
-    all_geom_boolfrag_obj.Objects = [bottom_box_obj, top_box_obj]
+    geom_obj = SplitFeatures.makeBooleanFragments(name='BooleanFragments')
+    geom_obj.Objects = [bottom_box_obj, top_box_obj]
     if FreeCAD.GuiUp:
         bottom_box_obj.ViewObject.hide()
         top_box_obj.ViewObject.hide()
     doc.recompute()
 
     if FreeCAD.GuiUp:
-        import FreeCADGui
-        FreeCADGui.ActiveDocument.activeView().viewAxonometric()
-        FreeCADGui.SendMsgToActiveView("ViewFit")
+        geom_obj.ViewObject.Document.activeView().viewAxonometric()
+        geom_obj.ViewObject.Document.activeView().fitAll()
 
     # analysis
     analysis = ObjectsFem.makeAnalysis(doc, "Analysis")
@@ -102,6 +113,22 @@ def setup(doc=None, solvertype="ccxtools"):
             ObjectsFem.makeSolverCalculixCcxTools(doc, "CalculiXccxTools")
         )[0]
         solver_object.WorkingDir = u""
+    elif solvertype == "elmer":
+        solver_object = analysis.addObject(ObjectsFem.makeSolverElmer(doc, "SolverElmer"))[0]
+        solver_object.SteadyStateMinIterations = 1
+        solver_object.SteadyStateMaxIterations = 10
+        eq_heat = ObjectsFem.makeEquationHeat(doc, solver_object)
+        eq_heat.Bubbles = True
+        eq_heat.Priority = 2
+        eq_elasticity = ObjectsFem.makeEquationElasticity(doc, solver_object)
+        eq_elasticity.Bubbles = True
+        eq_elasticity.Priority = 1
+        eq_elasticity.LinearSolverType = "Direct"
+    else:
+        FreeCAD.Console.PrintWarning(
+            "Not known or not supported solver type: {}. "
+            "No solver object was created.\n".format(solvertype)
+        )
     if solvertype == "calculix" or solvertype == "ccxtools":
         solver_object.AnalysisType = "thermomech"
         solver_object.GeometricalNonlinearity = "linear"
@@ -123,8 +150,9 @@ def setup(doc=None, solvertype="ccxtools"):
     mat["SpecificHeat"] = "385 J/kg/K"
     mat["ThermalConductivity"] = "200 W/m/K"
     mat["ThermalExpansionCoefficient"] = "0.00002 m/m/K"
+    mat["Density"] = "1.00 kg/m^3"
     material_obj_bottom.Material = mat
-    material_obj_bottom.References = [(all_geom_boolfrag_obj, "Solid1")]
+    material_obj_bottom.References = [(geom_obj, "Solid1")]
     analysis.addObject(material_obj_bottom)
 
     material_obj_top = analysis.addObject(
@@ -137,8 +165,9 @@ def setup(doc=None, solvertype="ccxtools"):
     mat["SpecificHeat"] = "510 J/kg/K"
     mat["ThermalConductivity"] = "13 W/m/K"
     mat["ThermalExpansionCoefficient"] = "0.0000012 m/m/K"
+    mat["Density"] = "1.00 kg/m^3"
     material_obj_top.Material = mat
-    material_obj_top.References = [(all_geom_boolfrag_obj, "Solid2")]
+    material_obj_top.References = [(geom_obj, "Solid2")]
     analysis.addObject(material_obj_top)
 
     # constraint fixed
@@ -146,8 +175,8 @@ def setup(doc=None, solvertype="ccxtools"):
         ObjectsFem.makeConstraintFixed(doc, "ConstraintFixed")
     )[0]
     con_fixed.References = [
-        (all_geom_boolfrag_obj, "Face1"),
-        (all_geom_boolfrag_obj, "Face7"),
+        (geom_obj, "Face1"),
+        (geom_obj, "Face7"),
     ]
 
     # constraint initial temperature
@@ -161,16 +190,16 @@ def setup(doc=None, solvertype="ccxtools"):
         ObjectsFem.makeConstraintTemperature(doc, "ConstraintTemperature")
     )[0]
     constraint_temperature.References = [
-        (all_geom_boolfrag_obj, "Face1"),
-        (all_geom_boolfrag_obj, "Face2"),
-        (all_geom_boolfrag_obj, "Face3"),
-        (all_geom_boolfrag_obj, "Face4"),
-        (all_geom_boolfrag_obj, "Face5"),
-        (all_geom_boolfrag_obj, "Face7"),
-        (all_geom_boolfrag_obj, "Face8"),
-        (all_geom_boolfrag_obj, "Face9"),
-        (all_geom_boolfrag_obj, "Face10"),
-        (all_geom_boolfrag_obj, "Face11"),
+        (geom_obj, "Face1"),
+        (geom_obj, "Face2"),
+        (geom_obj, "Face3"),
+        (geom_obj, "Face4"),
+        (geom_obj, "Face5"),
+        (geom_obj, "Face7"),
+        (geom_obj, "Face8"),
+        (geom_obj, "Face9"),
+        (geom_obj, "Face10"),
+        (geom_obj, "Face11"),
     ]
     constraint_temperature.Temperature = 373.0
     constraint_temperature.CFlux = 0.0
@@ -185,9 +214,11 @@ def setup(doc=None, solvertype="ccxtools"):
     if not control:
         FreeCAD.Console.PrintError("Error on creating elements.\n")
     femmesh_obj = analysis.addObject(
-        doc.addObject("Fem::FemMeshObject", mesh_name)
+        ObjectsFem.makeMeshGmsh(doc, mesh_name)
     )[0]
     femmesh_obj.FemMesh = fem_mesh
+    femmesh_obj.Part = geom_obj
+    femmesh_obj.SecondOrderLinear = False
 
     doc.recompute()
     return doc

@@ -36,8 +36,8 @@ using namespace Gui::Dialog;
 /* TRANSLATOR Gui::Dialog::DlgReportViewImp */
 
 /**
- *  Constructs a DlgReportViewImp which is a child of 'parent', with the 
- *  name 'name' and widget flags set to 'f' 
+ *  Constructs a DlgReportViewImp which is a child of 'parent', with the
+ *  name 'name' and widget flags set to 'f'
  *
  *  The dialog will by default be modeless, unless you set 'modal' to
  *  true to construct a modal dialog.
@@ -49,7 +49,7 @@ DlgReportViewImp::DlgReportViewImp( QWidget* parent )
     ui->setupUi(this);
 }
 
-/** 
+/**
  *  Destroys the object and frees any allocated resources
  */
 DlgReportViewImp::~DlgReportViewImp()
@@ -58,10 +58,15 @@ DlgReportViewImp::~DlgReportViewImp()
 
 void DlgReportViewImp::saveSettings()
 {
+    ui->checkMessage->onSave();
     ui->checkLogging->onSave();
     ui->checkWarning->onSave();
     ui->checkError->onSave();
-    ui->checkShowReportViewOnWarningOrError->onSave();
+    ui->checkShowReportViewOnWarning->onSave();
+    ui->checkShowReportViewOnError->onSave();
+    ui->checkShowReportViewOnNormalMessage->onSave();
+    ui->checkShowReportViewOnLogMessage->onSave();
+    ui->checkShowReportTimecode->onSave();
     ui->colorText->onSave();
     ui->colorLogging->onSave();
     ui->colorWarning->onSave();
@@ -72,10 +77,15 @@ void DlgReportViewImp::saveSettings()
 
 void DlgReportViewImp::loadSettings()
 {
+    ui->checkMessage->onRestore();
     ui->checkLogging->onRestore();
     ui->checkWarning->onRestore();
     ui->checkError->onRestore();
-    ui->checkShowReportViewOnWarningOrError->onRestore();
+    ui->checkShowReportViewOnWarning->onRestore();
+    ui->checkShowReportViewOnError->onRestore();
+    ui->checkShowReportViewOnNormalMessage->onRestore();
+    ui->checkShowReportViewOnLogMessage->onRestore();
+    ui->checkShowReportTimecode->onRestore();
     ui->colorText->onRestore();
     ui->colorLogging->onRestore();
     ui->colorWarning->onRestore();

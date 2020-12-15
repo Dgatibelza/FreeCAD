@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) 2019 WandererFan    <wandererfan@gmail.com>             *
+ *   Copyright (c) 2019 WandererFan <wandererfan@gmail.com>                *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -39,12 +39,14 @@
 #include <App/Document.h>
 #include <App/GroupExtension.h>
 #include <App/Part.h>
+#include <App/Link.h>
 
 #include <Base/BoundBox.h>
 #include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/FileInfo.h>
 #include <Base/Parameter.h>
+#include <Base/Placement.h>
 
 #include <Mod/Part/App/PartFeature.h>
 #include <Mod/Part/App/PrimitiveFeature.h>
@@ -67,22 +69,28 @@ std::vector<TopoDS_Shape> ShapeExtractor::getShapes2d(const std::vector<App::Doc
     }
     for (auto& l:links) {
         const App::GroupExtension* gex = dynamic_cast<const App::GroupExtension*>(l);
-//        App::Property* gProp = l->getPropertyByName("Group");
         if (gex != nullptr) {
             std::vector<App::DocumentObject*> objs = gex->Group.getValues();
             for (auto& d: objs) {
                 if (is2dObject(d)) {
-                    auto shape = Part::Feature::getShape(d);
-                    if(!shape.IsNull()) {
-                        shapes2d.push_back(shape);
+                    if (d->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId())) {
+                        //need to apply global placement here.  ??? because 2d shapes (Points so far)
+                        //don't get gp from Part::feature::getShape() ????
+                        const Part::Feature* pf = static_cast<const Part::Feature*>(d);
+                        Part::TopoShape ts = pf->Shape.getShape();
+                        ts.setPlacement(pf->globalPlacement());
+                        shapes2d.push_back(ts.getShape());
                     }
                 }
             }
         } else {
             if (is2dObject(l)) {
-                auto shape = Part::Feature::getShape(l);
-                if(!shape.IsNull()) {
-                    shapes2d.push_back(shape);
+                if (l->getTypeId().isDerivedFrom(Part::Feature::getClassTypeId())) {
+                    //need to apply placement here
+                    const Part::Feature* pf = static_cast<const Part::Feature*>(l);
+                    Part::TopoShape ts = pf->Shape.getShape();
+                    ts.setPlacement(pf->globalPlacement());
+                    shapes2d.push_back(ts.getShape());
                 }
             }
         }
@@ -92,24 +100,35 @@ std::vector<TopoDS_Shape> ShapeExtractor::getShapes2d(const std::vector<App::Doc
 
 TopoDS_Shape ShapeExtractor::getShapes(const std::vector<App::DocumentObject*> links)
 {
+//    Base::Console().Message("SE::getShapes() - links in: %d\n", links.size());
     TopoDS_Shape result;
     std::vector<TopoDS_Shape> sourceShapes;
 
     for (auto& l:links) {
-        auto shape = Part::Feature::getShape(l);
-        if(!shape.IsNull()) {
-//            BRepTools::Write(shape, "DVPgetShape.brep");            //debug
-            if (shape.ShapeType() > TopAbs_COMPSOLID)  {              //simple shape
-                sourceShapes.push_back(shape);
-            } else {                                                  //complex shape
-                std::vector<TopoDS_Shape> drawable = extractDrawableShapes(shape);
-                if (!drawable.empty()) {
-                    sourceShapes.insert(sourceShapes.end(),drawable.begin(),drawable.end());
-                }
+        if (l->getTypeId().isDerivedFrom(App::Link::getClassTypeId())) {
+            App::Link* xLink = dynamic_cast<App::Link*>(l);
+            std::vector<TopoDS_Shape> xShapes = getXShapes(xLink);
+            if (!xShapes.empty()) {
+                sourceShapes.insert(sourceShapes.end(), xShapes.begin(), xShapes.end());
+                continue;
             }
         } else {
-            std::vector<TopoDS_Shape> shapeList = getShapesFromObject(l);
-            sourceShapes.insert(sourceShapes.end(),shapeList.begin(),shapeList.end());
+            auto shape = Part::Feature::getShape(l);
+            if(!shape.IsNull()) {
+    //            BRepTools::Write(shape, "DVPgetShape.brep");            //debug
+                if (shape.ShapeType() > TopAbs_COMPSOLID)  {              //simple shape
+                    //do we need to apply placement here too??
+                    sourceShapes.push_back(shape);
+                } else {                                                  //complex shape
+                    std::vector<TopoDS_Shape> drawable = extractDrawableShapes(shape);
+                    if (!drawable.empty()) {
+                        sourceShapes.insert(sourceShapes.end(),drawable.begin(),drawable.end());
+                    }
+                }
+            } else {
+                std::vector<TopoDS_Shape> shapeList = getShapesFromObject(l);
+                sourceShapes.insert(sourceShapes.end(),shapeList.begin(),shapeList.end());
+            }
         }
     }
 
@@ -126,7 +145,7 @@ TopoDS_Shape ShapeExtractor::getShapes(const std::vector<App::DocumentObject*> l
         TopoDS_Shape shape = BuilderCopy.Shape();
         builder.Add(comp, shape);
     }
-    //it appears that an empty compound is !IsNull(), so we need to check a different way 
+    //it appears that an empty compound is !IsNull(), so we need to check a different way
     //if we added anything to the compound.
     if (!found) {
         Base::Console().Error("SE::getSourceShapes - source shape is empty!\n");
@@ -136,11 +155,86 @@ TopoDS_Shape ShapeExtractor::getShapes(const std::vector<App::DocumentObject*> l
     return result;
 }
 
+std::vector<TopoDS_Shape> ShapeExtractor::getXShapes(const App::Link* xLink)
+{
+//    Base::Console().Message("SE::getXShapes(%X) - %s\n", xLink, xLink->getNameInDocument());
+    std::vector<TopoDS_Shape> xSourceShapes;
+    if (xLink == nullptr) {
+        return xSourceShapes;
+    }
+
+    std::vector<App::DocumentObject*> children = xLink->getLinkedChildren();
+    Base::Placement linkPlm;
+    if (xLink->hasPlacement()) {
+        linkPlm = xLink->getLinkPlacementProperty()->getValue();
+    }
+
+    if (!children.empty()) {
+        for (auto& l:children) {
+//What to do with LinkGroup???
+//            if (l->getTypeId().isDerivedFrom(App::LinkGroup::getClassTypeId())) {
+//                Base::Console().Message("SE::getXShapes - found a LinkGroup\n");
+//            }
+            Base::Placement childPlm;
+            if (l->getTypeId().isDerivedFrom(App::LinkElement::getClassTypeId())) {
+                App::LinkElement* cLinkElem = static_cast<App::LinkElement*>(l);
+                if (cLinkElem->hasPlacement()) {
+                    childPlm = cLinkElem->getLinkPlacementProperty()->getValue();
+                }
+            }
+            auto shape = Part::Feature::getShape(l);
+            if(!shape.IsNull()) {
+                Base::Placement netPlm = linkPlm;
+                netPlm *= childPlm;
+                if (xLink->hasPlacement()) {
+                    Part::TopoShape ts(shape);
+                    ts.setPlacement(netPlm);
+                    shape = ts.getShape();
+                }
+                if (shape.ShapeType() > TopAbs_COMPSOLID)  {              //simple shape
+                    xSourceShapes.push_back(shape);
+                } else {                                                  //complex shape
+                    std::vector<TopoDS_Shape> drawable = extractDrawableShapes(shape);
+                    if (!drawable.empty()) {
+                        xSourceShapes.insert(xSourceShapes.end(),drawable.begin(),drawable.end());
+                    }
+                }
+            } else {
+                Base::Console().Message("SE::getXShapes - no shape from getXShape\n");
+            }
+        }
+    } else {
+        int depth = 1;   //0 is default value, related to recursion of Links???
+        App::DocumentObject* link = xLink->getLink(depth);
+        if (link != nullptr) {
+            auto shape = Part::Feature::getShape(link);
+            if(!shape.IsNull()) {
+                if (xLink->hasPlacement()) {
+                    Part::TopoShape ts(shape);
+                    ts.setPlacement(linkPlm);
+                    shape = ts.getShape();
+                }
+
+                if (shape.ShapeType() > TopAbs_COMPSOLID)  {              //simple shape
+                    xSourceShapes.push_back(shape);
+                } else {                                                  //complex shape
+                    std::vector<TopoDS_Shape> drawable = extractDrawableShapes(shape);
+                    if (!drawable.empty()) {
+                        xSourceShapes.insert(xSourceShapes.end(),drawable.begin(),drawable.end());
+                    }
+                }
+            }
+        }
+    }
+    return xSourceShapes;
+}
+
+
 std::vector<TopoDS_Shape> ShapeExtractor::getShapesFromObject(const App::DocumentObject* docObj)
 {
 //    Base::Console().Message("SE::getShapesFromObject(%s)\n", docObj->getNameInDocument());
     std::vector<TopoDS_Shape> result;
-    
+
     const App::GroupExtension* gex = dynamic_cast<const App::GroupExtension*>(docObj);
     App::Property* gProp = docObj->getPropertyByName("Group");
     App::Property* sProp = docObj->getPropertyByName("Shape");
@@ -241,8 +335,8 @@ std::vector<TopoDS_Shape> ShapeExtractor::extractDrawableShapes(const TopoDS_Sha
                 extShapes.push_back(s);
             }
         }
-        //vs using 2d geom as construction geom? 
-        //get edges not part of a solid 
+        //vs using 2d geom as construction geom?
+        //get edges not part of a solid
         //???? should this look for Faces(Wires?) before Edges?
         TopExp_Explorer expEdge(shapeIn, TopAbs_EDGE, TopAbs_SOLID);
         for (int i = 1; expEdge.More(); expEdge.Next(), i++) {
@@ -255,7 +349,7 @@ std::vector<TopoDS_Shape> ShapeExtractor::extractDrawableShapes(const TopoDS_Sha
         //not a Compound or a CompSolid just push_back shape_In)
         extShapes.push_back(shapeIn);
     }
-    
+
     result = extShapes;
     if (!extEdges.empty()) {
         result.insert(std::end(result), std::begin(extEdges), std::end(extEdges));
@@ -281,11 +375,11 @@ bool ShapeExtractor::isEdgeType(App::DocumentObject* obj)
 //    if (t.isDerivedFrom(Part::Line::getClassTypeId()) ) {
 //        result = true;
 //    } else if (t.isDerivedFrom(Part::Circle::getClassTypeId())) {
-//        result = true; 
+//        result = true;
 //    } else if (t.isDerivedFrom(Part::Ellipse::getClassTypeId())) {
-//        result = true; 
+//        result = true;
 //    } else if (t.isDerivedFrom(Part::RegularPolygon::getClassTypeId())) {
-//        result = true; 
+//        result = true;
 //    }
     return result;
 }
@@ -295,7 +389,7 @@ bool ShapeExtractor::isPointType(App::DocumentObject* obj)
     bool result = false;
     Base::Type t = obj->getTypeId();
     if (t.isDerivedFrom(Part::Vertex::getClassTypeId())) {
-        result = true; 
+        result = true;
     } else if (isDraftPoint(obj)) {
         result = true;
     }
@@ -307,10 +401,9 @@ bool ShapeExtractor::isDraftPoint(App::DocumentObject* obj)
 //    Base::Console().Message("SE::isDraftPoint()\n");
     bool result = false;
     //if the docObj doesn't have a Proxy property, it definitely isn't a Draft point
-    App::Property* proxy = obj->getPropertyByName("Proxy");
+    App::PropertyPythonObject* proxy = dynamic_cast<App::PropertyPythonObject*>(obj->getPropertyByName("Proxy"));
     if (proxy != nullptr) {
-        App::PropertyPythonObject* proxyPy = dynamic_cast<App::PropertyPythonObject*>(proxy);
-        std::string  pp = proxyPy->toString();
+        std::string  pp = proxy->toString();
 //        Base::Console().Message("SE::isDraftPoint - pp: %s\n", pp.c_str());
         if (pp.find("Point") != std::string::npos) {
             result = true;
@@ -329,16 +422,18 @@ Base::Vector3d ShapeExtractor::getLocation3dFromFeat(App::DocumentObject* obj)
 //    if (isDraftPoint(obj) {
 //        //Draft Points are not necc. Part::PartFeature??
 //        //if Draft option "use part primitives" is not set are Draft points still PartFeature?
-//        Base::Vector3d featPos = features[i]->(Placement.getValue()).Position();
 
     Part::Feature* pf = dynamic_cast<Part::Feature*>(obj);
     if (pf != nullptr) {
-        TopoDS_Shape ts = pf->Shape.getValue();
+        Part::TopoShape pts = pf->Shape.getShape();
+        pts.setPlacement(pf->globalPlacement());
+        TopoDS_Shape ts = pts.getShape();
         if (ts.ShapeType() == TopAbs_VERTEX)  {
             TopoDS_Vertex v = TopoDS::Vertex(ts);
             result = DrawUtil::vertex2Vector(v);
         }
     }
+
 //    Base::Console().Message("SE::getLocation3dFromFeat - returns: %s\n",
 //                            DrawUtil::formatVector(result).c_str());
     return result;
@@ -348,7 +443,7 @@ bool ShapeExtractor::prefAdd2d(void)
 {
     Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
           .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/General");
-    bool result = hGrp->GetBool("ShowLoose2d", false); 
+    bool result = hGrp->GetBool("ShowLoose2d", false);
     return result;
 }
-    
+

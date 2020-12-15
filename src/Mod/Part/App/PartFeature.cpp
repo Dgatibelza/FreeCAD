@@ -53,7 +53,7 @@
 #endif
 
 #include <boost/algorithm/string/predicate.hpp>
-#include <boost/bind.hpp>
+#include <boost_bind_bind.hpp>
 #include <Base/Console.h>
 #include <Base/Writer.h>
 #include <Base/Reader.h>
@@ -74,6 +74,7 @@
 #include "TopoShapePy.h"
 
 using namespace Part;
+namespace bp = boost::placeholders;
 
 FC_LOG_LEVEL_INIT("Part",true,true)
 
@@ -222,11 +223,11 @@ struct ShapeCache {
             return;
         inited = true;
         App::GetApplication().signalDeleteDocument.connect(
-                boost::bind(&ShapeCache::slotDeleteDocument, this, _1));
+                boost::bind(&ShapeCache::slotDeleteDocument, this, bp::_1));
         App::GetApplication().signalDeletedObject.connect(
-                boost::bind(&ShapeCache::slotClear, this, _1));
+                boost::bind(&ShapeCache::slotClear, this, bp::_1));
         App::GetApplication().signalChangedObject.connect(
-                boost::bind(&ShapeCache::slotChanged, this, _1,_2));
+                boost::bind(&ShapeCache::slotChanged, this, bp::_1,bp::_2));
     }
 
     void slotDeleteDocument(const App::Document &doc) {
@@ -407,9 +408,10 @@ static TopoShape _getTopoShape(const App::DocumentObject *obj, const char *subna
         // not return the linked object when calling getLinkedObject().
         // Therefore, it should be handled here.
         TopoShape baseShape;
+        Base::Matrix4D baseMat;
         std::string op;
         if(link && link->getElementCountValue()) {
-            linked = link->getTrueLinkedObject(false);
+            linked = link->getTrueLinkedObject(false,&baseMat);
             if(linked && linked!=owner) {
                 baseShape = Feature::getTopoShape(linked,0,false,0,0,false,false);
                 // if(!link->getShowElementValue())
@@ -421,7 +423,7 @@ static TopoShape _getTopoShape(const App::DocumentObject *obj, const char *subna
             int visible;
             std::string childName;
             App::DocumentObject *parent=0;
-            Base::Matrix4D mat;
+            Base::Matrix4D mat = baseMat;
             App::DocumentObject *subObj=0;
             if(sub.find('.')==std::string::npos)
                 visible = 1;

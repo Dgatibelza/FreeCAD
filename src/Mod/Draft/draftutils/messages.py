@@ -1,8 +1,3 @@
-"""Provide message utility functions for the Draft Workbench."""
-## @package messages
-# \ingroup DRAFT
-# \brief Provide message utility functions for the Draft Workbench.
-
 # ***************************************************************************
 # *   (c) 2020 Eliud Cabrera Castillo <e.cabrera-castillo@tum.de>           *
 # *                                                                         *
@@ -25,25 +20,39 @@
 # *   USA                                                                   *
 # *                                                                         *
 # ***************************************************************************
+"""Provides utility functions that wrap around the Console methods.
 
+The Console module has long function names, so we define some shorthands
+that are suitable for use in every workbench. These shorthands also include
+a newline character at the end of the string, so it doesn't have to be
+added manually.
+"""
+## @package messages
+# \ingroup draftutils
+# \brief Provides utility functions that wrap around the Console methods.
+
+## \addtogroup draftutils
+# @{
 import FreeCAD as App
 
 
 def _msg(text, end="\n"):
-    """Write messages to console including the line ending."""
+    """Write messages to the console including the line ending."""
     App.Console.PrintMessage(text + end)
 
 
 def _wrn(text, end="\n"):
-    """Write warnings to console including the line ending."""
+    """Write warnings to the console including the line ending."""
     App.Console.PrintWarning(text + end)
 
 
 def _err(text, end="\n"):
-    """Write errors to console including the line ending."""
+    """Write errors to the console including the line ending."""
     App.Console.PrintError(text + end)
 
 
 def _log(text, end="\n"):
     """Write messages to the log file including the line ending."""
     App.Console.PrintLog(text + end)
+
+## @}

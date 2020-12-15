@@ -1,14 +1,3 @@
-"""Provides lists of commands for the Draft Workbench.
-
-This module returns lists of commands, so that the toolbars
-can be initialized by Draft, and by other workbenches.
-These commands should be defined in `DraftTools`, and in the individual
-modules in `draftguitools`.
-"""
-## @package init_tools
-# \ingroup DRAFT
-# \brief This module provides lists of commands for the Draft Workbench.
-
 # ***************************************************************************
 # *   (c) 2020 Eliud Cabrera Castillo <e.cabrera-castillo@tum.de>           *
 # *                                                                         *
@@ -31,7 +20,19 @@ modules in `draftguitools`.
 # *   USA                                                                   *
 # *                                                                         *
 # ***************************************************************************
+"""Provides lists of commands in order to set up toolbars of the workbench.
 
+This module returns lists of commands, so that the toolbars
+can be initialized by Draft, and by other workbenches.
+These commands should be defined in `DraftTools`, and in the individual
+modules in `draftguitools`.
+"""
+## @package init_tools
+# \ingroup draftutils
+# \brief Provides lists of commands to set up toolbars of the workbench.
+
+## \addtogroup draftutils
+# @{
 from PySide.QtCore import QT_TRANSLATE_NOOP
 
 # Comment out commands that aren't ready to be used
@@ -39,17 +40,18 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 
 def get_draft_drawing_commands():
     """Return the drawing commands list."""
-    return ["Draft_Line", "Draft_Wire",  # "Draft_Fillet",
+    return ["Draft_Line", "Draft_Wire", "Draft_Fillet",
             "Draft_ArcTools",
             "Draft_Circle", "Draft_Ellipse", "Draft_Rectangle",
             "Draft_Polygon", "Draft_BSpline", "Draft_BezierTools",
-            "Draft_Point", "Draft_Facebinder"]
+            "Draft_Point", "Draft_Facebinder",
+            "Draft_ShapeString"]
 
 
 def get_draft_annotation_commands():
     """Return the annotation commands list."""
-    return ["Draft_Text", "Draft_ShapeString", "Draft_Dimension",
-            "Draft_Label"]
+    return ["Draft_Text", "Draft_Dimension",
+            "Draft_Label", "Draft_AnnotationStyleEditor"]
 
 
 def get_draft_array_commands():
@@ -57,17 +59,36 @@ def get_draft_array_commands():
     return ["Draft_ArrayTools"]
 
 
+def get_draft_small_commands():
+    """Return a list with only some utilities."""
+    return ["Draft_Layer",
+            "Draft_WorkingPlaneProxy",
+            "Draft_ToggleDisplayMode",
+            "Draft_AddToGroup",
+            "Draft_SelectGroup",
+            "Draft_AddConstruction",
+            "Draft_Heal"]
+
+
 def get_draft_modification_commands():
     """Return the modification commands list."""
-    lst = ["Draft_Move", "Draft_Rotate", "Draft_Offset",
-           "Draft_Trimex", "Draft_Join", "Draft_Split",
-           "Draft_Upgrade", "Draft_Downgrade", "Draft_Scale",
-           "Draft_Edit", "Draft_SubelementHighlight",
-           "Draft_WireToBSpline", "Draft_Draft2Sketch",
-           "Draft_Shape2DView"]
+    lst = ["Draft_Move", "Draft_Rotate",
+           "Draft_Scale", "Draft_Mirror",
+           "Draft_Offset", "Draft_Trimex",
+           "Draft_Stretch",
+           "Separator",
+           "Draft_Clone"]
     lst += get_draft_array_commands()
-    lst += ["Draft_Clone",
-            "Draft_Drawing", "Draft_Mirror", "Draft_Stretch"]
+    lst += ["Separator",
+            "Draft_Edit", "Draft_SubelementHighlight",
+            "Separator",
+            "Draft_Join", "Draft_Split",
+            "Draft_Upgrade", "Draft_Downgrade",
+            "Separator",
+            "Draft_WireToBSpline", "Draft_Draft2Sketch",
+            "Draft_Slope", "Draft_FlipDimension",
+            "Separator",
+            "Draft_Shape2DView"]
     return lst
 
 
@@ -76,7 +97,8 @@ def get_draft_context_commands():
     return ["Draft_ApplyStyle", "Draft_ToggleDisplayMode",
             "Draft_AddToGroup", "Draft_SelectGroup",
             "Draft_SelectPlane", "Draft_ShowSnapBar",
-            "Draft_ToggleGrid", "Draft_AutoGroup"]
+            "Draft_ToggleGrid", "Draft_AutoGroup",
+            "Draft_SetStyle"]
 
 
 def get_draft_line_commands():
@@ -90,21 +112,22 @@ def get_draft_utility_commands():
     return ["Draft_Layer", "Draft_Heal", "Draft_FlipDimension",
             "Draft_ToggleConstructionMode",
             "Draft_ToggleContinueMode", "Draft_Edit",
-            "Draft_Slope", "Draft_SetWorkingPlaneProxy",
+            "Draft_Slope", "Draft_WorkingPlaneProxy",
             "Draft_AddConstruction"]
 
 
 def get_draft_snap_commands():
     """Return the snapping commands list."""
-    return ['Draft_Snap_Lock', 'Draft_Snap_Midpoint',
-            'Draft_Snap_Perpendicular',
-            'Draft_Snap_Grid', 'Draft_Snap_Intersection',
-            'Draft_Snap_Parallel',
-            'Draft_Snap_Endpoint', 'Draft_Snap_Angle',
-            'Draft_Snap_Center',
-            'Draft_Snap_Extension', 'Draft_Snap_Near',
-            'Draft_Snap_Ortho', 'Draft_Snap_Special',
-            'Draft_Snap_Dimensions', 'Draft_Snap_WorkingPlane']
+    return ['Draft_Snap_Lock',
+            'Draft_Snap_Endpoint', 'Draft_Snap_Midpoint',
+            'Draft_Snap_Center', 'Draft_Snap_Angle',
+            'Draft_Snap_Intersection', 'Draft_Snap_Perpendicular',
+            'Draft_Snap_Extension', 'Draft_Snap_Parallel',
+            'Draft_Snap_Special', 'Draft_Snap_Near',
+            'Draft_Snap_Ortho', 'Draft_Snap_Grid',
+            'Draft_Snap_WorkingPlane', 'Draft_Snap_Dimensions',
+            'Separator', 'Draft_ToggleGrid'
+            ]
 
 
 def init_draft_toolbars(workbench):
@@ -112,7 +135,7 @@ def init_draft_toolbars(workbench):
 
     Parameters
     ----------
-    workbench : Gui.Workbench
+    workbench: Gui.Workbench
         The workbench class on which the commands have to be available.
         If called from within the `Initialize` method
         of a workbench class defined inside `InitGui.py`,
@@ -134,7 +157,7 @@ def init_draft_menus(workbench):
 
     Parameters
     ----------
-    workbench : Gui.Workbench
+    workbench: Gui.Workbench
         The workbench class on which the commands have to be available.
         If called from within the `Initialize` method
         of a workbench class defined inside `InitGui.py`,
@@ -149,3 +172,5 @@ def init_draft_menus(workbench):
     workbench.appendMenu(QT_TRANSLATE_NOOP("Draft", "&Utilities"),
                          get_draft_utility_commands()
                          + get_draft_context_commands())
+
+## @}

@@ -24,8 +24,8 @@
 #ifndef GUI_DIALOG_DLGSETTINGSIMAGE_IMP_H
 #define GUI_DIALOG_DLGSETTINGSIMAGE_IMP_H
 
-#include <Inventor/SoOffscreenRenderer.h> 
-#include <Inventor/SbMatrix.h> 
+#include <Inventor/SoOffscreenRenderer.h>
+#include <Inventor/SbMatrix.h>
 
 #include <QWidget>
 #include <memory>
@@ -35,7 +35,7 @@ namespace Dialog {
 class Ui_DlgSettingsImage;
 
 /**
- * The DlgSettings3DViewImp class implements a preference page to change settings
+ * The DlgSettingsImageImp class implements a preference page to change settings
  * for the Inventor viewer.
  * @author Werner Mayer
  */

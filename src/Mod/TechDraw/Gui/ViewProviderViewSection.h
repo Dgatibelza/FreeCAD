@@ -22,8 +22,8 @@
  ***************************************************************************/
 
 
-#ifndef DRAWINGGUI_VIEWPROVIDERVIEWSECTION_H
-#define DRAWINGGUI_VIEWPROVIDERVIEWSECTION_H
+#ifndef TECHDRAWGUI_VIEWPROVIDERVIEWSECTION_H
+#define TECHDRAWGUI_VIEWPROVIDERVIEWSECTION_H
 
 #include <Mod/TechDraw/App/DrawView.h>
 #include <Mod/TechDraw/App/DrawViewPart.h>
@@ -48,6 +48,7 @@ public:
     App::PropertyColor  CutSurfaceColor;
     App::PropertyBool   HatchCutSurface;       //obsolete - use CutSurfaceDisplay
     App::PropertyColor  HatchColor;
+    App::PropertyColor  GeomHatchColor;
     App::PropertyFloat  WeightPattern;
 
 
@@ -73,4 +74,4 @@ public:
 } // namespace TechDrawGui
 
 
-#endif // DRAWINGGUI_VIEWPROVIDERVIEW_H
+#endif // TECHDRAWGUI_VIEWPROVIDERVIEWSECTION_H

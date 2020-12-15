@@ -68,6 +68,9 @@ TaskDressUpParameters::TaskDressUpParameters(ViewProviderDressUp *DressUpView, b
     , allowFaces(selectFaces)
     , allowEdges(selectEdges)
 {
+    // remember initial transaction ID
+    App::GetApplication().getActiveTransaction(&transactionID);
+
     selectionMode = none;
     showObject();
 }
@@ -78,13 +81,20 @@ TaskDressUpParameters::~TaskDressUpParameters()
     Gui::Selection().rmvSelectionGate();
 }
 
-void TaskDressUpParameters::setupTransaction() {
+void TaskDressUpParameters::setupTransaction()
+{
+    if (!DressUpView)
+        return;
+
     int tid = 0;
-    const char *name = App::GetApplication().getActiveTransaction(&tid);
+    App::GetApplication().getActiveTransaction(&tid);
+    if (tid && tid == transactionID)
+        return;
+
+    // open a transaction if none is active
     std::string n("Edit ");
     n += DressUpView->getObject()->Label.getValue();
-    if(!name || n != name)
-        App::GetApplication().setActiveTransaction(n.c_str());
+    transactionID = App::GetApplication().setActiveTransaction(n.c_str());
 }
 
 bool TaskDressUpParameters::referenceSelected(const Gui::SelectionChanges& msg)
@@ -195,17 +205,19 @@ void TaskDressUpParameters::setSelection(QListWidgetItem* current) {
         std::string docName = DressUpView->getObject()->getDocument()->getName();
         // get the name of the body we are in
         Part::BodyBase* body = PartDesign::Body::findBodyOf(DressUpView->getObject());
-        std::string objName = body->getNameInDocument();
+        if (body) {
+            std::string objName = body->getNameInDocument();
 
-        // hide fillet to see the original edge
-        // (a fillet creates new edges so that the original one is not available)
-        hideObject();
-        // highlight all objects in the list
-        DressUpView->highlightReferences(true);
-        // clear existing selection because only the current item is highlighted, not all selected ones to keep the overview
-        Gui::Selection().clearSelection();
-        // highligh the selected item
-        Gui::Selection().addSelection(docName.c_str(), objName.c_str(), subName.c_str(), 0, 0, 0);
+            // hide fillet to see the original edge
+            // (a fillet creates new edges so that the original one is not available)
+            hideObject();
+            // highlight all objects in the list
+            DressUpView->highlightReferences(true);
+            // clear existing selection because only the current item is highlighted, not all selected ones to keep the overview
+            Gui::Selection().clearSelection();
+            // highligh the selected item
+            Gui::Selection().addSelection(docName.c_str(), objName.c_str(), subName.c_str(), 0, 0, 0);
+        }
     }
 }
 

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # ***************************************************************************
-# *                                                                         *
 # *   Copyright (c) 2015 Yorik van Havre <yorik@uncreated.net>              *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
@@ -37,7 +36,7 @@ def translate(context, text, disambig=None):
 class CommandPathSimpleCopy:
 
     def GetResources(self):
-        return {'Pixmap': 'Path-SimpleCopy',
+        return {'Pixmap': 'Path_SimpleCopy',
                 'MenuText': QtCore.QT_TRANSLATE_NOOP("Path_SimpleCopy", "Simple Copy"),
                 'ToolTip': QtCore.QT_TRANSLATE_NOOP("Path_SimpleCopy", "Creates a non-parametric copy of another path")}
 

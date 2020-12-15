@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (c) 2019 Wanderer Fan <wandererfan@gmail.com>               *
+ *   Copyright (c) 2019 WandererFan <wandererfan@gmail.com>                *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -62,13 +62,14 @@ DrawWeldSymbol::DrawWeldSymbol(void)
     Caption.setStatus(App::Property::Hidden,true);
     Scale.setStatus(App::Property::Hidden,true);
     ScaleType.setStatus(App::Property::Hidden,true);
+    Rotation.setStatus(App::Property::Hidden, true);
 }
 
 DrawWeldSymbol::~DrawWeldSymbol()
 {
 }
 
-//DWS always has exactly 2 child tiles - ArrowSide and OtherSide. 
+//DWS always has exactly 2 child tiles - ArrowSide and OtherSide.
 //OtherSide tile may be hidden;
 //once DWS has been added to the document, add 2x DrawTileWeld
 //but if this is a restore of an existing DWS, the tiles will loaded elsewhere
@@ -99,8 +100,8 @@ void DrawWeldSymbol::onSettingDocument()
     DrawTileWeld* tile2 = dynamic_cast<DrawTileWeld*>(tile2Obj);
     if (tile2 != nullptr) {
         tile2->TileParent.setValue(this);
+        tile2->TileRow.setValue(-1);   //other side is row -1
     }
-    tile2->TileRow.setValue(-1);   //other side is row -1
 
     DrawView::onSettingDocument();
 }
@@ -119,7 +120,7 @@ short DrawWeldSymbol::mustExecute() const
 }
 
 App::DocumentObjectExecReturn *DrawWeldSymbol::execute(void)
-{ 
+{
 //    Base::Console().Message("DWS::execute()\n");
     if (!keepUpdated()) {
         return App::DocumentObject::StdReturn;

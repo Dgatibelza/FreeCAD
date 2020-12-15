@@ -1,34 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Form</class>
- <widget class="QWidget" name="Form">
+ <class>ToolBitAttributes</class>
+ <widget class="QWidget" name="ToolBitAttributes">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>587</width>
-    <height>744</height>
+    <width>401</width>
+    <height>715</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Tool Bit Attributes</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
-    <widget class="QToolBox" name="toolBox">
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="page">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>559</width>
-        <height>626</height>
-       </rect>
-      </property>
-      <attribute name="label">
+     <widget class="QWidget" name="tabWidgetPage1">
+      <attribute name="title">
        <string>Shape</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -61,7 +59,7 @@
           <item row="1" column="0">
            <widget class="QLabel" name="label_2">
             <property name="text">
-             <string>Type</string>
+             <string>Shape File</string>
             </property>
            </widget>
           </item>
@@ -122,7 +120,7 @@
           <item row="0" column="1">
            <widget class="Gui::InputField" name="toolCuttingEdgeAngle">
             <property name="text">
-             <string>180°</string>
+             <string>0 °</string>
             </property>
             <property name="unit" stdset="0">
              <string>°</string>
@@ -139,7 +137,7 @@
           <item row="1" column="1">
            <widget class="Gui::InputField" name="toolCuttingEdgeHeight">
             <property name="text">
-             <string>0.00</string>
+             <string>0 mm</string>
             </property>
             <property name="unit" stdset="0">
              <string>mm</string>
@@ -180,16 +178,8 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="page_2">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>559</width>
-        <height>626</height>
-       </rect>
-      </property>
-      <attribute name="label">
+     <widget class="QWidget" name="tabWidgetPage2">
+      <attribute name="title">
        <string>Attributes</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -228,6 +218,8 @@
    <header>Gui/InputField.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../../../../../Gui/Icons/resource.qrc"/>
+ </resources>
  <connections/>
 </ui>

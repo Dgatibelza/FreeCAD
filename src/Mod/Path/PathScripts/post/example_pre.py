@@ -1,5 +1,5 @@
 # ***************************************************************************
-# *   (c) Yorik van Havre (yorik@uncreated.net) 2014                        *
+# *   Copyright (c) 2014 Yorik van Havre <yorik@uncreated.net>              *
 # *                                                                         *
 # *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
@@ -19,13 +19,14 @@
 # *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
 # *   USA                                                                   *
 # *                                                                         *
-# ***************************************************************************/
+# ***************************************************************************
 
 
 '''
 This is an example preprocessor file for the Path workbench. Its aim is to
 open a gcode file, parse its contents, and create the appropriate objects
-in FreeCAD.
+in FreeCAD. This preprocessor will not add imported gcode to an existing
+job. For a more useful preprocessor, look at the gcode_pre.py file
 
 Read the Path Workbench documentation to know how to create Path objects
 from GCode.
@@ -73,13 +74,11 @@ def insert(filename, docname):
 def parse(inputstring):
     "parse(inputstring): returns a parsed output string"
     print("preprocessing...")
-    print(inputstring)
     PathLog.track(inputstring)
     # split the input by line
     lines = inputstring.split("\n")
-    output = ""
+    output = []
     lastcommand = None
-    print(lines)
 
     for lin in lines:
         # remove any leftover trailing and preceding spaces
@@ -91,7 +90,7 @@ def parse(inputstring):
             # remove line numbers
             lin = lin.split(" ", 1)
             if len(lin) >= 1:
-                lin = lin[1]
+                lin = lin[1].strip()
             else:
                 continue
 
@@ -100,7 +99,7 @@ def parse(inputstring):
             continue
         if lin[0].upper() in ["G", "M"]:
             # found a G or M command: we store it
-            output += lin + "\n"
+            output.append(Path.Command(str(lin)))
             last = lin[0].upper()
             for c in lin[1:]:
                 if not c.isdigit():
@@ -110,7 +109,7 @@ def parse(inputstring):
             lastcommand = last
         elif lastcommand:
             # no G or M command: we repeat the last one
-            output += lastcommand + " " + lin + "\n"
+            output.append(Path.Command(str(lastcommand + " " + lin)))
 
     print("done preprocessing.")
     return output

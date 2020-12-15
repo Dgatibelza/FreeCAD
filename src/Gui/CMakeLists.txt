@@ -171,7 +171,7 @@ IF(OCULUS_FOUND)
     )
 ENDIF(OCULUS_FOUND)
 
-if(SHIBOKEN_INCLUDE_DIR)
+if(FREECAD_USE_SHIBOKEN)
     if (BUILD_QT5)
         add_definitions(-DHAVE_SHIBOKEN2)
     else()
@@ -191,9 +191,9 @@ if(SHIBOKEN_INCLUDE_DIR)
             )
         endif (TARGET Shiboken2::libshiboken)
     endif (SHIBOKEN_LIBRARY)
-endif(SHIBOKEN_INCLUDE_DIR)
+endif(FREECAD_USE_SHIBOKEN)
 
-if(PYSIDE_INCLUDE_DIR)
+if(FREECAD_USE_PYSIDE)
     include_directories(
         ${PYSIDE_INCLUDE_DIR}
         ${PYSIDE_INCLUDE_DIR}/QtCore
@@ -218,17 +218,19 @@ if(PYSIDE_INCLUDE_DIR)
     else()
         add_definitions(-DHAVE_PYSIDE)
     endif()
-endif(PYSIDE_INCLUDE_DIR)
+endif(FREECAD_USE_PYSIDE)
 
 generate_from_xml(DocumentPy)
 generate_from_xml(PythonWorkbenchPy)
 generate_from_xml(ViewProviderPy)
 generate_from_xml(ViewProviderDocumentObjectPy)
+generate_from_xml(ViewProviderExtensionPy)
 generate_from_xml(WorkbenchPy)
 generate_from_xml(SelectionObjectPy)
 generate_from_xml(LinkViewPy)
 generate_from_xml(ViewProviderLinkPy)
 generate_from_xml(AxisOriginPy)
+generate_from_xml(CommandPy)
 
 generate_from_py(FreeCADGuiInit GuiInitScript.h)
 
@@ -236,6 +238,7 @@ generate_from_py(FreeCADGuiInit GuiInitScript.h)
 SET(FreeCADGui_XML_SRCS
     ViewProviderDocumentObjectPy.xml
     ViewProviderPy.xml
+    ViewProviderExtensionPy.xml
     PythonWorkbenchPy.xml
     WorkbenchPy.xml
     SelectionObjectPy.xml
@@ -243,6 +246,7 @@ SET(FreeCADGui_XML_SRCS
     LinkViewPy.xml
     ViewProviderLinkPy.xml
     AxisOriginPy.xml
+    CommandPy.xml
 )
 SOURCE_GROUP("XML" FILES ${FreeCADApp_XML_SRCS})
 
@@ -312,6 +316,7 @@ set(Gui_MOC_HDRS
     DlgPropertyLink.h
     DlgReportViewImp.h
     DlgSettings3DViewImp.h
+    DlgSettingsNavigation.h
     DlgSettingsViewColor.h
     DlgSettingsColorGradientImp.h
     DlgSettingsDocumentImp.h
@@ -369,6 +374,7 @@ set(Gui_MOC_HDRS
     TreeView.h
     ProjectView.h
     View3DInventor.h
+    VectorListEditor.h
     WidgetFactory.h
     Widgets.h
     Language/Translator.h
@@ -436,6 +442,7 @@ SET(Gui_UIC_SRCS
     DlgPropertyLink.ui
     DlgReportView.ui
     DlgSettings3DView.ui
+    DlgSettingsNavigation.ui
     DlgSettingsUnits.ui
     DlgSettingsViewColor.ui
     DlgSettingsColorGradient.ui
@@ -462,6 +469,7 @@ SET(Gui_UIC_SRCS
     TaskElementColors.ui
     DlgObjectSelection.ui
     DlgAddProperty.ui
+    VectorListEditor.ui
 )
 
 SET(Gui_RES_SRCS
@@ -494,6 +502,7 @@ SET(Command_CPP_SRCS
     CommandView.cpp
     CommandStructure.cpp
     CommandLink.cpp
+    CommandPyImp.cpp
 )
 SET(Command_SRCS
     ${Command_CPP_SRCS}
@@ -539,6 +548,7 @@ SET(Dialog_CPP_SRCS
     TaskElementColors.cpp
     DlgObjectSelection.cpp
     DlgAddProperty.cpp
+    VectorListEditor.cpp
 )
 
 SET(Dialog_HPP_SRCS
@@ -575,6 +585,7 @@ SET(Dialog_HPP_SRCS
     TaskElementColors.h
     DlgObjectSelection.h
     DlgAddProperty.h
+    VectorListEditor.h
 )
 
 SET(Dialog_SRCS
@@ -613,6 +624,7 @@ SET(Dialog_SRCS
     TextureMapping.ui
     TaskElementColors.ui
     DlgObjectSelection.ui
+    VectorListEditor.ui
 )
 SOURCE_GROUP("Dialog" FILES ${Dialog_SRCS})
 
@@ -660,6 +672,7 @@ SET(Dialog_Settings_CPP_SRCS
     DlgPreferencesImp.cpp
     DlgReportViewImp.cpp
     DlgSettings3DViewImp.cpp
+    DlgSettingsNavigation.cpp
     DlgSettingsUnitsImp.cpp
     DlgSettingsViewColor.cpp
     DlgSettingsColorGradientImp.cpp
@@ -674,6 +687,7 @@ SET(Dialog_Settings_HPP_SRCS
     DlgPreferencesImp.h
     DlgReportViewImp.h
     DlgSettings3DViewImp.h
+    DlgSettingsNavigation.h
     DlgSettingsUnitsImp.h
     DlgSettingsViewColor.h
     DlgSettingsColorGradientImp.h
@@ -690,6 +704,7 @@ SET(Dialog_Settings_SRCS
     DlgPreferences.ui
     DlgReportView.ui
     DlgSettings3DView.ui
+    DlgSettingsNavigation.ui
     DlgSettingsUnits.ui
     DlgSettingsViewColor.ui
     DlgSettingsColorGradient.ui
@@ -991,6 +1006,7 @@ SOURCE_GROUP("Quarter" FILES ${Quarter_SRCS})
 SET(Viewprovider_CPP_SRCS
     ViewProvider.cpp
     ViewProviderExtension.cpp
+    ViewProviderExtensionPyImp.cpp
     ViewProviderGroupExtension.cpp
     ViewProviderGeoFeatureGroupExtension.cpp
     ViewProviderOriginGroupExtension.cpp
@@ -1082,6 +1098,7 @@ SET(Inventor_CPP_SRCS
     SoAxisCrossKit.cpp
     SoTextLabel.cpp
     SoTouchEvents.cpp
+    SoMouseWheelEvent.cpp
     SoFCCSysDragger.cpp
 )
 SET(Inventor_SRCS
@@ -1108,6 +1125,7 @@ SET(Inventor_SRCS
     SoAxisCrossKit.h
     SoTextLabel.h
     SoTouchEvents.h
+    SoMouseWheelEvent.h
     SoFCCSysDragger.h
 )
 SOURCE_GROUP("View3D\\Inventor" FILES ${Inventor_SRCS})
@@ -1218,6 +1236,7 @@ SET(FreeCADGui_CPP_SRCS
     DocumentObserver.cpp
     DocumentObserverPython.cpp
     ExpressionBinding.cpp
+    ExpressionBindingPy.cpp
     GraphicsViewZoom.cpp
     ExpressionCompleter.cpp
     GuiApplication.cpp
@@ -1244,7 +1263,8 @@ SET(FreeCADGui_SRCS
     DocumentModel.h
     DocumentObserver.h
     DocumentObserverPython.h
-    ExpressionBinding.cpp
+    ExpressionBinding.h
+    ExpressionBindingPy.h
     ExpressionCompleter.h
     FreeCADGuiInit.py
     GraphicsViewZoom.h
@@ -1338,6 +1358,21 @@ if (FREECAD_USE_QT_FILEDIALOG)
     set_source_files_properties(FileDialog.cpp PROPERTIES COMPILE_FLAGS -DUSE_QT_FILEDIALOG)
 endif()
 
+# Suppress some very long Eigen3 warnings of older versions and
+# suppress this warning for the SbMatrix class
+if (EIGEN3_NO_DEPRECATED_COPY)
+    set_source_files_properties(
+        NaviCube.cpp
+        Inventor/SoAutoZoomTranslation.cpp
+        SoFCOffscreenRenderer.cpp
+        SoFCSelectionAction.cpp
+        SoNavigationDragger.cpp
+        SoFCCSysDragger.cpp
+        Quarter/QuarterWidget.cpp
+        View3DInventorViewer.cpp
+        PROPERTIES COMPILE_FLAGS ${EIGEN3_NO_DEPRECATED_COPY})
+endif ()
+
 add_library(FreeCADGui SHARED ${FreeCADGui_SRCS})
 target_link_libraries(FreeCADGui ${FreeCADGui_LIBS})
 
@@ -1375,17 +1410,35 @@ set(FreeCADGui_Scripts
     RemoteDebugger.py
 )
 
+set(FreeCADGui_Configs
+    3Dconnexion/3DConnexion.xml
+)
+
 add_custom_target(FreeCADGui_Resources ALL
-    SOURCES ${FreeCADGui_Scripts}
+    SOURCES ${FreeCADGui_Scripts} ${FreeCADGui_Configs}
 )
 
 fc_copy_sources(FreeCADGui_Resources
     ${CMAKE_BINARY_DIR}/Ext/freecad/gui
-    ${FreeCADGui_Scripts})
+    ${FreeCADGui_Scripts}
+)
+
+fc_target_copy_resource(FreeCADGui_Resources
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_DATADIR}
+    ${FreeCADGui_Configs}
+)
 
 INSTALL(
     FILES
         ${FreeCADGui_Scripts}
     DESTINATION
         Ext/freecad/gui
+)
+
+INSTALL(
+    FILES
+        ${FreeCADGui_Configs}
+    DESTINATION
+        ${CMAKE_INSTALL_DATADIR}/3Dconnexion
 )

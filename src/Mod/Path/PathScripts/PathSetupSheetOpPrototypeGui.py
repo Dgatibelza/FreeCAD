@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-
 # ***************************************************************************
-# *                                                                         *
 # *   Copyright (c) 2018 sliptonic <shopinthewoods@gmail.com>               *
 # *                                                                         *
 # *   This program is free software; you can redistribute it and/or modify  *
@@ -30,7 +28,7 @@ from PySide import QtCore, QtGui
 
 __title__ = "Setup Sheet Editor"
 __author__ = "sliptonic (Brad Collette)"
-__url__ = "http://www.freecadweb.org"
+__url__ = "https://www.freecadweb.org"
 __doc__ = "Task panel editor for a SetupSheet"
 
 # Qt translation handling
@@ -187,6 +185,18 @@ class _PropertyFloatEditor(_PropertyEditor):
 
     def setModelData(self, widget):
         self.prop.setValue(widget.value())
+
+class _PropertyFileEditor(_PropertyEditor):
+
+    def widget(self, parent):
+        return QtGui.QLineEdit(parent)
+
+    def setEditorData(self, widget):
+        text = '' if self.prop.getValue() is None else self.prop.getValue()
+        widget.setText(text)
+
+    def setModelData(self, widget):
+        self.prop.setValue(widget.text())
 
 _EditorFactory = {
         PathSetupSheetOpPrototype.Property:             None,

@@ -1,6 +1,6 @@
 /***************************************************************************
  *   Copyright (c) 2004 Jürgen Riegel <juergen.riegel@web.de>              *
- *   Copyright (c) 2015 Wandererfan <wandererfan@gmail.com>                *
+ *   Copyright (c) 2015 WandererFan <wandererfan@gmail.com>                *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -32,18 +32,17 @@
 /// Here the FreeCAD includes sorted by Base,App,Gui......
 #include <Base/Console.h>
 #include <Base/Parameter.h>
-//#include <Base/Exception.h>
-//#include <Base/Sequencer.h>
 #include <Base/UnitsApi.h>
 #include <App/Application.h>
 #include <App/Document.h>
 #include <App/DocumentObject.h>
 #include <Gui/Application.h>
-//#include <Gui/SoFCSelection.h>
-//#include <Gui/Selection.h>
+#include <Gui/Control.h>
 
 #include <Mod/TechDraw/App/DrawHatch.h>
 #include <Mod/TechDraw/App/DrawViewPart.h>
+
+#include "TaskHatch.h"
 #include "ViewProviderHatch.h"
 
 using namespace TechDrawGui;
@@ -55,7 +54,7 @@ using namespace TechDrawGui;
 //                                                                  pow(10,- Base::UnitsApi::getDecimals())};
 App::PropertyFloatConstraint::Constraints ViewProviderHatch::scaleRange = {pow(10,- Base::UnitsApi::getDecimals()),
                                                                   1000.0,
-                                                                  pow(10,- Base::UnitsApi::getDecimals())};
+                                                                  0.1};
 
 
 PROPERTY_SOURCE(TechDrawGui::ViewProviderHatch, Gui::ViewProviderDocumentObject)
@@ -68,12 +67,8 @@ ViewProviderHatch::ViewProviderHatch()
     sPixmap = "TechDraw_Tree_Hatch";
 
     static const char *vgroup = "Hatch";
-    Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
-        .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/TechDraw/Colors");
-    App::Color fcColor;
-    fcColor.setPackedValue(hGrp->GetUnsigned("Hatch", 0x00FF0000));
-
-    ADD_PROPERTY_TYPE(HatchColor,(fcColor),vgroup,App::Prop_None,"The color of the hatch pattern");
+    ADD_PROPERTY_TYPE(HatchColor,(TechDraw::DrawHatch::prefSvgHatchColor()),
+                        vgroup,App::Prop_None,"The color of the hatch pattern");
     ADD_PROPERTY_TYPE(HatchScale,(1.0),vgroup,App::Prop_None,"Hatch pattern size adjustment");
     HatchScale.setConstraints(&scaleRange);
 }
@@ -99,6 +94,45 @@ std::vector<std::string> ViewProviderHatch::getDisplayModes(void) const
     std::vector<std::string> StrList = ViewProviderDocumentObject::getDisplayModes();
 
     return StrList;
+}
+
+bool ViewProviderHatch::setEdit(int ModNum)
+{
+    Q_UNUSED(ModNum);
+    Gui::TaskView::TaskDialog *dlg = Gui::Control().activeDialog();
+    TaskDlgHatch *projDlg = qobject_cast<TaskDlgHatch *>(dlg);
+    if (projDlg && (projDlg->getViewProvider() != this))
+        projDlg = 0; // somebody left task panel open
+
+    // clear the selection (convenience)
+    Gui::Selection().clearSelection();
+
+    // start the edit dialog
+    if (projDlg) {
+        projDlg->setCreateMode(false);
+        Gui::Control().showDialog(projDlg);
+    }
+    else {
+        Gui::Control().showDialog(new TaskDlgHatch(getViewObject(), this, false));
+    }
+
+    return true;
+}
+
+void ViewProviderHatch::unsetEdit(int ModNum)
+{
+    if (ModNum == ViewProvider::Default) {
+        Gui::Control().closeDialog();
+    }
+    else {
+        ViewProviderDocumentObject::unsetEdit(ModNum);
+    }
+}
+
+bool ViewProviderHatch::doubleClicked(void)
+{
+    setEdit(0);
+    return true;
 }
 
 void ViewProviderHatch::onChanged(const App::Property* prop)

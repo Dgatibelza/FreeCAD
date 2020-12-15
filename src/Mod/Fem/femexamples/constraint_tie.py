@@ -1,5 +1,6 @@
 # ***************************************************************************
 # *   Copyright (c) 2020 Bernd Hahnebach <bernd@bimstatik.org>              *
+# *   Copyright (c) 2020 Sudhanshu Dubey <sudhanshu.thethunder@gmail.com    *
 # *                                                                         *
 # *   This file is part of the FreeCAD CAx development system.              *
 # *                                                                         *
@@ -9,21 +10,18 @@
 # *   the License, or (at your option) any later version.                   *
 # *   for detail see the LICENCE text file.                                 *
 # *                                                                         *
-# *   FreeCAD is distributed in the hope that it will be useful,            *
+# *   This program is distributed in the hope that it will be useful,       *
 # *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
 # *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
 # *   GNU Library General Public License for more details.                  *
 # *                                                                         *
 # *   You should have received a copy of the GNU Library General Public     *
-# *   License along with FreeCAD; if not, write to the Free Software        *
+# *   License along with this program; if not, write to the Free Software   *
 # *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
 # *   USA                                                                   *
 # *                                                                         *
 # ***************************************************************************
 
-
-# constraint tie, bond two surfaces together (solid mesh only)
-# https://forum.freecadweb.org/viewtopic.php?f=18&t=42783
 # to run the example use:
 """
 from femexamples.constraint_tie import setup
@@ -31,14 +29,16 @@ setup()
 
 """
 
+# constraint tie, bond two surfaces together (solid mesh only)
+# https://forum.freecadweb.org/viewtopic.php?f=18&t=42783
 
 import FreeCAD
-import ObjectsFem
-import Fem
-import Part
-import BOPTools.SplitFeatures
 from FreeCAD import Vector
 
+import Fem
+import ObjectsFem
+import Part
+from BOPTools import SplitFeatures
 
 mesh_name = "Mesh"  # needs to be Mesh to work with unit tests
 
@@ -49,13 +49,25 @@ def init_doc(doc=None):
     return doc
 
 
+def get_information():
+    info = {"name": "Constraint Tie",
+            "meshtype": "solid",
+            "meshelement": "Tet10",
+            "constraints": ["fixed", "force", "tie"],
+            "solvers": ["calculix"],
+            "material": "solid",
+            "equation": "mechanical"
+            }
+    return info
+
+
 def setup(doc=None, solvertype="ccxtools"):
     # setup model
 
     if doc is None:
         doc = init_doc()
 
-    # parts
+    # geometry objects
     # cones cut
     cone_outer_sh = Part.makeCone(1100, 1235, 1005, Vector(0, 0, 0), Vector(0, 0, 1), 359)
     cone_inner_sh = Part.makeCone(1050, 1185, 1005, Vector(0, 0, 0), Vector(0, 0, 1), 359)
@@ -71,19 +83,17 @@ def setup(doc=None, solvertype="ccxtools"):
     line_force_obj = doc.addObject("Part::Feature", "Line_Force")
     line_force_obj.Shape = line_force_sh
 
-    geom_all_obj = BOPTools.SplitFeatures.makeBooleanFragments(name='BooleanFragments')
-    geom_all_obj.Objects = [cone_cut_obj, line_fix_obj, line_force_obj]
+    geom_obj = SplitFeatures.makeBooleanFragments(name='BooleanFragments')
+    geom_obj.Objects = [cone_cut_obj, line_fix_obj, line_force_obj]
     if FreeCAD.GuiUp:
         cone_cut_obj.ViewObject.hide()
         line_fix_obj.ViewObject.hide()
         line_force_obj.ViewObject.hide()
-
     doc.recompute()
 
     if FreeCAD.GuiUp:
-        import FreeCADGui
-        FreeCADGui.ActiveDocument.activeView().viewAxonometric()
-        FreeCADGui.SendMsgToActiveView("ViewFit")
+        geom_obj.ViewObject.Document.activeView().viewAxonometric()
+        geom_obj.ViewObject.Document.activeView().fitAll()
 
     # analysis
     analysis = ObjectsFem.makeAnalysis(doc, "Analysis")
@@ -98,6 +108,11 @@ def setup(doc=None, solvertype="ccxtools"):
             ObjectsFem.makeSolverCalculixCcxTools(doc, "CalculiXccxTools")
         )[0]
         solver_object.WorkingDir = u""
+    else:
+        FreeCAD.Console.PrintWarning(
+            "Not known or not supported solver type: {}. "
+            "No solver object was created.\n".format(solvertype)
+        )
     if solvertype == "calculix" or solvertype == "ccxtools":
         solver_object.AnalysisType = "static"
         solver_object.GeometricalNonlinearity = "linear"
@@ -121,15 +136,15 @@ def setup(doc=None, solvertype="ccxtools"):
     con_fixed = analysis.addObject(
         ObjectsFem.makeConstraintFixed(doc, "ConstraintFixed")
     )[0]
-    con_fixed.References = [(geom_all_obj, "Edge1")]
+    con_fixed.References = [(geom_obj, "Edge1")]
 
     # constraint force
     con_force = doc.Analysis.addObject(
         ObjectsFem.makeConstraintForce(doc, name="ConstraintForce")
     )[0]
-    con_force.References = [(geom_all_obj, "Edge2")]
+    con_force.References = [(geom_obj, "Edge2")]
     con_force.Force = 10000.0  # 10000 N = 10 kN
-    con_force.Direction = (geom_all_obj, ["Edge2"])
+    con_force.Direction = (geom_obj, ["Edge2"])
     con_force.Reversed = False
 
     # constraint tie
@@ -137,8 +152,8 @@ def setup(doc=None, solvertype="ccxtools"):
         ObjectsFem.makeConstraintTie(doc, name="ConstraintTie")
     )[0]
     con_tie.References = [
-        (geom_all_obj, "Face5"),
-        (geom_all_obj, "Face7"),
+        (geom_obj, "Face5"),
+        (geom_obj, "Face7"),
     ]
     con_tie.Tolerance = 25.0
 
@@ -152,9 +167,11 @@ def setup(doc=None, solvertype="ccxtools"):
     if not control:
         FreeCAD.Console.PrintError("Error on creating elements.\n")
     femmesh_obj = analysis.addObject(
-        doc.addObject("Fem::FemMeshObject", mesh_name)
+        ObjectsFem.makeMeshGmsh(doc, mesh_name)
     )[0]
     femmesh_obj.FemMesh = fem_mesh
+    femmesh_obj.Part = geom_obj
+    femmesh_obj.SecondOrderLinear = False
 
     doc.recompute()
     return doc
