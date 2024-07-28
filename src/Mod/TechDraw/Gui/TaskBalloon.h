@@ -24,28 +24,32 @@
 #ifndef GUI_TASKVIEW_TASKBALLOON_H
 #define GUI_TASKVIEW_TASKBALLOON_H
 
-#include <Gui/TaskView/TaskView.h>
 #include <Gui/TaskView/TaskDialog.h>
+#include <Gui/TaskView/TaskView.h>
+#include <Mod/TechDraw/TechDrawGlobal.h>
 
-#include <Mod/TechDraw/Gui/ui_TaskBalloon.h>
-
-#include <Mod/TechDraw/App/DrawViewPart.h>
-
-#include "QGIViewBalloon.h"
-#include "ViewProviderBalloon.h"
-
-class Ui_TaskBalloon;
+namespace Gui
+{
+class Document;
+}
+namespace App
+{
+class Document;
+}
 
 namespace TechDrawGui
 {
 
+class QGIViewBalloon;
+class ViewProviderBalloon;
+class Ui_TaskBalloon;
 class TaskBalloon : public QWidget
 {
     Q_OBJECT
 
 public:
     TaskBalloon(QGIViewBalloon *parent, ViewProviderBalloon *balloonVP);
-    ~TaskBalloon();
+    ~TaskBalloon() override;
 
 public:
     virtual bool accept();
@@ -56,16 +60,22 @@ private Q_SLOTS:
     void onTextChanged();
     void onColorChanged();
     void onFontsizeChanged();
-    void onShapeChanged();
+    void onBubbleShapeChanged();
     void onShapeScaleChanged();
-    void onEndTypeChanged();
+    void onEndSymbolChanged();
+    void onEndSymbolScaleChanged();
+    void onLineVisibleChanged();
     void onLineWidthChanged();
-    void onBalloonKinkChanged();  
+    void onKinkLengthChanged();
 
 private:
-    Ui_TaskBalloon *ui;
+    std::unique_ptr<Ui_TaskBalloon> ui;
     QGIViewBalloon *m_parent;
     ViewProviderBalloon* m_balloonVP;
+
+    std::string m_balloonName;
+    App::Document* m_appDocument;
+    Gui::Document* m_guiDocument;
 };
 
 class TaskDlgBalloon : public Gui::TaskView::TaskDialog
@@ -74,20 +84,20 @@ class TaskDlgBalloon : public Gui::TaskView::TaskDialog
 
 public:
     TaskDlgBalloon(QGIViewBalloon *parent, ViewProviderBalloon *balloonVP);
-    ~TaskDlgBalloon();
+    ~TaskDlgBalloon() override;
 
 public:
     /// is called the TaskView when the dialog is opened
-    virtual void open();
+    void open() override;
     /// is called by the framework if an button is clicked which has no accept or reject role
-    virtual void clicked(int);
+    void clicked(int) override;
     /// is called by the framework if the dialog is accepted (Ok)
-    virtual bool accept();
+    bool accept() override;
     /// is called by the framework if the dialog is rejected (Cancel)
-    virtual bool reject();
+    bool reject() override;
     /// is called by the framework if the user presses the help button
-    virtual void helpRequested() { return;}
-    virtual bool isAllowedAlterDocument(void) const
+    void helpRequested() override { return;}
+    bool isAllowedAlterDocument() const override
     { return false; }
 
     void update();

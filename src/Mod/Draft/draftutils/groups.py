@@ -37,8 +37,37 @@ the objects created with this workbench work like groups.
 import FreeCAD as App
 import draftutils.utils as utils
 
-from draftutils.translate import _tr
-from draftutils.messages import _msg, _err
+from draftutils.translate import translate
+from draftutils.messages import _err
+
+
+def is_group(obj):
+    """Return True if the given object is considered a group.
+
+    Parameters
+    ----------
+    obj : App::DocumentObject
+        The object to check.
+
+    Returns
+    -------
+    bool
+        Returns `True` if `obj` is considered a group:
+
+        The object is derived from `App::DocumentObjectGroup` but not
+        a `'LayerContainer'`.
+
+        Or the object is of the type `'Project'`, `'Site'`, `'Building'`,
+        `'Floor'`, `'BuildingPart'` or `'Space'` from the Arch Workbench.
+        Note that `'Floor'` and `'Building'` are obsolete types.
+
+        Otherwise returns `False`.
+    """
+    typ = utils.get_type(obj)
+    return ((obj.isDerivedFrom("App::DocumentObjectGroup")
+                and typ != "LayerContainer")
+            or typ in ("Project", "Site", "Building",
+                       "Floor", "BuildingPart", "Space"))
 
 
 def get_group_names(doc=None):
@@ -54,25 +83,22 @@ def get_group_names(doc=None):
     Returns
     -------
     list of str
-        A list of names of objects that are "groups".
-        These are objects derived from `App::DocumentObjectGroup`
-        or which are of types `'Floor'`, `'Building'`, or `'Site'`
-        from the Arch Workbench.
+        A list of names of objects that are considered groups.
+        See the is_group function.
 
-        Otherwise, return an empty list.
+        Otherwise returns an empty list.
     """
     if not doc:
         found, doc = utils.find_doc(App.activeDocument())
 
     if not found:
-        _err(_tr("No active document. Aborting."))
+        _err(translate("draft", "No active document. Aborting."))
         return []
 
     glist = []
 
     for obj in doc.Objects:
-        if (obj.isDerivedFrom("App::DocumentObjectGroup")
-                or utils.get_type(obj) in ("Floor", "Building", "Site")):
+        if is_group(obj):
             glist.append(obj.Name)
 
     return glist
@@ -102,8 +128,7 @@ def ungroup(obj):
 
     found, obj = utils.find_object(obj, doc=App.activeDocument())
     if not found:
-        _msg("obj: {}".format(obj_str))
-        _err(_tr("Wrong input: object not in document."))
+        _err(translate("draft", "Wrong input: object {} not in document.").format(obj_str))
         return None
 
     doc = obj.Document
@@ -146,9 +171,8 @@ def get_windows(obj):
     if utils.get_type(obj) in ("Wall", "Structure"):
         for o in obj.OutList:
             out.extend(get_windows(o))
-
         for i in obj.InList:
-            if (utils.get_type(i) == "Window"
+            if (utils.get_type(i.getLinkedObject()) == "Window"
                     or utils.is_clone(obj, "Window")):
                 if hasattr(i, "Hosts"):
                     if obj in i.Hosts:
@@ -158,8 +182,7 @@ def get_windows(obj):
                 if hasattr(i, "Host"):
                     if obj == i.Host:
                         out.append(i)
-
-    elif (utils.get_type(obj) in ("Window", "Rebar")
+    elif (utils.get_type(obj.getLinkedObject()) in ("Window", "Rebar")
           or utils.is_clone(obj, ["Window", "Rebar"])):
         out.append(obj)
 
@@ -177,12 +200,9 @@ def get_group_contents(objectslist,
     Parameters
     ----------
     objectslist: list
-        If any object in the list is a group, its contents (`obj.Group`)
-        are extracted and added to the output list.
-
-        The "groups" are objects derived from `App::DocumentObjectGroup`,
-        but they can also be `'App::Part'`, or `'Building'`, `'BuildingPart'`,
-        `'Space'`, and `'Site'` from the Arch Workbench.
+        If any object in the list is considered a group, see the `is_group`
+        function, its contents (`obj.Group`) are extracted and added to the
+        output list.
 
         Single items that aren't groups are added to the output list
         as is.
@@ -199,8 +219,8 @@ def get_group_contents(objectslist,
 
     spaces: bool, optional
         It defaults to `False`.
-        If it is `True`, Arch Spaces are treated as groups,
-        and are added to the output list.
+        If it is `True`, Arch Spaces are added to the output list even
+        when addgroups is False (their contents are always added).
 
     noarchchild: bool, optional
         It defaults to `False`.
@@ -219,28 +239,16 @@ def get_group_contents(objectslist,
 
     for obj in objectslist:
         if obj:
-            if (obj.isDerivedFrom("App::DocumentObjectGroup")
-                    or (utils.get_type(obj) in ("Building", "BuildingPart",
-                                                "Space", "Site")
-                        and hasattr(obj, "Group"))):
-                if utils.get_type(obj) == "Site":
-                    if obj.Shape:
-                        newlist.append(obj)
-                if obj.isDerivedFrom("Drawing::FeaturePage"):
-                    # Skip if the group is a Drawing page
-                    # Note: the Drawing workbench is obsolete
+            if is_group(obj):
+                if addgroups or (spaces
+                                 and utils.get_type(obj) == "Space"):
                     newlist.append(obj)
-                else:
-                    if addgroups or (spaces
-                                     and utils.get_type(obj) == "Space"):
-                        newlist.append(obj)
-                    if (noarchchild
-                            and utils.get_type(obj) in ("Building",
-                                                        "BuildingPart")):
-                        pass
-                    else:
-                        newlist.extend(get_group_contents(obj.Group,
-                                                          walls, addgroups))
+                if not (noarchchild
+                        and utils.get_type(obj) in ("Building",
+                                                    "BuildingPart")):
+                    newlist.extend(get_group_contents(obj.Group,
+                                                      walls, addgroups,
+                                                      spaces, noarchchild))
             else:
                 # print("adding ", obj.Name)
                 newlist.append(obj)
@@ -267,7 +275,7 @@ def getGroupContents(objectslist,
                               spaces, noarchchild)
 
 
-def get_movable_children(objectslist, recursive=True):
+def get_movable_children(objectslist, recursive=True, _donelist=[]):
     """Return a list of objects with child objects that move with a host.
 
     Builds a list of objects with all child objects (`obj.OutList`)
@@ -286,6 +294,9 @@ def get_movable_children(objectslist, recursive=True):
         Otherwise, only direct children of the input objects
         are added to the output list.
 
+    _donelist: list
+        List of object names. Used internally to prevent an endless loop.
+
     Returns
     -------
     list
@@ -297,9 +308,15 @@ def get_movable_children(objectslist, recursive=True):
         objectslist = [objectslist]
 
     for obj in objectslist:
+        if obj.Name in _donelist:
+            continue
+
+        _donelist.append(obj.Name)
+
         # Skips some objects that should never move their children
-        if utils.get_type(obj) not in ("Clone", "SectionPlane",
-                                       "Facebinder", "BuildingPart"):
+        if utils.get_type(obj) not in ("App::Part", "PartDesign::Body",
+                                       "Clone", "SectionPlane",
+                                       "Facebinder", "BuildingPart", "App::Link"):
             children = obj.OutList
             if (hasattr(obj, "Proxy") and obj.Proxy
                     and hasattr(obj.Proxy, "getSiblings")
@@ -309,17 +326,14 @@ def get_movable_children(objectslist, recursive=True):
 
             for child in children:
                 if hasattr(child, "MoveWithHost") and child.MoveWithHost:
-                    if hasattr(obj, "CloneOf"):
-                        if obj.CloneOf:
-                            if obj.CloneOf.Name != child.Name:
-                                added.append(child)
-                        else:
+                    if hasattr(obj, "CloneOf") and  obj.CloneOf:
+                        if obj.CloneOf.Name != child.Name:
                             added.append(child)
                     else:
                         added.append(child)
 
             if recursive:
-                added.extend(get_movable_children(children))
+                added.extend(get_movable_children(children, recursive, _donelist))
 
     return added
 

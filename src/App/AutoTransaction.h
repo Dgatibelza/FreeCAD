@@ -23,15 +23,18 @@
 #ifndef APP_AUTOTRANSACTION_H
 #define APP_AUTOTRANSACTION_H
 
+#include <cstddef>
+#include <FCGlobal.h>
+
 namespace App {
 
 class Application;
 
 /// Helper class to manager transaction (i.e. undo/redo)
 class AppExport AutoTransaction {
-private:
+public:
     /// Private new operator to prevent heap allocation
-    void* operator new(size_t size);
+    void* operator new (std::size_t) = delete;
 
 public:
     /** Constructor
@@ -48,7 +51,7 @@ public:
      * current active transaction until it reaches zero. It does not have any
      * effect on aborting transaction, though.
      */
-    AutoTransaction(const char *name=0, bool tmpName=false);
+    AutoTransaction(const char *name=nullptr, bool tmpName=false);
 
     /** Destructor
      *
@@ -118,9 +121,9 @@ public:
 
     friend class Application;
 
-private:
+public:
     /// Private new operator to prevent heap allocation
-    void* operator new(size_t size);
+    void* operator new (std::size_t) = delete;
 
 private:
     bool active;

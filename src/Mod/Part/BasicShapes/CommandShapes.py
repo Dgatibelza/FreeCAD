@@ -22,7 +22,7 @@
 
 __title__ = "BasicShapes.CommandShapes"
 __author__ = "Werner Mayer"
-__url__ = "http://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 __doc__ = "Basic shapes"
 
 
@@ -44,7 +44,7 @@ class CommandTube:
         return {'MenuText': Qt.QT_TRANSLATE_NOOP("Part_Tube","Create tube"),
                 'Accel': "",
                 'CmdType': "AlterDoc:Alter3DView:AlterSelection",
-                'Pixmap': "Part_Tube",
+                'Pixmap': "Part_Tube_Parametric",
                 'ToolTip': Qt.QT_TRANSLATE_NOOP("Part_Tube","Creates a tube")}
 
     def Activated(self):
@@ -53,6 +53,9 @@ class CommandTube:
         tube = FreeCAD.ActiveDocument.addObject("Part::FeaturePython","Tube")
         Shapes.TubeFeature(tube)
         vp = ViewProviderShapes.ViewProviderTube(tube.ViewObject)
+        activePart = FreeCADGui.activeView().getActiveObject('part')
+        if activePart:
+            activePart.addObject(tube)
         FreeCAD.ActiveDocument.recompute()
         vp.startDefaultEditMode(tube.ViewObject)
 

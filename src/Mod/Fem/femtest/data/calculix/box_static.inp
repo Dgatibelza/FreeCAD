@@ -425,13 +425,11 @@ Evolumes
 
 ***********************************************************
 ** Element sets for materials and FEM element type (solid, shell, beam, fluid)
-** written by write_element_sets_material_and_femelement_type function
 *ELSET,ELSET=MechanicalMaterialSolid
 Evolumes
 
 ***********************************************************
 ** constraints fixed node sets
-** written by write_node_sets_constraints_fixed function
 ** FemConstraintFixed
 *NSET,NSET=FemConstraintFixed
 1,
@@ -476,31 +474,30 @@ Evolumes
 68,
 69,
 
+** Physical constants for SI(mm) unit system with Kelvins
+*PHYSICAL CONSTANTS, ABSOLUTE ZERO=0, STEFAN BOLTZMANN=5.670374419e-11
+
 ***********************************************************
 ** Materials
-** written by write_materials function
-** Young's modulus unit is MPa = N/mm2
+** see information about units at file end
 ** FreeCAD material name: Steel-Generic
 ** MechanicalMaterial
 *MATERIAL, NAME=MechanicalMaterial
 *ELASTIC
-200000, 0.300
+200000,0.3
 
 ***********************************************************
 ** Sections
-** written by write_femelementsets function
 *SOLID SECTION, ELSET=MechanicalMaterialSolid, MATERIAL=MechanicalMaterial
 
 ***********************************************************
 ** At least one step is needed to run an CalculiX analysis of FreeCAD
-** written by write_step_begin function
-*STEP
+*STEP, INC=2000
 *STATIC
 
 
 ***********************************************************
 ** Fixed Constraints
-** written by write_constraints_fixed function
 ** FemConstraintFixed
 *BOUNDARY
 FemConstraintFixed,1
@@ -510,57 +507,55 @@ FemConstraintFixed,3
 
 ***********************************************************
 ** constraints force node loads
-** written by write_constraints_force function
 *CLOAD
 ** FemConstraintForce
 ** node loads on shape: Box:Face6
-2,3,-0.0000000000000E+00
-4,3,-0.0000000000000E+00
-6,3,-0.0000000000000E+00
-8,3,-0.0000000000000E+00
-18,3,-0.0000000000000E+00
-19,3,-8.3333333333333E+02
-20,3,-8.3333333333333E+02
-30,3,-0.0000000000000E+00
-31,3,-8.3333333333333E+02
-32,3,-8.3333333333333E+02
-36,3,-0.0000000000000E+00
-37,3,-8.3333333333333E+02
-38,3,-8.3333333333333E+02
-42,3,-0.0000000000000E+00
-43,3,-8.3333333333333E+02
-44,3,-8.3333333333333E+02
-170,3,-0.0000000000000E+00
-171,3,-0.0000000000000E+00
-172,3,-0.0000000000000E+00
-173,3,-0.0000000000000E+00
-174,3,-0.0000000000000E+00
-175,3,-1.6666666666667E+03
-176,3,-1.6666666666667E+03
-177,3,-1.6666666666667E+03
-178,3,-1.6666666666667E+03
-179,3,-1.6666666666667E+03
-180,3,-1.6666666666667E+03
-181,3,-1.6666666666667E+03
-182,3,-1.6666666666667E+03
-183,3,-1.6666666666667E+03
-184,3,-1.6666666666667E+03
-185,3,-1.6666666666667E+03
-186,3,-1.6666666666667E+03
-187,3,-1.6666666666667E+03
-188,3,-1.6666666666667E+03
-189,3,-1.6666666666667E+03
-190,3,-1.6666666666667E+03
-191,3,-1.6666666666667E+03
-192,3,-1.6666666666667E+03
-193,3,-1.6666666666667E+03
-194,3,-1.6666666666667E+03
+2,3,-0
+4,3,-0
+6,3,-0
+8,3,-0
+18,3,-0
+19,3,-833.3333333333
+20,3,-833.3333333333
+30,3,-0
+31,3,-833.3333333333
+32,3,-833.3333333333
+36,3,-0
+37,3,-833.3333333333
+38,3,-833.3333333333
+42,3,-0
+43,3,-833.3333333333
+44,3,-833.3333333333
+170,3,-0
+171,3,-0
+172,3,-0
+173,3,-0
+174,3,-0
+175,3,-1666.666666667
+176,3,-1666.666666667
+177,3,-1666.666666667
+178,3,-1666.666666667
+179,3,-1666.666666667
+180,3,-1666.666666667
+181,3,-1666.666666667
+182,3,-1666.666666667
+183,3,-1666.666666667
+184,3,-1666.666666667
+185,3,-1666.666666667
+186,3,-1666.666666667
+187,3,-1666.666666667
+188,3,-1666.666666667
+189,3,-1666.666666667
+190,3,-1666.666666667
+191,3,-1666.666666667
+192,3,-1666.666666667
+193,3,-1666.666666667
+194,3,-1666.666666667
 
 
 
 ***********************************************************
 ** constraints pressure element face loads
-** written by write_constraints_pressure function
 ** FemConstraintPressure
 *DLOAD
 ** FemConstraintPressure: face load
@@ -583,7 +578,6 @@ FemConstraintFixed,3
 
 ***********************************************************
 ** Outputs --> frd file
-** written by write_outputs_types function
 *NODE FILE
 U
 *EL FILE
@@ -593,27 +587,25 @@ S, E
 *NODE PRINT, NSET=FemConstraintFixed, TOTALS=ONLY
 RF
 
-
+*OUTPUT, FREQUENCY=1
 ***********************************************************
-** written by write_step_end function
-*END STEP 
+*END STEP
 
 ***********************************************************
 ** CalculiX Input file
-** written by write_footer function
-**   written by    --> FreeCAD 0.17.9749 (Git)
-**   written on    --> Sun Jan 22 14:28:56 2017
-**   file name     --> 
+**   written by    --> FreeCAD 0.21.0
+**   written on    --> Tue Mar 28 06:53:21 2023
+**   file name     --> box_static.FCStd
 **   analysis name --> Analysis
 **
 **
 ***********************************************************
 **  About units:
 **  See ccx manual, ccx does not know about any unit.
-**  Golden rule: The user must make sure that the numbers he provides have consistent units.
+**  Golden rule: The user must make sure that the numbers they provide have consistent units.
 **  The user is the FreeCAD calculix writer module ;-)
 **
-**  The unit system which is used at Guido Dhodts company: mm, N, s, K
+**  The unit system which is used at Guido Dhondt's company: mm, N, s, K
 **  Since Length and Mass are connected by Force, if Length is mm the Mass is in t to get N
 **  The following units are used to write to inp file:
 **
@@ -624,9 +616,9 @@ RF
 **
 **  This leads to:
 **  Force: N
-**  Pressure: N/mm^2
-**  Density: t/mm^2
+**  Pressure: N/mm^2 == MPa (Young's Modulus has unit Pressure)
+**  Density: t/mm^3
 **  Gravity: mm/s^2
-**  Thermal conductivity: t*mm/K*s^3
-**  Specific Heat: kJ/t/K = mm^2/s^2/K
+**  Thermal conductivity: t*mm/K/s^3 == as W/m/K == kW/mm/K
+**  Specific Heat: mm^2/s^2/K = J/kg/K == kJ/t/K
 **

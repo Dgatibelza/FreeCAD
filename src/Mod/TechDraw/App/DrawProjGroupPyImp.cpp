@@ -27,17 +27,17 @@
 
 #include "DrawProjGroup.h"
 #include "DrawProjGroupItem.h"
-
 // inclusion of the generated files (generated out of DrawProjGroupPy.xml)
 #include <Mod/TechDraw/App/DrawProjGroupPy.h>
 #include <Mod/TechDraw/App/DrawProjGroupPy.cpp>
 #include <Mod/TechDraw/App/DrawProjGroupItemPy.h>
 #include <Base/VectorPy.h>
 
+
 using namespace TechDraw;
 
 // returns a string which represents the object e.g. when printed in python
-std::string DrawProjGroupPy::representation(void) const
+std::string DrawProjGroupPy::representation() const
 {
     return std::string("<DrawProjGroup object>");
 }
@@ -72,11 +72,7 @@ PyObject* DrawProjGroupPy::removeProjection(PyObject* args)
     DrawProjGroup* projGroup = getDrawProjGroupPtr();
     int i = projGroup->removeProjection(projType);
 
-#if PY_MAJOR_VERSION < 3
-    return PyInt_FromLong((long) i);
-#else
     return PyLong_FromLong((long) i);
-#endif
 }
 
 PyObject* DrawProjGroupPy::purgeProjections(PyObject* /*args*/)
@@ -84,11 +80,7 @@ PyObject* DrawProjGroupPy::purgeProjections(PyObject* /*args*/)
     DrawProjGroup* projGroup = getDrawProjGroupPtr();
     int i = projGroup->purgeProjections();
 
-#if PY_MAJOR_VERSION < 3
-    return PyInt_FromLong((long) i);
-#else
     return PyLong_FromLong((long) i);
-#endif
 }
 
 PyObject* DrawProjGroupPy::getItemByLabel(PyObject* args)
@@ -127,7 +119,7 @@ PyObject* DrawProjGroupPy::getXYPosition(PyObject* args)
 
 PyObject *DrawProjGroupPy::getCustomAttributes(const char* /*attr*/) const
 {
-    return 0;
+    return nullptr;
 }
 
 int DrawProjGroupPy::setCustomAttributes(const char* /*attr*/, PyObject* /*obj*/)

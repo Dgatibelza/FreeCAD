@@ -1,23 +1,24 @@
-#   (c) Juergen Riegel (FreeCAD@juergen-riegel.net) 2011      LGPL        *
-#                                                                         *
-#   This file is part of the FreeCAD CAx development system.              *
-#                                                                         *
-#   This program is free software; you can redistribute it and/or modify  *
-#   it under the terms of the GNU Lesser General Public License (LGPL)    *
-#   as published by the Free Software Foundation; either version 2 of     *
-#   the License, or (at your option) any later version.                   *
-#   for detail see the LICENCE text file.                                 *
-#                                                                         *
-#   FreeCAD is distributed in the hope that it will be useful,            *
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
-#   GNU Library General Public License for more details.                  *
-#                                                                         *
-#   You should have received a copy of the GNU Library General Public     *
-#   License along with FreeCAD; if not, write to the Free Software        *
-#   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
-#   USA                                                                   *
-#**************************************************************************
+#***************************************************************************
+#*   Copyright (c) 2011 Juergen Riegel <FreeCAD@juergen-riegel.net>        *
+#*                                                                         *
+#*   This program is free software; you can redistribute it and/or modify  *
+#*   it under the terms of the GNU Lesser General Public License (LGPL)    *
+#*   as published by the Free Software Foundation; either version 2 of     *
+#*   the License, or (at your option) any later version.                   *
+#*   for detail see the LICENCE text file.                                 *
+#*                                                                         *
+#*   This program is distributed in the hope that it will be useful,       *
+#*   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+#*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+#*   GNU Library General Public License for more details.                  *
+#*                                                                         *
+#*   You should have received a copy of the GNU Library General Public     *
+#*   License along with this program; if not, write to the Free Software   *
+#*   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  *
+#*   USA                                                                   *
+#*                                                                         *
+#***************************************************************************
+
 import unittest
 
 import FreeCAD
@@ -31,7 +32,7 @@ class TestDatumPoint(unittest.TestCase):
     def testOriginDatumPoint(self):
         self.Body = self.Doc.addObject('PartDesign::Body','Body')
         self.DatumPoint = self.Doc.addObject('PartDesign::Point','DatumPoint')
-        self.DatumPoint.Support = [(self.Doc.XY_Plane,'')]
+        self.DatumPoint.AttachmentSupport = [(self.Doc.XY_Plane,'')]
         self.DatumPoint.MapMode = 'ObjectOrigin'
         self.Body.addObject(self.DatumPoint)
         self.Doc.recompute()
@@ -49,7 +50,7 @@ class TestDatumLine(unittest.TestCase):
     def testXAxisDatumLine(self):
         self.Body = self.Doc.addObject('PartDesign::Body','Body')
         self.DatumLine = self.Doc.addObject('PartDesign::Line','DatumLine')
-        self.DatumLine.Support = [(self.Doc.XY_Plane,'')]
+        self.DatumLine.AttachmentSupport = [(self.Doc.XY_Plane,'')]
         self.DatumLine.MapMode = 'ObjectX'
         self.Body.addObject(self.DatumLine)
         self.Doc.recompute()
@@ -67,7 +68,7 @@ class TestDatumPlane(unittest.TestCase):
     def testXYDatumPlane(self):
         self.Body = self.Doc.addObject('PartDesign::Body','Body')
         self.DatumPlane = self.Doc.addObject('PartDesign::Plane','DatumPlane')
-        self.DatumPlane.Support = [(self.Doc.XY_Plane,'')]
+        self.DatumPlane.AttachmentSupport = [(self.Doc.XY_Plane,'')]
         self.DatumPlane.MapMode = 'FlatFace'
         self.Body.addObject(self.DatumPlane)
         self.Doc.recompute()

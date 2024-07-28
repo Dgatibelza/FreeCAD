@@ -4,17 +4,17 @@
   <context>
     <name>CmdMeshPartCrossSections</name>
     <message>
-      <location filename="../../Command.cpp" line="276"/>
+      <location filename="../../Command.cpp" line="281"/>
       <source>MeshPart</source>
-      <translation>Składnik_Siatki</translation>
+      <translation>Siatka Części</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="277"/>
+      <location filename="../../Command.cpp" line="282"/>
       <source>Cross-sections...</source>
-      <translation>Przekrój poprzeczny...</translation>
+      <translation>Przekrój poprzeczny ...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="278"/>
+      <location filename="../../Command.cpp" line="283"/>
       <source>Cross-sections</source>
       <translation>Przekrój poprzeczny</translation>
     </message>
@@ -22,39 +22,39 @@
   <context>
     <name>CmdMeshPartCurveOnMesh</name>
     <message>
-      <location filename="../../Command.cpp" line="312"/>
+      <location filename="../../Command.cpp" line="317"/>
       <source>Mesh</source>
       <translation>Siatka</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="313"/>
+      <location filename="../../Command.cpp" line="318"/>
       <source>Curve on mesh...</source>
       <translation>Krzywa na siatce...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="314"/>
+      <location filename="../../Command.cpp" line="319"/>
       <source>Creates an approximated curve on top of a mesh.
 This command only works with a 'mesh' object.</source>
-      <translation>Tworzy przybliżoną krzywą na siatce.
-Ta komenda działa tylko z obiektem 'mesh'.</translation>
+      <translation>Tworzy przybliżoną krzywą na wierzchu siatki.
+To polecenie działa tylko z obiektem typu Siatka.</translation>
     </message>
   </context>
   <context>
     <name>CmdMeshPartMesher</name>
     <message>
-      <location filename="../../Command.cpp" line="59"/>
+      <location filename="../../Command.cpp" line="58"/>
       <source>Mesh</source>
       <translation>Siatka</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="60"/>
+      <location filename="../../Command.cpp" line="59"/>
       <source>Create mesh from shape...</source>
-      <translation>Utwórz siatkę z kształtu...</translation>
+      <translation>Utwórz siatkę z kształtu ...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="61"/>
+      <location filename="../../Command.cpp" line="60"/>
       <source>Tessellate shape</source>
-      <translation>Tesselacja obwiedni</translation>
+      <translation>Rozdrobnienie kształtu</translation>
     </message>
   </context>
   <context>
@@ -72,26 +72,39 @@ Ta komenda działa tylko z obiektem 'mesh'.</translation>
     <message>
       <location filename="../../Command.cpp" line="194"/>
       <source>Section</source>
-      <translation>Przecięcie</translation>
+      <translation>Przekrój</translation>
     </message>
   </context>
   <context>
     <name>CmdMeshPartTrimByPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="84"/>
+      <location filename="../../Command.cpp" line="83"/>
       <source>Mesh</source>
       <translation>Siatka</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="85"/>
+      <location filename="../../Command.cpp" line="84"/>
       <source>Trim mesh with a plane</source>
       <translation>Przytnij siatkę za pomocą płaszczyzny</translation>
     </message>
     <message>
+      <location filename="../../Command.cpp" line="85"/>
       <location filename="../../Command.cpp" line="86"/>
-      <location filename="../../Command.cpp" line="87"/>
       <source>Trims a mesh with a plane</source>
       <translation>Przycina siatkę za pomocą płaszczyzny</translation>
+    </message>
+  </context>
+  <context>
+    <name>Command</name>
+    <message>
+      <location filename="../../Command.cpp" line="134"/>
+      <source>Trim with plane</source>
+      <translation>Przytnij płaszczyzną</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="217"/>
+      <source>Section with plane</source>
+      <translation>Przekrój z płaszczyzną</translation>
     </message>
   </context>
   <context>
@@ -99,12 +112,12 @@ Ta komenda działa tylko z obiektem 'mesh'.</translation>
     <message>
       <location filename="../../CrossSections.ui" line="14"/>
       <source>Cross sections</source>
-      <translation>Przekroje</translation>
+      <translation>Przekrój poprzeczny</translation>
     </message>
     <message>
       <location filename="../../CrossSections.ui" line="20"/>
       <source>Guiding plane</source>
-      <translation>Prowadzenie płaszczyzny</translation>
+      <translation>Płaszczyzna prowadzenia</translation>
     </message>
     <message>
       <location filename="../../CrossSections.ui" line="26"/>
@@ -129,7 +142,7 @@ Ta komenda działa tylko z obiektem 'mesh'.</translation>
     <message>
       <location filename="../../CrossSections.ui" line="71"/>
       <source>Sections</source>
-      <translation>Sekcje</translation>
+      <translation>Przekroje</translation>
     </message>
     <message>
       <location filename="../../CrossSections.ui" line="83"/>
@@ -139,7 +152,7 @@ Ta komenda działa tylko z obiektem 'mesh'.</translation>
     <message>
       <location filename="../../CrossSections.ui" line="92"/>
       <source>Count</source>
-      <translation>Przelicz</translation>
+      <translation>Licznik</translation>
     </message>
     <message>
       <location filename="../../CrossSections.ui" line="109"/>
@@ -154,10 +167,10 @@ Ta komenda działa tylko z obiektem 'mesh'.</translation>
     <message>
       <location filename="../../CrossSections.ui" line="134"/>
       <source>Connect edges if distance less than</source>
-      <translation type="unfinished">Connect edges if distance less than</translation>
+      <translation>Połącz krawędzie, jeśli odległość jest mniejsza niż</translation>
     </message>
     <message>
-      <location filename="../../CrossSections.cpp" line="345"/>
+      <location filename="../../CrossSections.cpp" line="384"/>
       <source>Failure</source>
       <translation>Niepowodzenie</translation>
     </message>
@@ -165,32 +178,32 @@ Ta komenda działa tylko z obiektem 'mesh'.</translation>
   <context>
     <name>MeshPartGui::CurveOnMeshHandler</name>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="364"/>
+      <location filename="../../CurveOnMesh.cpp" line="362"/>
       <source>Create</source>
       <translation>Utwórz</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="366"/>
+      <location filename="../../CurveOnMesh.cpp" line="364"/>
       <source>Close wire</source>
       <translation>Zamknij linie łamaną</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="368"/>
+      <location filename="../../CurveOnMesh.cpp" line="366"/>
       <source>Clear</source>
       <translation>Wyczyść</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="369"/>
+      <location filename="../../CurveOnMesh.cpp" line="367"/>
       <source>Cancel</source>
       <translation>Anuluj</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="615"/>
+      <location filename="../../CurveOnMesh.cpp" line="624"/>
       <source>Wrong mesh picked</source>
-      <translation>Wybraną nieodpowiednią siatkę</translation>
+      <translation>Wybrano nieodpowiednią siatkę</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="655"/>
+      <location filename="../../CurveOnMesh.cpp" line="663"/>
       <source>No point was picked</source>
       <translation>Nie wybrano żadnego punktu</translation>
     </message>
@@ -214,7 +227,7 @@ Ta komenda działa tylko z obiektem 'mesh', a nie zwykłą płaszczyzną lub pow
     <message>
       <location filename="../../TaskCurveOnMesh.ui" line="38"/>
       <source>Wire</source>
-      <translation>Linia</translation>
+      <translation>Polilinia</translation>
     </message>
     <message>
       <location filename="../../TaskCurveOnMesh.ui" line="44"/>
@@ -229,12 +242,12 @@ Ta komenda działa tylko z obiektem 'mesh', a nie zwykłą płaszczyzną lub pow
     <message>
       <location filename="../../TaskCurveOnMesh.ui" line="61"/>
       <source>Split threshold</source>
-      <translation>Próg połączenia</translation>
+      <translation>Próg podziału</translation>
     </message>
     <message>
       <location filename="../../TaskCurveOnMesh.ui" line="87"/>
       <source>Spline Approximation</source>
-      <translation>Przybliżenie splajnu</translation>
+      <translation>Przybliżenie krzywej złożonej</translation>
     </message>
     <message>
       <location filename="../../TaskCurveOnMesh.ui" line="96"/>
@@ -247,7 +260,7 @@ Ta komenda działa tylko z obiektem 'mesh', a nie zwykłą płaszczyzną lub pow
       <translation>Ciągłość</translation>
     </message>
     <message>
-      <location filename="../../TaskCurveOnMesh.ui" line="129"/>
+      <location filename="../../TaskCurveOnMesh.ui" line="136"/>
       <source>Maximum curve degree</source>
       <translation>Maksymalny stopień krzywej</translation>
     </message>
@@ -262,7 +275,7 @@ Ta komenda działa tylko z obiektem 'mesh', a nie zwykłą płaszczyzną lub pow
     <message>
       <location filename="../../Tessellation.ui" line="14"/>
       <source>Tessellation</source>
-      <translation>Tesselacja</translation>
+      <translation>Rozdrobnienie</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="20"/>
@@ -272,22 +285,7 @@ Ta komenda działa tylko z obiektem 'mesh', a nie zwykłą płaszczyzną lub pow
     <message>
       <location filename="../../Tessellation.ui" line="30"/>
       <source>Standard</source>
-      <translation>Standardowy</translation>
-    </message>
-    <message>
-      <location filename="../../Tessellation.ui" line="145"/>
-      <source>Mefisto</source>
-      <translation>Mefisto</translation>
-    </message>
-    <message>
-      <location filename="../../Tessellation.ui" line="206"/>
-      <source>Netgen</source>
-      <translation>Netgen</translation>
-    </message>
-    <message>
-      <location filename="../../Tessellation.ui" line="41"/>
-      <source>Surface deviation:</source>
-      <translation>Odchylenie powierzchni</translation>
+      <translation>Standardowe</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="33"/>
@@ -295,9 +293,14 @@ Ta komenda działa tylko z obiektem 'mesh', a nie zwykłą płaszczyzną lub pow
       <translation>Użyj standardowego generatora siatek</translation>
     </message>
     <message>
+      <location filename="../../Tessellation.ui" line="41"/>
+      <source>Surface deviation:</source>
+      <translation>Odchylenie powierzchni:</translation>
+    </message>
+    <message>
       <location filename="../../Tessellation.ui" line="48"/>
       <source>Maximal linear deflection of a mesh section from the surface of the object</source>
-      <translation type="unfinished">Maximal linear deflection of a mesh section from the surface of the object</translation>
+      <translation>Maksymalne liniowe ugięcie części oczka od powierzchni obiektu</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="67"/>
@@ -307,7 +310,7 @@ Ta komenda działa tylko z obiektem 'mesh', a nie zwykłą płaszczyzną lub pow
     <message>
       <location filename="../../Tessellation.ui" line="74"/>
       <source>Maximal angular deflection of a mesh section to the next section</source>
-      <translation type="unfinished">Maximal angular deflection of a mesh section to the next section</translation>
+      <translation>Maksymalne ugięcie kątowe sekcji siatki do następnej sekcji</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="98"/>
@@ -319,12 +322,12 @@ Odchylenie powierzchniowe pomnożone przez długość aktualnego segmentu oczek 
     <message>
       <location filename="../../Tessellation.ui" line="102"/>
       <source>Relative surface deviation</source>
-      <translation>Względne odchylenie powierzchni:</translation>
+      <translation>Względne odchylenie powierzchni</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="109"/>
       <source>Mesh will get face colors of the object</source>
-      <translation type="unfinished">Mesh will get face colors of the object</translation>
+      <translation>Siatka otrzyma kolory ścian obiektu</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="112"/>
@@ -338,12 +341,17 @@ These groups will be exported for mesh output formats supporting
 this feature (e.g. the format OBJ).</source>
       <translation>Segmenty siatki zostaną pogrupowane zgodnie z kolorem powierzchni obiektów.
 Grupy te zostaną wyeksportowane dla wyjściowych formatów siatki obsługujących
-tą funkcję (np. format OBJ).</translation>
+tę funkcję (np. format OBJ).</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="124"/>
       <source>Define segments by face colors</source>
-      <translation>Zdefiniowanie segmentów przez kolory powierzchni</translation>
+      <translation>Zdefiniuj segmenty według kolorów ścian</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.ui" line="145"/>
+      <source>Mefisto</source>
+      <translation>Mefisto</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="148"/>
@@ -359,13 +367,18 @@ tą funkcję (np. format OBJ).</translation>
       <location filename="../../Tessellation.ui" line="162"/>
       <source>If this number is smaller the mesh becomes finer.
 The smallest value is 0.</source>
-      <translation type="unfinished">If this number is smaller the mesh becomes finer.
-The smallest value is 0.</translation>
+      <translation>Jeśli ta liczba jest mniejsza, siatka staje się drobniejsza.
+Najmniejszą wartością jest 0.</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="183"/>
       <source>Estimate</source>
-      <translation type="unfinished">Estimate</translation>
+      <translation>Szacunkowo</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.ui" line="206"/>
+      <source>Netgen</source>
+      <translation>Netgen</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="209"/>
@@ -395,17 +408,17 @@ The smallest value is 0.</translation>
     <message>
       <location filename="../../Tessellation.ui" line="249"/>
       <source>Fine</source>
-      <translation>Drobno</translation>
+      <translation>Drobne</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="254"/>
       <source>Very fine</source>
-      <translation>Bardzo dokładna</translation>
+      <translation>Bardzo drobno</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="259"/>
       <source>User defined</source>
-      <translation>Zdefiniowana przez użytkownika</translation>
+      <translation>Wartość użytkownika</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="269"/>
@@ -416,31 +429,31 @@ The smallest value is 0.</translation>
       <location filename="../../Tessellation.ui" line="279"/>
       <source>If this parameter is smaller, the mesh becomes finer.
 A value in the range of 0.1-1.</source>
-      <translation type="unfinished">If this parameter is smaller, the mesh becomes finer.
-A value in the range of 0.1-1.</translation>
+      <translation>Jeśli ten parametr jest mniejszy, siatka staje się drobniejsza.
+Wartość w zakresie 0,1-1.</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="302"/>
       <source>Elements per edge:</source>
-      <translation>Elementy na krawędź:</translation>
+      <translation>Liczba elementów na krawędź:</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="312"/>
       <location filename="../../Tessellation.ui" line="345"/>
       <source>If this parameter is larger, the mesh becomes finer.
 A value in the range of 0.2-10.</source>
-      <translation type="unfinished">If this parameter is larger, the mesh becomes finer.
-A value in the range of 0.2-10.</translation>
+      <translation>Jeśli ten parametr jest większy, siatka staje się drobniejsza.
+Wartość w zakresie 0,2–10.</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="335"/>
       <source>Elements per curvature radius:</source>
-      <translation>Elementy na promień krzywizny:</translation>
+      <translation>Liczba elementów na promień krzywizny:</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="370"/>
       <source>Whether optimization of surface shape will be done</source>
-      <translation type="unfinished">Whether optimization of surface shape will be done</translation>
+      <translation>Czy zostanie przeprowadzona optymalizacja kształtu powierzchni</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="373"/>
@@ -450,7 +463,7 @@ A value in the range of 0.2-10.</translation>
     <message>
       <location filename="../../Tessellation.ui" line="383"/>
       <source>Whether second order elements will be generated</source>
-      <translation type="unfinished">Whether second order elements will be generated</translation>
+      <translation>Czy będą generowane elementy drugiego rzędu</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="386"/>
@@ -460,7 +473,7 @@ A value in the range of 0.2-10.</translation>
     <message>
       <location filename="../../Tessellation.ui" line="393"/>
       <source>Whether meshes will be arranged preferably using quadrilateral faces</source>
-      <translation type="unfinished">Whether meshes will be arranged preferably using quadrilateral faces</translation>
+      <translation>Czy siatki będą rozmieszczone najlepiej przy użyciu czworobocznych ścian</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="396"/>
@@ -470,34 +483,48 @@ A value in the range of 0.2-10.</translation>
     <message>
       <location filename="../../Tessellation.ui" line="422"/>
       <source>Leave panel open</source>
-      <translation type="unfinished">Leave panel open</translation>
+      <translation>Pozostaw panel otwarty</translation>
     </message>
     <message>
       <location filename="../../Tessellation.cpp" line="62"/>
-      <source>gmsh</source>
-      <translation>gmsh</translation>
+      <source>Gmsh</source>
+      <translation>Gmsh</translation>
     </message>
     <message>
-      <location filename="../../Tessellation.cpp" line="226"/>
-      <location filename="../../Tessellation.cpp" line="232"/>
+      <location filename="../../Tessellation.cpp" line="237"/>
+      <location filename="../../Tessellation.cpp" line="243"/>
       <source>No active document</source>
       <translation>Brak aktywnego dokumentu</translation>
     </message>
     <message>
-      <location filename="../../Tessellation.cpp" line="247"/>
+      <location filename="../../Tessellation.cpp" line="273"/>
+      <source>You have selected a body without tip.
+Either set the tip of the body or select a different shape, please.</source>
+      <translation>Wybrałeś zawartość bez czubka.
+Proszę, ustaw czubek zawartości lub wybierz inny kształt.</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.cpp" line="279"/>
+      <source>You have selected a shape without faces.
+Select a different shape, please.</source>
+      <translation>Wybrałeś kształt bez ścian.
+Proszę wybrać inny kształt.</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.cpp" line="283"/>
       <source>Select a shape for meshing, first.</source>
-      <translation>Zaznacz najpierw obwiednię w celu utworzenia siatki</translation>
+      <translation>Najpierw wybierz kształt do utworzenia siatki.</translation>
     </message>
   </context>
   <context>
     <name>MeshPart_Section</name>
     <message>
-      <location filename="../../Command.cpp" line="205"/>
+      <location filename="../../Command.cpp" line="206"/>
       <source>Select plane</source>
       <translation>Wybierz płaszczyznę</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="206"/>
+      <location filename="../../Command.cpp" line="207"/>
       <source>Please select a plane at which you section the mesh.</source>
       <translation>Wybierz płaszczyznę którą chcesz podzielić siatkę.</translation>
     </message>
@@ -505,14 +532,14 @@ A value in the range of 0.2-10.</translation>
   <context>
     <name>MeshPart_TrimByPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="96"/>
+      <location filename="../../Command.cpp" line="95"/>
       <source>Select plane</source>
       <translation>Wybierz płaszczyznę</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="97"/>
+      <location filename="../../Command.cpp" line="96"/>
       <source>Please select a plane at which you trim the mesh.</source>
-      <translation>Wybierz płaszczyznę którą chcesz przyciąć siatkę.</translation>
+      <translation>Proszę wybrać płaszczyznę, na której przycinasz siatkę.</translation>
     </message>
     <message>
       <location filename="../../Command.cpp" line="103"/>
@@ -522,20 +549,20 @@ A value in the range of 0.2-10.</translation>
     <message>
       <location filename="../../Command.cpp" line="104"/>
       <source>Select the side you want to keep.</source>
-      <translation>Wybierz stronę, którą chcesz zachować.</translation>
+      <translation>Wybierz tę stronę, którą zamierzasz pozostawić.</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="105"/>
+      <location filename="../../Command.cpp" line="106"/>
       <source>Below</source>
       <translation>Poniżej</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="106"/>
+      <location filename="../../Command.cpp" line="108"/>
       <source>Above</source>
-      <translation>Ponad</translation>
+      <translation>Powyżej</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="107"/>
+      <location filename="../../Command.cpp" line="110"/>
       <source>Split</source>
       <translation>Rozdziel</translation>
     </message>
@@ -545,7 +572,33 @@ A value in the range of 0.2-10.</translation>
     <message>
       <location filename="../../Workbench.cpp" line="36"/>
       <source>MeshPart</source>
-      <translation>Składnik_Siatki</translation>
+      <translation>Siatka Części</translation>
+    </message>
+  </context>
+  <context>
+    <name>MeshPart_CreateFlatMesh</name>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="49"/>
+      <source>Unwrap mesh</source>
+      <translation>Rozwiń siatkę</translation>
+    </message>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="52"/>
+      <source>Find a flat representation of a mesh.</source>
+      <translation>Znajdź płaską reprezentację siatki.</translation>
+    </message>
+  </context>
+  <context>
+    <name>MeshPart_CreateFlatFace</name>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="88"/>
+      <source>Unwrap face</source>
+      <translation>Rozwiń ścianę</translation>
+    </message>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="91"/>
+      <source>Find a flat representation of a face.</source>
+      <translation>Znajdź płaską reprezentację siatki.</translation>
     </message>
   </context>
 </TS>

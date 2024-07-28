@@ -8,6 +8,7 @@ set(Part_Scripts
     Init.py
     JoinFeatures.py
     MakeBottle.py
+    PartEnums.py
     TestPartApp.py
 )
 
@@ -29,10 +30,12 @@ set(AttachmentEditor_Scripts
 set(BasicShapes_Scripts
     BasicShapes/__init__.py
     BasicShapes/Shapes.py
+    BasicShapes/Utils.py
 )
 
 if(BUILD_GUI)
     list (APPEND BasicShapes_Scripts
+          BasicShapes/ShapeContent.py
           BasicShapes/CommandShapes.py
           BasicShapes/ViewProviderShapes.py
           BasicShapes/TaskTube.ui
@@ -41,6 +44,7 @@ endif(BUILD_GUI)
 
 set(BOPTools_Scripts
     BOPTools/__init__.py
+    BOPTools/BOPFeatures.py
     BOPTools/GeneralFuseResult.py
     BOPTools/JoinAPI.py
     BOPTools/JoinFeatures.py
@@ -60,8 +64,14 @@ set(CompoundTools_Scripts
 
 set(Part_tests
     parttests/__init__.py
+    parttests/BRep_tests.py
+    parttests/Geom2d_tests.py
     parttests/part_test_objects.py
     parttests/regression_tests.py
+    parttests/TopoShapeListTest.py
+    parttests/ColorPerFaceTest.py
+    parttests/ColorTransparencyTest.py
+    parttests/TopoShapeTest.py
 )
 
 add_custom_target(PartScripts ALL SOURCES

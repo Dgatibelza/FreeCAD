@@ -20,18 +20,12 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #ifndef GUI_TASKVIEW_TaskHoleParameters_H
 #define GUI_TASKVIEW_TaskHoleParameters_H
 
-#include <Gui/TaskView/TaskView.h>
-#include <Gui/Selection.h>
-#include <Gui/TaskView/TaskDialog.h>
-#include <App/DocumentObserver.h>
-#include <boost/bind/bind.hpp>
-
 #include "TaskSketchBasedParameters.h"
 #include "ViewProviderHole.h"
+
 
 class Ui_TaskHoleParameters;
 
@@ -47,7 +41,7 @@ namespace PartDesign {
 class Hole;
 }
 
-namespace PartDesignGui { 
+namespace PartDesignGui {
 
 
 
@@ -56,9 +50,9 @@ class TaskHoleParameters : public TaskSketchBasedParameters
     Q_OBJECT
 
 public:
-    TaskHoleParameters(ViewProviderHole *HoleView, QWidget *parent = 0);
-    ~TaskHoleParameters();
-    
+    explicit TaskHoleParameters(ViewProviderHole *HoleView, QWidget *parent = nullptr);
+    ~TaskHoleParameters() override;
+
     void apply() override;
 
     bool   getThreaded() const;
@@ -69,6 +63,7 @@ public:
     Base::Quantity getDiameter() const;
     long   getThreadDirection() const;
     long   getHoleCutType() const;
+    bool   getHoleCutCustomValues() const;
     Base::Quantity getHoleCutDiameter() const;
     Base::Quantity getHoleCutDepth() const;
     Base::Quantity getHoleCutCountersinkAngle() const;
@@ -76,8 +71,14 @@ public:
     Base::Quantity getDepth() const;
     long   getDrillPoint() const;
     Base::Quantity getDrillPointAngle() const;
+    bool   getDrillForDepth() const;
     bool   getTapered() const;
     Base::Quantity getTaperedAngle() const;
+    bool getUseCustomThreadClearance() const;
+    double getCustomThreadClearance() const;
+    bool getModelThread() const;
+    long getThreadDepthType() const;
+    double getThreadDepth() const;
 
 private Q_SLOTS:
     void threadedChanged();
@@ -85,14 +86,11 @@ private Q_SLOTS:
     void threadSizeChanged(int index);
     void threadClassChanged(int index);
     void threadFitChanged(int index);
-    void modelActualThreadChanged();
     void threadPitchChanged(double value);
-    void threadCutOffOuterChanged(double value);
-    void threadCutOffInnerChanged(double value);
-    void threadAngleChanged(double value);    
     void threadDiameterChanged(double value);
     void threadDirectionChanged();
-    void holeCutChanged(int index);
+    void holeCutTypeChanged(int index);
+    void holeCutCustomValuesChanged();
     void holeCutDiameterChanged(double value);
     void holeCutDepthChanged(double value);
     void holeCutCountersinkAngleChanged(double value);
@@ -100,15 +98,23 @@ private Q_SLOTS:
     void depthValueChanged(double value);
     void drillPointChanged();
     void drillPointAngledValueChanged(double value);
+    void drillForDepthChanged();
     void taperedChanged();
+    void taperedAngleChanged(double value);
     void reversedChanged();
-    void taperedAngleChanged(double value);   
+    void modelThreadChanged();
+    void useCustomThreadClearanceChanged();
+    void customThreadClearanceChanged(double value);
+    void updateViewChanged(bool isChecked);
+    void threadDepthTypeChanged(int index);
+    void threadDepthChanged(double value);
+
 private:
     class Observer : public App::DocumentObserver {
     public:
         Observer(TaskHoleParameters * _owner, PartDesign::Hole * _hole);
     private:
-        virtual void slotChangedObject(const App::DocumentObject& Obj, const App::Property& Prop);
+        void slotChangedObject(const App::DocumentObject& Obj, const App::Property& Prop) override;
         TaskHoleParameters * owner;
         PartDesign::Hole * hole;
     };
@@ -122,13 +128,13 @@ private:
 
 private:
 
-    typedef boost::signals2::scoped_connection Connection;
+    using Connection = boost::signals2::scoped_connection;
     Connection connectPropChanged;
 
     std::unique_ptr<Observer> observer;
-    QWidget* proxy;
-    Ui_TaskHoleParameters* ui;
     bool isApplying;
+    QWidget* proxy;
+    std::unique_ptr<Ui_TaskHoleParameters> ui;
 };
 
 /// simulation dialog for the TaskView
@@ -137,10 +143,8 @@ class TaskDlgHoleParameters : public TaskDlgSketchBasedParameters
     Q_OBJECT
 
 public:
-    TaskDlgHoleParameters(ViewProviderHole *HoleView);
-    ~TaskDlgHoleParameters();
-
-    ViewProviderHole* getHoleView() const { return static_cast<ViewProviderHole*>(vp); }
+    explicit TaskDlgHoleParameters(ViewProviderHole *HoleView);
+    ~TaskDlgHoleParameters() override;
 
 protected:
     TaskHoleParameters  *parameter;

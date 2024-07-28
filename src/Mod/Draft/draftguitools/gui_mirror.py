@@ -40,12 +40,13 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 import FreeCAD as App
 import FreeCADGui as Gui
 import Draft_rc
+import DraftGeomUtils
 import DraftVecUtils
-import WorkingPlane
 import draftguitools.gui_base_original as gui_base_original
+import draftguitools.gui_trackers as trackers
 import draftguitools.gui_tool_utils as gui_tool_utils
 
-from draftutils.messages import _msg
+from draftutils.messages import _msg, _toolmsg
 from draftutils.translate import translate
 
 # The module is used to prevent complaints from code checkers (flake8)
@@ -57,22 +58,19 @@ class Mirror(gui_base_original.Modifier):
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _tip = ("Mirrors the selected objects along a line "
-                "defined by two points.")
 
         return {'Pixmap': 'Draft_Mirror',
                 'Accel': "M, I",
                 'MenuText': QT_TRANSLATE_NOOP("Draft_Mirror", "Mirror"),
-                'ToolTip': QT_TRANSLATE_NOOP("Draft_Mirror", _tip)}
+                'ToolTip': QT_TRANSLATE_NOOP("Draft_Mirror", "Mirrors the selected objects along a line defined by two points.")}
 
     def Activated(self):
         """Execute when the command is called."""
-        self.name = translate("draft", "Mirror")
-        super(Mirror, self).Activated(name=self.name)
+        super().Activated(name="Mirror")
         self.ghost = None
         if self.ui:
             if not Gui.Selection.getSelection():
-                self.ui.selectUi()
+                self.ui.selectUi(on_close_call=self.finish)
                 _msg(translate("draft", "Select an object to mirror"))
                 self.call = \
                     self.view.addEventCallback("SoEvent",
@@ -86,25 +84,20 @@ class Mirror(gui_base_original.Modifier):
             self.view.removeEventCallback("SoEvent", self.call)
 
         self.sel = Gui.Selection.getSelection()
-        self.ui.pointUi(self.name)
-        self.ui.modUi()
+        self.ui.pointUi(title=translate("draft", self.featureName), icon="Draft_Mirror")
         self.ui.xValue.setFocus()
         self.ui.xValue.selectAll()
-        # self.ghost = trackers.ghostTracker(self.sel)
-        # TODO: solve this (see below)
+        self.ghost = trackers.ghostTracker(self.sel, mirror=True)
         self.call = self.view.addEventCallback("SoEvent", self.action)
-        _msg(translate("draft", "Pick start point of mirror line"))
+        _toolmsg(translate("draft", "Pick start point of mirror line"))
         self.ui.isCopy.hide()
 
-    def finish(self, closed=False, cont=False):
+    def finish(self, cont=False):
         """Terminate the operation of the tool."""
+        self.end_callbacks(self.call)
         if self.ghost:
             self.ghost.finalize()
-        super(Mirror, self).finish()
-        if cont and self.ui:
-            if self.ui.continueMode:
-                Gui.Selection.clearSelection()
-                self.Activated()
+        super().finish()
 
     def mirror(self, p1, p2, copy=False):
         """Mirror the real shapes."""
@@ -141,31 +134,21 @@ class Mirror(gui_base_original.Modifier):
             if arg["Key"] == "ESCAPE":
                 self.finish()
         elif arg["Type"] == "SoLocation2Event":  # mouse movement detection
-            (self.point,
-             ctrlPoint, info) = gui_tool_utils.getPoint(self, arg)
+            self.point, ctrlPoint, info = gui_tool_utils.getPoint(self, arg)
             if len(self.node) > 0:
                 last = self.node[-1]
                 if self.ghost:
-                    if self.point != last:
-                        # TODO: the following doesn't work at the moment
-                        mu = self.point.sub(last).normalize()
-                        # This part used to test for the GUI to obtain
-                        # the camera view but this is unnecessary
-                        # as this command is always launched in the GUI.
-                        _view = Gui.ActiveDocument.ActiveView
-                        mv = _view.getViewDirection().negative()
-                        mw = mv.cross(mu)
-                        _plane = WorkingPlane.plane(u=mu, v=mv, w=mw,
-                                                    pos=last)
-                        tm = _plane.getPlacement().toMatrix()
-                        m = self.ghost.getMatrix()
-                        m = m.multiply(tm.inverse())
-                        m.scale(App.Vector(1, 1, -1))
-                        m = m.multiply(tm)
-                        m.scale(App.Vector(-1, 1, 1))
-                        self.ghost.setMatrix(m)
+                    tol = 1e-7
+                    if self.point.sub(last).Length > tol:
+                        # The normal of the mirror plane must be same as in mirror.py.
+                        nor = self.point.sub(last).cross(self.wp.axis)
+                        if nor.Length > tol:
+                            nor.normalize()
+                            mtx = DraftGeomUtils.mirror_matrix(App.Matrix(), last, nor)
+                            self.ghost.setMatrix(mtx) # Ignores the position of the matrix.
+                            self.ghost.move(App.Vector(mtx.col(3)[:3]))
             if self.extendedCopy:
-                if not gui_tool_utils.hasMod(arg, gui_tool_utils.MODALT):
+                if not gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_alt_key()):
                     self.finish()
             gui_tool_utils.redraw3DView()
         elif arg["Type"] == "SoMouseButtonEvent":
@@ -177,21 +160,21 @@ class Mirror(gui_base_original.Modifier):
                         self.ui.isRelative.show()
                         if self.ghost:
                             self.ghost.on()
-                        _msg(translate("draft",
+                        _toolmsg(translate("draft",
                                        "Pick end point of mirror line"))
                         if self.planetrack:
                             self.planetrack.set(self.point)
                     else:
                         last = self.node[0]
                         if (self.ui.isCopy.isChecked()
-                                or gui_tool_utils.hasMod(arg, gui_tool_utils.MODALT)):
+                                or gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_alt_key())):
                             self.mirror(last, self.point, True)
                         else:
                             self.mirror(last, self.point)
-                        if gui_tool_utils.hasMod(arg, gui_tool_utils.MODALT):
+                        if gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_alt_key()):
                             self.extendedCopy = True
                         else:
-                            self.finish(cont=True)
+                            self.finish()
 
     def numericInput(self, numx, numy, numz):
         """Validate the entry fields in the user interface.
@@ -204,7 +187,7 @@ class Mirror(gui_base_original.Modifier):
             self.node.append(self.point)
             if self.ghost:
                 self.ghost.on()
-            _msg(translate("draft", "Pick end point of mirror line"))
+            _toolmsg(translate("draft", "Pick end point of mirror line"))
         else:
             last = self.node[-1]
             if self.ui.isCopy.isChecked():

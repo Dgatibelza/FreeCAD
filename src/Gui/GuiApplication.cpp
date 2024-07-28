@@ -25,11 +25,10 @@
 
 #ifndef _PreComp_
 # include <sstream>
-# include <stdexcept>
+# include <QAbstractSpinBox>
 # include <QByteArray>
 # include <QComboBox>
 # include <QDataStream>
-# include <QDebug>
 # include <QFileInfo>
 # include <QFileOpenEvent>
 # include <QSessionManager>
@@ -39,43 +38,35 @@
 #include <QLocalServer>
 #include <QLocalSocket>
 
-#if defined(Q_OS_WIN)
-# include <Windows.h>
-#endif
 #if defined(Q_OS_UNIX)
 # include <sys/types.h>
-# include <time.h>
+# include <ctime>
 # include <unistd.h>
 #endif
 
-#include "GuiApplication.h"
-#include "Application.h"
-#include "SpaceballEvent.h"
-#include "MainWindow.h"
-
+#include <App/Application.h>
 #include <Base/Console.h>
 #include <Base/Exception.h>
 
-#include <App/Application.h>
+#include "GuiApplication.h"
+#include "Application.h"
+#include "MainWindow.h"
+#include "SpaceballEvent.h"
+
 
 using namespace Gui;
 
 GUIApplication::GUIApplication(int & argc, char ** argv)
     : GUIApplicationNativeEventAware(argc, argv)
 {
-#if QT_VERSION > 0x050000
-    // In Qt 4.x 'commitData' is a virtual method
-    connect(this, SIGNAL(commitDataRequest(QSessionManager &)),
-            SLOT(commitData(QSessionManager &)), Qt::DirectConnection);
-#endif
-#if QT_VERSION >= 0x050600
+    connect(this, &GUIApplication::commitDataRequest,
+            this, &GUIApplication::commitData, Qt::DirectConnection);
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     setFallbackSessionManagementEnabled(false);
 #endif
 }
 
-GUIApplication::~GUIApplication()
-{
-}
+GUIApplication::~GUIApplication() = default;
 
 bool GUIApplication::notify (QObject * receiver, QEvent * event)
 {
@@ -173,14 +164,12 @@ bool GUIApplication::event(QEvent * ev)
 
 class GUISingleApplication::Private {
 public:
-    Private(GUISingleApplication *q_ptr)
+    explicit Private(GUISingleApplication *q_ptr)
       : q_ptr(q_ptr)
       , timer(new QTimer(q_ptr))
-      , server(0)
-      , running(false)
     {
         timer->setSingleShot(true);
-        std::string exeName = App::GetApplication().getExecutableName();
+        std::string exeName = App::Application::getExecutableName();
         serverName = QString::fromStdString(exeName);
     }
 
@@ -207,8 +196,8 @@ public:
     {
         // Start a QLocalServer to listen for connections
         server = new QLocalServer();
-        QObject::connect(server, SIGNAL(newConnection()),
-                         q_ptr, SLOT(receiveConnection()));
+        QObject::connect(server, &QLocalServer::newConnection,
+                         q_ptr, &GUISingleApplication::receiveConnection);
         // first attempt
         if (!server->listen(serverName)) {
             if (server->serverError() == QAbstractSocket::AddressInUseError) {
@@ -227,10 +216,10 @@ public:
 
     GUISingleApplication *q_ptr;
     QTimer *timer;
-    QLocalServer *server;
+    QLocalServer *server{nullptr};
     QString serverName;
     QList<QByteArray> messages;
-    bool running;
+    bool running{false};
 };
 
 GUISingleApplication::GUISingleApplication(int & argc, char ** argv)
@@ -238,12 +227,10 @@ GUISingleApplication::GUISingleApplication(int & argc, char ** argv)
       d_ptr(new Private(this))
 {
     d_ptr->setupConnection();
-    connect(d_ptr->timer, SIGNAL(timeout()), this, SLOT(processMessages()));
+    connect(d_ptr->timer, &QTimer::timeout, this, &GUISingleApplication::processMessages);
 }
 
-GUISingleApplication::~GUISingleApplication()
-{
-}
+GUISingleApplication::~GUISingleApplication() = default;
 
 bool GUISingleApplication::isRunning() const
 {
@@ -281,8 +268,8 @@ void GUISingleApplication::receiveConnection()
     if (!socket)
         return;
 
-    connect(socket, SIGNAL(disconnected()),
-            socket, SLOT(deleteLater()));
+    connect(socket, &QLocalSocket::disconnected,
+            socket, &QLocalSocket::deleteLater);
     if (socket->waitForReadyRead()) {
         QDataStream in(socket);
         if (!in.atEnd()) {
@@ -316,7 +303,7 @@ bool WheelEventFilter::eventFilter(QObject* obj, QEvent* ev)
 {
     if (qobject_cast<QComboBox*>(obj) && ev->type() == QEvent::Wheel)
         return true;
-    QAbstractSpinBox* sb = qobject_cast<QAbstractSpinBox*>(obj);
+    auto sb = qobject_cast<QAbstractSpinBox*>(obj);
     if (sb) {
         if (ev->type() == QEvent::Show) {
             sb->setFocusPolicy(Qt::StrongFocus);
@@ -327,6 +314,5 @@ bool WheelEventFilter::eventFilter(QObject* obj, QEvent* ev)
     }
     return false;
 }
-
 
 #include "moc_GuiApplication.cpp"

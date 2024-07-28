@@ -4,17 +4,17 @@
   <context>
     <name>CmdMeshPartCrossSections</name>
     <message>
-      <location filename="../../Command.cpp" line="276"/>
+      <location filename="../../Command.cpp" line="281"/>
       <source>MeshPart</source>
       <translation>Mesh onderdeel</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="277"/>
+      <location filename="../../Command.cpp" line="282"/>
       <source>Cross-sections...</source>
       <translation>Dwarsdoorsneden...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="278"/>
+      <location filename="../../Command.cpp" line="283"/>
       <source>Cross-sections</source>
       <translation>Dwarsdoorsneden</translation>
     </message>
@@ -22,37 +22,37 @@
   <context>
     <name>CmdMeshPartCurveOnMesh</name>
     <message>
-      <location filename="../../Command.cpp" line="312"/>
+      <location filename="../../Command.cpp" line="317"/>
       <source>Mesh</source>
-      <translation type="unfinished">Mesh</translation>
+      <translation>Mesh</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="313"/>
+      <location filename="../../Command.cpp" line="318"/>
       <source>Curve on mesh...</source>
       <translation>Ronding op gaas...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="314"/>
+      <location filename="../../Command.cpp" line="319"/>
       <source>Creates an approximated curve on top of a mesh.
 This command only works with a 'mesh' object.</source>
-      <translation type="unfinished">Creates an approximated curve on top of a mesh.
-This command only works with a 'mesh' object.</translation>
+      <translation>Maakt een geschatte curve bovenop een maaswerk.
+Deze opdracht werkt alleen met een 'maaswerk' object.</translation>
     </message>
   </context>
   <context>
     <name>CmdMeshPartMesher</name>
     <message>
-      <location filename="../../Command.cpp" line="59"/>
+      <location filename="../../Command.cpp" line="58"/>
       <source>Mesh</source>
-      <translation type="unfinished">Mesh</translation>
+      <translation>Mesh</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="60"/>
+      <location filename="../../Command.cpp" line="59"/>
       <source>Create mesh from shape...</source>
       <translation>Maak een mesh van vorm...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="61"/>
+      <location filename="../../Command.cpp" line="60"/>
       <source>Tessellate shape</source>
       <translation>Betegel vorm</translation>
     </message>
@@ -78,20 +78,33 @@ This command only works with a 'mesh' object.</translation>
   <context>
     <name>CmdMeshPartTrimByPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="84"/>
+      <location filename="../../Command.cpp" line="83"/>
       <source>Mesh</source>
       <translation type="unfinished">Mesh</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="85"/>
+      <location filename="../../Command.cpp" line="84"/>
       <source>Trim mesh with a plane</source>
       <translation>Maaswerk bijsnijden met een vlak</translation>
     </message>
     <message>
+      <location filename="../../Command.cpp" line="85"/>
       <location filename="../../Command.cpp" line="86"/>
-      <location filename="../../Command.cpp" line="87"/>
       <source>Trims a mesh with a plane</source>
       <translation>Snijdt een maaswerk bij met een vlak</translation>
+    </message>
+  </context>
+  <context>
+    <name>Command</name>
+    <message>
+      <location filename="../../Command.cpp" line="134"/>
+      <source>Trim with plane</source>
+      <translation>Bijsnijden met vlak</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="217"/>
+      <source>Section with plane</source>
+      <translation>Sectie met vlak</translation>
     </message>
   </context>
   <context>
@@ -157,7 +170,7 @@ This command only works with a 'mesh' object.</translation>
       <translation>Verbind de randen als afstand kleiner is dan</translation>
     </message>
     <message>
-      <location filename="../../CrossSections.cpp" line="345"/>
+      <location filename="../../CrossSections.cpp" line="384"/>
       <source>Failure</source>
       <translation>Mislukt</translation>
     </message>
@@ -165,32 +178,32 @@ This command only works with a 'mesh' object.</translation>
   <context>
     <name>MeshPartGui::CurveOnMeshHandler</name>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="364"/>
+      <location filename="../../CurveOnMesh.cpp" line="362"/>
       <source>Create</source>
       <translation>Aanmaken</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="366"/>
+      <location filename="../../CurveOnMesh.cpp" line="364"/>
       <source>Close wire</source>
       <translation>Sluit draad</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="368"/>
+      <location filename="../../CurveOnMesh.cpp" line="366"/>
       <source>Clear</source>
       <translation>Wissen</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="369"/>
+      <location filename="../../CurveOnMesh.cpp" line="367"/>
       <source>Cancel</source>
       <translation>Annuleren</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="615"/>
+      <location filename="../../CurveOnMesh.cpp" line="624"/>
       <source>Wrong mesh picked</source>
       <translation>Verkeerde gaas gepakt</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="655"/>
+      <location filename="../../CurveOnMesh.cpp" line="663"/>
       <source>No point was picked</source>
       <translation>Geen punt was geselecteerd</translation>
     </message>
@@ -207,19 +220,19 @@ This command only works with a 'mesh' object.</translation>
       <source>Press 'Start', then pick points on the mesh; when enough points have been set, right-click and choose 'Create'. Repeat this process to create more splines. Close this task panel to complete the operation.
 
 This command only works with a 'mesh' object, not a regular face or surface. To convert an object to a mesh use the tools of the Mesh Workbench.</source>
-      <translation type="unfinished">Press 'Start', then pick points on the mesh; when enough points have been set, right-click and choose 'Create'. Repeat this process to create more splines. Close this task panel to complete the operation.
+      <translation>Druk op 'Start' en kies punten op het maaswerk; als er genoeg punten ingesteld zijn, klik dan met de rechtermuisknop en kies 'Aanmaken'. Herhaal dit proces om meer splines te maken. Sluit dit taakpaneel om de bewerking te voltooien.
 
-This command only works with a 'mesh' object, not a regular face or surface. To convert an object to a mesh use the tools of the Mesh Workbench.</translation>
+Dit commando werkt alleen met een 'maaswerk'-object, niet een normaal vlak of oppervlak. Gebruik de gereedschappen van de Maaswerk werkbank om een object naar een maas te converteren.</translation>
     </message>
     <message>
       <location filename="../../TaskCurveOnMesh.ui" line="38"/>
       <source>Wire</source>
-      <translation>Draad</translation>
+      <translation>Polygonale lijn</translation>
     </message>
     <message>
       <location filename="../../TaskCurveOnMesh.ui" line="44"/>
       <source>Snap tolerance to vertices</source>
-      <translation type="unfinished">Snap tolerance to vertices</translation>
+      <translation>Uitlijn tolerantie tot hoekpunten</translation>
     </message>
     <message>
       <location filename="../../TaskCurveOnMesh.ui" line="51"/>
@@ -247,7 +260,7 @@ This command only works with a 'mesh' object, not a regular face or surface. To 
       <translation>Continuïteit</translation>
     </message>
     <message>
-      <location filename="../../TaskCurveOnMesh.ui" line="129"/>
+      <location filename="../../TaskCurveOnMesh.ui" line="136"/>
       <source>Maximum curve degree</source>
       <translation>Maximaal aantal graden voor de ronding</translation>
     </message>
@@ -275,24 +288,14 @@ This command only works with a 'mesh' object, not a regular face or surface. To 
       <translation>Standaard</translation>
     </message>
     <message>
-      <location filename="../../Tessellation.ui" line="145"/>
-      <source>Mefisto</source>
-      <translation>Mefisto</translation>
-    </message>
-    <message>
-      <location filename="../../Tessellation.ui" line="206"/>
-      <source>Netgen</source>
-      <translation>Netgen</translation>
+      <location filename="../../Tessellation.ui" line="33"/>
+      <source>Use the standard mesher</source>
+      <translation>Gebruik de standaardmesher</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="41"/>
       <source>Surface deviation:</source>
       <translation>Oppervlakte-afwijking:</translation>
-    </message>
-    <message>
-      <location filename="../../Tessellation.ui" line="33"/>
-      <source>Use the standard mesher</source>
-      <translation>Gebruik de standaardmesher</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="48"/>
@@ -346,6 +349,11 @@ die deze functie ondersteunen (bijvoorbeeld het OBJ-formaat).</translation>
       <translation>Definieer segmenten door vlak kleuren</translation>
     </message>
     <message>
+      <location filename="../../Tessellation.ui" line="145"/>
+      <source>Mefisto</source>
+      <translation>Mefisto</translation>
+    </message>
+    <message>
       <location filename="../../Tessellation.ui" line="148"/>
       <source>Use the Mefisto mesher</source>
       <translation>Gebruik de Mefistomesher</translation>
@@ -366,6 +374,11 @@ De kleinste waarde is 0.</translation>
       <location filename="../../Tessellation.ui" line="183"/>
       <source>Estimate</source>
       <translation>Schatting</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.ui" line="206"/>
+      <source>Netgen</source>
+      <translation>Netgen</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="209"/>
@@ -474,17 +487,31 @@ Een waarde tussen 0,2 en 10.</translation>
     </message>
     <message>
       <location filename="../../Tessellation.cpp" line="62"/>
-      <source>gmsh</source>
-      <translation>gmsh</translation>
+      <source>Gmsh</source>
+      <translation>Gmsh</translation>
     </message>
     <message>
-      <location filename="../../Tessellation.cpp" line="226"/>
-      <location filename="../../Tessellation.cpp" line="232"/>
+      <location filename="../../Tessellation.cpp" line="237"/>
+      <location filename="../../Tessellation.cpp" line="243"/>
       <source>No active document</source>
       <translation>Geen actief document</translation>
     </message>
     <message>
-      <location filename="../../Tessellation.cpp" line="247"/>
+      <location filename="../../Tessellation.cpp" line="273"/>
+      <source>You have selected a body without tip.
+Either set the tip of the body or select a different shape, please.</source>
+      <translation>Je hebt een vast lichaam geselecteerd zonder tip.
+Stel de punt van het vaste lichaam in of selecteer een andere vorm, alstublieft.</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.cpp" line="279"/>
+      <source>You have selected a shape without faces.
+Select a different shape, please.</source>
+      <translation>Je hebt een vorm zonder vlakken geselecteerd.
+Selecteer een andere vorm alstublieft.</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.cpp" line="283"/>
       <source>Select a shape for meshing, first.</source>
       <translation>Selecteer voor de meshing eerst een vorm.</translation>
     </message>
@@ -492,12 +519,12 @@ Een waarde tussen 0,2 en 10.</translation>
   <context>
     <name>MeshPart_Section</name>
     <message>
-      <location filename="../../Command.cpp" line="205"/>
+      <location filename="../../Command.cpp" line="206"/>
       <source>Select plane</source>
       <translation>Selecteer vlak</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="206"/>
+      <location filename="../../Command.cpp" line="207"/>
       <source>Please select a plane at which you section the mesh.</source>
       <translation>Selecteer een vlak waarop u het gaas compartimenteerd.</translation>
     </message>
@@ -505,12 +532,12 @@ Een waarde tussen 0,2 en 10.</translation>
   <context>
     <name>MeshPart_TrimByPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="96"/>
+      <location filename="../../Command.cpp" line="95"/>
       <source>Select plane</source>
       <translation>Selecteer vlak</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="97"/>
+      <location filename="../../Command.cpp" line="96"/>
       <source>Please select a plane at which you trim the mesh.</source>
       <translation>Selecteer een vlak waarop u de mesh trimt.</translation>
     </message>
@@ -525,17 +552,17 @@ Een waarde tussen 0,2 en 10.</translation>
       <translation>Selecteer de zijde die U wenst te behouden.</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="105"/>
+      <location filename="../../Command.cpp" line="106"/>
       <source>Below</source>
       <translation>Onderaan</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="106"/>
+      <location filename="../../Command.cpp" line="108"/>
       <source>Above</source>
       <translation>Bovenaan</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="107"/>
+      <location filename="../../Command.cpp" line="110"/>
       <source>Split</source>
       <translation>Delen</translation>
     </message>
@@ -546,6 +573,32 @@ Een waarde tussen 0,2 en 10.</translation>
       <location filename="../../Workbench.cpp" line="36"/>
       <source>MeshPart</source>
       <translation>Mesh onderdeel</translation>
+    </message>
+  </context>
+  <context>
+    <name>MeshPart_CreateFlatMesh</name>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="49"/>
+      <source>Unwrap mesh</source>
+      <translation type="unfinished">Unwrap mesh</translation>
+    </message>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="52"/>
+      <source>Find a flat representation of a mesh.</source>
+      <translation>Zoek een platte representatie van een mesh.</translation>
+    </message>
+  </context>
+  <context>
+    <name>MeshPart_CreateFlatFace</name>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="88"/>
+      <source>Unwrap face</source>
+      <translation type="unfinished">Unwrap face</translation>
+    </message>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="91"/>
+      <source>Find a flat representation of a face.</source>
+      <translation>Zoek een platte representatie van een vlak.</translation>
     </message>
   </context>
 </TS>

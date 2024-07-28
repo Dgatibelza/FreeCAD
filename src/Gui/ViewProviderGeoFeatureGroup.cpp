@@ -21,14 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
-
-#ifndef _PreComp_
-# include <Inventor/nodes/SoGroup.h>
-#endif
-
-#include <App/GeoFeatureGroupExtension.h>
 
 #include "ViewProviderGeoFeatureGroup.h"
 
@@ -43,9 +36,7 @@ ViewProviderGeoFeatureGroup::ViewProviderGeoFeatureGroup()
     ViewProviderGeoFeatureGroupExtension::initExtension(this);
 }
 
-ViewProviderGeoFeatureGroup::~ViewProviderGeoFeatureGroup()
-{
-}
+ViewProviderGeoFeatureGroup::~ViewProviderGeoFeatureGroup() = default;
 
 
 // Python feature -----------------------------------------------------------------------

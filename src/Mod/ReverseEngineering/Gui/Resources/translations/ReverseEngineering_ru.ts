@@ -4,17 +4,17 @@
   <context>
     <name>CmdApproxCylinder</name>
     <message>
-      <location filename="../../Command.cpp" line="211"/>
+      <location filename="../../Command.cpp" line="248"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="212"/>
+      <location filename="../../Command.cpp" line="249"/>
       <source>Cylinder</source>
       <translation>Цилиндр</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="213"/>
+      <location filename="../../Command.cpp" line="250"/>
       <source>Approximate a cylinder</source>
       <translation>Аппроксимировать цилиндр</translation>
     </message>
@@ -22,17 +22,17 @@
   <context>
     <name>CmdApproxPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="110"/>
+      <location filename="../../Command.cpp" line="140"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="111"/>
-      <source>Plane...</source>
-      <translation>Плоскость...</translation>
+      <location filename="../../Command.cpp" line="141"/>
+      <source>Plane</source>
+      <translation>Плоскость</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="112"/>
+      <location filename="../../Command.cpp" line="142"/>
       <source>Approximate a plane</source>
       <translation>Аппроксимировать плоскость</translation>
     </message>
@@ -40,17 +40,17 @@
   <context>
     <name>CmdApproxPolynomial</name>
     <message>
-      <location filename="../../Command.cpp" line="324"/>
+      <location filename="../../Command.cpp" line="364"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="325"/>
+      <location filename="../../Command.cpp" line="365"/>
       <source>Polynomial surface</source>
       <translation>Полиномиальная поверхность</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="326"/>
+      <location filename="../../Command.cpp" line="366"/>
       <source>Approximate a polynomial surface</source>
       <translation>Аппроксимировать полиномиальную поверхность</translation>
     </message>
@@ -58,17 +58,17 @@
   <context>
     <name>CmdApproxSphere</name>
     <message>
-      <location filename="../../Command.cpp" line="277"/>
+      <location filename="../../Command.cpp" line="316"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="278"/>
+      <location filename="../../Command.cpp" line="317"/>
       <source>Sphere</source>
       <translation>Сфера</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="279"/>
+      <location filename="../../Command.cpp" line="318"/>
       <source>Approximate a sphere</source>
       <translation>Аппроксимировать сферу</translation>
     </message>
@@ -76,17 +76,17 @@
   <context>
     <name>CmdApproxSurface</name>
     <message>
-      <location filename="../../Command.cpp" line="74"/>
+      <location filename="../../Command.cpp" line="102"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="75"/>
+      <location filename="../../Command.cpp" line="103"/>
       <source>Approximate B-spline surface...</source>
       <translation>Аппроксимировать поверхность B-сплайна...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="76"/>
+      <location filename="../../Command.cpp" line="104"/>
       <source>Approximate a B-spline surface</source>
       <translation>Аппроксимировать поверхность B-сплайна</translation>
     </message>
@@ -94,17 +94,17 @@
   <context>
     <name>CmdMeshBoundary</name>
     <message>
-      <location filename="../../Command.cpp" line="490"/>
+      <location filename="../../Command.cpp" line="536"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="491"/>
+      <location filename="../../Command.cpp" line="537"/>
       <source>Wire from mesh boundary...</source>
       <translation>Ломаная линия из границ сетки...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="492"/>
+      <location filename="../../Command.cpp" line="538"/>
       <source>Create wire from mesh boundaries</source>
       <translation>Создать провод из границ сетки</translation>
     </message>
@@ -112,17 +112,17 @@
   <context>
     <name>CmdPoissonReconstruction</name>
     <message>
-      <location filename="../../Command.cpp" line="556"/>
+      <location filename="../../Command.cpp" line="603"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="557"/>
+      <location filename="../../Command.cpp" line="604"/>
       <source>Poisson...</source>
       <translation>Пуассона...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="558"/>
+      <location filename="../../Command.cpp" line="605"/>
       <source>Poisson surface reconstruction</source>
       <translation>Реконструкция поверхности Пуассона</translation>
     </message>
@@ -130,17 +130,17 @@
   <context>
     <name>CmdSegmentation</name>
     <message>
-      <location filename="../../Command.cpp" line="379"/>
+      <location filename="../../Command.cpp" line="422"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="380"/>
+      <location filename="../../Command.cpp" line="423"/>
       <source>Mesh segmentation...</source>
       <translation>Сегментация сетки...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="381"/>
+      <location filename="../../Command.cpp" line="424"/>
       <source>Create mesh segments</source>
       <translation>Создать сегменты полигональной сетки</translation>
     </message>
@@ -148,17 +148,17 @@
   <context>
     <name>CmdSegmentationFromComponents</name>
     <message>
-      <location filename="../../Command.cpp" line="440"/>
+      <location filename="../../Command.cpp" line="484"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="441"/>
+      <location filename="../../Command.cpp" line="485"/>
       <source>From components</source>
       <translation>Из компонентов</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="442"/>
+      <location filename="../../Command.cpp" line="486"/>
       <source>Create mesh segments from components</source>
       <translation>Создать сегменты сетки из компонентов</translation>
     </message>
@@ -166,17 +166,17 @@
   <context>
     <name>CmdSegmentationManual</name>
     <message>
-      <location filename="../../Command.cpp" line="411"/>
+      <location filename="../../Command.cpp" line="454"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="412"/>
+      <location filename="../../Command.cpp" line="455"/>
       <source>Manual segmentation...</source>
       <translation>Ручная сегментация...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="413"/>
+      <location filename="../../Command.cpp" line="456"/>
       <source>Create mesh segments manually</source>
       <translation>Создать сегменты сетки вручную</translation>
     </message>
@@ -184,20 +184,69 @@
   <context>
     <name>CmdViewTriangulation</name>
     <message>
-      <location filename="../../Command.cpp" line="590"/>
+      <location filename="../../Command.cpp" line="638"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="591"/>
+      <location filename="../../Command.cpp" line="639"/>
       <source>Structured point clouds</source>
       <translation>Облака структурированных точек</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="592"/>
-      <location filename="../../Command.cpp" line="593"/>
+      <location filename="../../Command.cpp" line="640"/>
+      <location filename="../../Command.cpp" line="641"/>
       <source>Triangulation of structured point clouds</source>
       <translation>Триангуляция облаков структурированных точек</translation>
+    </message>
+  </context>
+  <context>
+    <name>Command</name>
+    <message>
+      <location filename="../../Command.cpp" line="226"/>
+      <source>Fit plane</source>
+      <translation>Разместить плоскость</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="258"/>
+      <source>Fit cylinder</source>
+      <translation>Разместить цилиндр</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="326"/>
+      <source>Fit sphere</source>
+      <translation>Разместить сферу</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="375"/>
+      <source>Fit polynomial surface</source>
+      <translation>Разместить полиномиальную поверхность</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="650"/>
+      <source>View triangulation</source>
+      <translation>Просмотреть триангуляцию</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="154"/>
+      <source>Placement</source>
+      <translation>Расположение</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="231"/>
+      <location filename="../../FitBSplineCurve.cpp" line="139"/>
+      <source>Fit B-spline</source>
+      <translation type="unfinished">Fit B-spline</translation>
+    </message>
+    <message>
+      <location filename="../../Poisson.cpp" line="83"/>
+      <source>Poisson reconstruction</source>
+      <translation>Реконструирование поверхности Пуассона</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.cpp" line="281"/>
+      <source>Segmentation</source>
+      <translation>Сегментация</translation>
     </message>
   </context>
   <context>
@@ -246,57 +295,57 @@
     </message>
     <message>
       <location filename="../../FitBSplineSurface.ui" line="218"/>
-      <source>Smoothing</source>
-      <translation>Сглаживание</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="227"/>
-      <source>Total Weight</source>
-      <translation>Общий вес</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="256"/>
-      <source>Length of gradient</source>
-      <translation>Длина градиента</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="285"/>
-      <source>Bending energy</source>
-      <translation>Энергия изгиба</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="314"/>
-      <source>Curvature variation</source>
-      <translation>Варианты кривизны</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="346"/>
       <source>User-defined u/v directions</source>
       <translation>Пользовательские u/v направления</translation>
     </message>
     <message>
-      <location filename="../../FitBSplineSurface.ui" line="359"/>
+      <location filename="../../FitBSplineSurface.ui" line="231"/>
       <source>Create placement</source>
       <translation>Создать размещение</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="238"/>
+      <source>Smoothing</source>
+      <translation>Сглаживание</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="247"/>
+      <source>Total Weight</source>
+      <translation>Общий вес</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="276"/>
+      <source>Length of gradient</source>
+      <translation>Длина градиента</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="305"/>
+      <source>Bending energy</source>
+      <translation>Энергия изгиба</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="334"/>
+      <source>Curvature variation</source>
+      <translation>Варианты кривизны</translation>
     </message>
   </context>
   <context>
     <name>ReenGui::FitBSplineSurfaceWidget</name>
     <message>
-      <location filename="../../FitBSplineSurface.cpp" line="207"/>
-      <source>Wrong selection</source>
-      <translation>Неправильный выбор</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.cpp" line="208"/>
-      <source>Please select a single placement object to get local orientation.</source>
-      <translation>Пожалуйста, выберите один объект размещения для получения локальной ориентации.</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.cpp" line="167"/>
-      <location filename="../../FitBSplineSurface.cpp" line="235"/>
+      <location filename="../../FitBSplineSurface.cpp" line="165"/>
+      <location filename="../../FitBSplineSurface.cpp" line="238"/>
       <source>Input error</source>
       <translation>Ошибка ввода</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="206"/>
+      <source>Wrong selection</source>
+      <translation>Неправильное выделение</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="207"/>
+      <source>Please select a single placement object to get local orientation.</source>
+      <translation>Пожалуйста, выберите один объект размещения для получения локальной ориентации.</translation>
     </message>
   </context>
   <context>
@@ -327,7 +376,7 @@
       <translation>Количество дискретных элементов на узел</translation>
     </message>
     <message>
-      <location filename="../../Poisson.cpp" line="108"/>
+      <location filename="../../Poisson.cpp" line="90"/>
       <source>Input error</source>
       <translation>Ошибка ввода</translation>
     </message>
@@ -335,18 +384,24 @@
   <context>
     <name>Reen_ApproxSurface</name>
     <message>
-      <location filename="../../Command.cpp" line="89"/>
-      <location filename="../../Command.cpp" line="569"/>
+      <location filename="../../Command.cpp" line="82"/>
+      <location filename="../../Command.cpp" line="120"/>
+      <location filename="../../Command.cpp" line="618"/>
       <source>Wrong selection</source>
       <translation>Неправильный выбор</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="90"/>
+      <location filename="../../Command.cpp" line="83"/>
+      <source>Please select a point cloud.</source>
+      <translation>Выбрать облако точек.</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="121"/>
       <source>Please select a point cloud or mesh.</source>
       <translation>Пожалуйста, выберите облако точек или сетку.</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="570"/>
+      <location filename="../../Command.cpp" line="619"/>
       <source>Please select a single point cloud.</source>
       <translation>Пожалуйста, выберите одну точку облака.</translation>
     </message>
@@ -354,7 +409,7 @@
   <context>
     <name>Reen_ViewTriangulation</name>
     <message>
-      <location filename="../../Command.cpp" line="625"/>
+      <location filename="../../Command.cpp" line="672"/>
       <source>View triangulation failed</source>
       <translation>Просмотр непросчитанной триангуляции</translation>
     </message>
@@ -367,39 +422,39 @@
       <translation>Сегментация полигональной сетки</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="27"/>
-      <source>Create compound</source>
-      <translation>Создать состав</translation>
-    </message>
-    <message>
-      <location filename="../../Segmentation.ui" line="34"/>
+      <location filename="../../Segmentation.ui" line="20"/>
       <source>Smooth mesh</source>
       <translation>Сгладить полигональную сетку</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="44"/>
+      <location filename="../../Segmentation.ui" line="37"/>
       <source>Plane</source>
       <translation>Плоскость</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="53"/>
+      <location filename="../../Segmentation.ui" line="46"/>
       <source>Curvature tolerance</source>
       <translation>Допуск кривизны</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="70"/>
+      <location filename="../../Segmentation.ui" line="63"/>
       <source>Distance to plane</source>
       <translation>Расстояние до плоскости</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="87"/>
+      <location filename="../../Segmentation.ui" line="80"/>
       <source>Minimum number of faces</source>
       <translation>Минимальное количество граней</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="107"/>
+      <location filename="../../Segmentation.ui" line="100"/>
       <source>Create mesh from unused triangles</source>
       <translation>Создать сетку из неиспользуемых треугольников</translation>
+    </message>
+    <message>
+      <location filename="../../Segmentation.ui" line="107"/>
+      <source>Create compound</source>
+      <translation>Создать состав</translation>
     </message>
   </context>
   <context>
@@ -416,33 +471,33 @@
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="41"/>
-      <source>Components</source>
-      <translation>Компоненты</translation>
-    </message>
-    <message>
-      <location filename="../../SegmentationManual.ui" line="48"/>
       <source>Region</source>
       <translation>Область</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="55"/>
-      <source>Select whole component</source>
-      <translation>Выбрать весь компонент</translation>
+      <location filename="../../SegmentationManual.ui" line="61"/>
+      <source>All</source>
+      <translation>Все</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="62"/>
+      <location filename="../../SegmentationManual.ui" line="81"/>
+      <source>Components</source>
+      <translation>Компоненты</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.ui" line="88"/>
+      <source>&lt; faces than</source>
+      <translation>граней меньше чем</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.ui" line="98"/>
       <source>Pick triangle</source>
       <translation>Выбрать треугольник</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="82"/>
-      <source>&lt; faces than</source>
-      <translation>&lt; граней</translation>
-    </message>
-    <message>
-      <location filename="../../SegmentationManual.ui" line="89"/>
-      <source>All</source>
-      <translation>Все</translation>
+      <location filename="../../SegmentationManual.ui" line="105"/>
+      <source>Select whole component</source>
+      <translation>Выбрать весь компонент</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="112"/>
@@ -458,22 +513,22 @@
       <location filename="../../SegmentationManual.ui" line="128"/>
       <location filename="../../SegmentationManual.ui" line="181"/>
       <location filename="../../SegmentationManual.ui" line="234"/>
-      <source>Tolerance</source>
-      <translation>Точность</translation>
-    </message>
-    <message>
-      <location filename="../../SegmentationManual.ui" line="148"/>
-      <location filename="../../SegmentationManual.ui" line="201"/>
-      <location filename="../../SegmentationManual.ui" line="254"/>
-      <source>Minimum number of faces</source>
-      <translation>Минимальное количество граней</translation>
-    </message>
-    <message>
-      <location filename="../../SegmentationManual.ui" line="165"/>
-      <location filename="../../SegmentationManual.ui" line="218"/>
-      <location filename="../../SegmentationManual.ui" line="271"/>
       <source>Detect</source>
       <translation>Обнаружить</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.ui" line="135"/>
+      <location filename="../../SegmentationManual.ui" line="188"/>
+      <location filename="../../SegmentationManual.ui" line="241"/>
+      <source>Tolerance</source>
+      <translation>Допуск</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.ui" line="155"/>
+      <location filename="../../SegmentationManual.ui" line="208"/>
+      <location filename="../../SegmentationManual.ui" line="261"/>
+      <source>Minimum number of faces</source>
+      <translation>Минимальное количество граней</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="175"/>
@@ -498,7 +553,7 @@
     <message>
       <location filename="../../SegmentationManual.ui" line="297"/>
       <source>Respect only triangles with normals facing screen</source>
-      <translation>Предпочитать только треугольники повернутые нормалями к экрану</translation>
+      <translation>Предпочитать только треугольники, повернутые нормалями к экрану</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="310"/>
@@ -519,17 +574,151 @@
   <context>
     <name>ReverseEngineeringGui::TaskSegmentationManual</name>
     <message>
-      <location filename="../../SegmentationManual.cpp" line="310"/>
+      <location filename="../../SegmentationManual.cpp" line="352"/>
       <source>Create</source>
-      <translation>Собрать</translation>
+      <translation>Создать</translation>
     </message>
   </context>
   <context>
     <name>Workbench</name>
     <message>
-      <location filename="../../Workbench.cpp" line="37"/>
+      <location filename="../../Workbench.cpp" line="34"/>
       <source>Reverse Engineering</source>
       <translation>Обратный инжиниринг</translation>
+    </message>
+  </context>
+  <context>
+    <name>ReenGui::FitBSplineCurve</name>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="14"/>
+      <source>Fit B-spline surface</source>
+      <translation>Разместить B-сплайновую поверхность</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="20"/>
+      <source>Parameters</source>
+      <translation>Параметры</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="26"/>
+      <source>Maximum degree</source>
+      <translation>Максимальная степень</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="37"/>
+      <source>Chord length</source>
+      <translation>Длина хорды</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="42"/>
+      <source>Centripetal</source>
+      <translation>Центростремительный</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="47"/>
+      <source>Iso-Parametric</source>
+      <translation>Изопараметрический</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="55"/>
+      <source>Continuity</source>
+      <translation>Непрерывность</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="88"/>
+      <source>Parametrization type</source>
+      <translation>Тип параметризации</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="96"/>
+      <source>C0</source>
+      <translation>C0</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="101"/>
+      <source>G1</source>
+      <translation>G1</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="106"/>
+      <source>C1</source>
+      <translation>C1</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="111"/>
+      <source>G2</source>
+      <translation>G2</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="116"/>
+      <source>C2</source>
+      <translation>C2</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="121"/>
+      <source>C3</source>
+      <translation>C3</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="126"/>
+      <source>CN</source>
+      <translation>CN</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="134"/>
+      <source>Minimum degree</source>
+      <translation>Минимальная степень</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="141"/>
+      <source>Closed curve</source>
+      <translation>Закрытая кривая</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="151"/>
+      <source>Smoothing</source>
+      <translation>Сглаживание</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="160"/>
+      <source>Torsion</source>
+      <translation>Кручение</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="167"/>
+      <source>Curve length</source>
+      <translation>Длина кривой</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="174"/>
+      <source>Curvature</source>
+      <translation>Кривизна</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdApproxCurve</name>
+    <message>
+      <location filename="../../Command.cpp" line="69"/>
+      <source>Reverse Engineering</source>
+      <translation>Обратный инжиниринг</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="70"/>
+      <source>Approximate B-spline curve...</source>
+      <translation>Аппроксимировать кривую B-сплайна...</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="71"/>
+      <source>Approximate a B-spline curve</source>
+      <translation>Аппроксимировать эту кривую B-сплайна</translation>
+    </message>
+  </context>
+  <context>
+    <name>ReenGui::FitBSplineCurveWidget</name>
+    <message>
+      <location filename="../../FitBSplineCurve.cpp" line="91"/>
+      <source>Input error</source>
+      <translation>Ошибка ввода</translation>
     </message>
   </context>
 </TS>

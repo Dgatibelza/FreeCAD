@@ -23,31 +23,25 @@
 
 #include "PreCompiled.h"
 
-#ifndef _PreComp_
-# include <sstream>
-# include <boost/version.hpp>
-# include <boost/filesystem/path.hpp>
-#endif
-
-/// Here the FreeCAD includes sorted by Base,App,Gui......
-#include <boost/math/special_functions/round.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+#include <boost/math/special_functions/round.hpp>
 
 #include <Base/Console.h>
 #include <Base/Exception.h>
+#include <Base/Interpreter.h>
 #include <Base/Reader.h>
 #include <Base/Writer.h>
-#include <Base/Stream.h>
 #include <Base/Quantity.h>
+#include <Base/Stream.h>
 #include <Base/Tools.h>
 
 #include "PropertyStandard.h"
-#include "PropertyLinks.h"
-#include "MaterialPy.h"
-#include "ObjectIdentifier.h"
 #include "Application.h"
 #include "Document.h"
 #include "DocumentObject.h"
+#include "MaterialPy.h"
+#include "ObjectIdentifier.h"
+
 
 using namespace App;
 using namespace Base;
@@ -73,10 +67,7 @@ PropertyInteger::PropertyInteger()
 }
 
 
-PropertyInteger::~PropertyInteger()
-{
-
-}
+PropertyInteger::~PropertyInteger() = default;
 
 //**************************************************************************
 // Base class implementer
@@ -89,27 +80,21 @@ void PropertyInteger::setValue(long lValue)
     hasSetValue();
 }
 
-long PropertyInteger::getValue(void) const
+long PropertyInteger::getValue() const
 {
     return _lValue;
 }
 
-PyObject *PropertyInteger::getPyObject(void)
+PyObject *PropertyInteger::getPyObject()
 {
     return Py_BuildValue("l", _lValue);
 }
 
 void PropertyInteger::setPyObject(PyObject *value)
 {
-#if PY_MAJOR_VERSION < 3
-    if (PyInt_Check(value)) {
-        aboutToSetValue();
-        _lValue = PyInt_AsLong(value);
-#else
     if (PyLong_Check(value)) {
         aboutToSetValue();
         _lValue = PyLong_AsLong(value);
-#endif
         hasSetValue();
     }
     else {
@@ -132,7 +117,7 @@ void PropertyInteger::Restore(Base::XMLReader &reader)
     setValue(reader.getAttributeAsInteger("value"));
 }
 
-Property *PropertyInteger::Copy(void) const
+Property *PropertyInteger::Copy() const
 {
     PropertyInteger *p= new PropertyInteger();
     p->_lValue = _lValue;
@@ -175,15 +160,9 @@ TYPESYSTEM_SOURCE(App::PropertyPath , App::Property)
 //**************************************************************************
 // Construction/Destruction
 
-PropertyPath::PropertyPath()
-{
+PropertyPath::PropertyPath() = default;
 
-}
-
-PropertyPath::~PropertyPath()
-{
-
-}
+PropertyPath::~PropertyPath() = default;
 
 
 //**************************************************************************
@@ -213,12 +192,12 @@ void PropertyPath::setValue(const char * Path)
     hasSetValue();
 }
 
-boost::filesystem::path PropertyPath::getValue(void) const
+const boost::filesystem::path &PropertyPath::getValue() const
 {
     return _cValue;
 }
 
-PyObject *PropertyPath::getPyObject(void)
+PyObject *PropertyPath::getPyObject()
 {
 #if (BOOST_FILESYSTEM_VERSION == 2)
     std::string str = _cValue.native_file_string();
@@ -227,7 +206,7 @@ PyObject *PropertyPath::getPyObject(void)
 #endif
 
     // Returns a new reference, don't increment it!
-    PyObject *p = PyUnicode_DecodeUTF8(str.c_str(),str.size(),0);
+    PyObject *p = PyUnicode_DecodeUTF8(str.c_str(),str.size(),nullptr);
     if (!p) throw Base::UnicodeError("UTF8 conversion failure at PropertyPath::getPyObject()");
     return p;
 }
@@ -236,16 +215,7 @@ void PropertyPath::setPyObject(PyObject *value)
 {
     std::string path;
     if (PyUnicode_Check(value)) {
-#if PY_MAJOR_VERSION >= 3
         path = PyUnicode_AsUTF8(value);
-#else
-        PyObject* unicode = PyUnicode_AsUTF8String(value);
-        path = PyString_AsString(unicode);
-        Py_DECREF(unicode);
-    }
-    else if (PyString_Check(value)) {
-        path = PyString_AsString(value);
-#endif
     }
     else {
         std::string error = std::string("type must be str or unicode, not ");
@@ -272,7 +242,7 @@ void PropertyPath::Restore(Base::XMLReader &reader)
     setValue(reader.getAttribute("value"));
 }
 
-Property *PropertyPath::Copy(void) const
+Property *PropertyPath::Copy() const
 {
     PropertyPath *p= new PropertyPath();
     p->_cValue = _cValue;
@@ -286,7 +256,7 @@ void PropertyPath::Paste(const Property &from)
     hasSetValue();
 }
 
-unsigned int PropertyPath::getMemSize (void) const
+unsigned int PropertyPath::getMemSize () const
 {
     return static_cast<unsigned int>(_cValue.string().size());
 }
@@ -312,32 +282,24 @@ PropertyEnumeration::PropertyEnumeration(const App::Enumeration &e)
     _enum = e;
 }
 
-PropertyEnumeration::~PropertyEnumeration()
-{
-
-}
+PropertyEnumeration::~PropertyEnumeration() = default;
 
 void PropertyEnumeration::setEnums(const char **plEnums)
 {
-    // Setting the enum is done only once inside the constructor
-    // but before the current index is already set. So, this needs
-    // to be preserved.
-    int index = _enum._index;
+    // For backward compatibility, if the property container is not attached to
+    // any document (i.e. its full name starts with '?'), do not notify, or
+    // else existing code may crash.
+    bool notify = !boost::starts_with(getFullName(), "?");
+    if (notify)
+        aboutToSetValue();
     _enum.setEnums(plEnums);
-    // Make sure not to set an index out of range
-    int max = _enum.maxValue();
-    _enum._index = std::min<int>(index, max);
+    if (notify)
+        hasSetValue();
 }
 
 void PropertyEnumeration::setEnums(const std::vector<std::string> &Enums)
 {
-    if (_enum.isValid()) {
-        const std::string &index = getValueAsString();
-        _enum.setEnums(Enums);
-        setValue(index.c_str());
-    } else {
-        _enum.setEnums(Enums);
-    }
+    setEnumVector(Enums);
 }
 
 void PropertyEnumeration::setValue(const char *value)
@@ -361,7 +323,7 @@ void PropertyEnumeration::setValue(const Enumeration &source)
     hasSetValue();
 }
 
-long PropertyEnumeration::getValue(void) const
+long PropertyEnumeration::getValue() const
 {
     return _enum.getInt();
 }
@@ -376,29 +338,42 @@ bool PropertyEnumeration::isPartOf(const char *value) const
     return _enum.contains(value);
 }
 
-const char * PropertyEnumeration::getValueAsString(void) const
+const char * PropertyEnumeration::getValueAsString() const
 {
     if (!_enum.isValid())
         throw Base::RuntimeError("Cannot get value from invalid enumeration");
     return _enum.getCStr();
 }
 
-Enumeration PropertyEnumeration::getEnum(void) const
+const Enumeration & PropertyEnumeration::getEnum() const
 {
     return _enum;
 }
 
-std::vector<std::string> PropertyEnumeration::getEnumVector(void) const
+std::vector<std::string> PropertyEnumeration::getEnumVector() const
 {
     return _enum.getEnumVector();
 }
 
-const char ** PropertyEnumeration::getEnums(void) const
+void PropertyEnumeration::setEnumVector(const std::vector<std::string> &values)
 {
-    return _enum.getEnums();
+    // For backward compatibility, if the property container is not attached to
+    // any document (i.e. its full name starts with '?'), do not notify, or
+    // else existing code may crash.
+    bool notify = !boost::starts_with(getFullName(), "?");
+    if (notify)
+        aboutToSetValue();
+    _enum.setEnums(values);
+    if (notify)
+        hasSetValue();
 }
 
-bool PropertyEnumeration::isValid(void) const
+bool PropertyEnumeration::hasEnums() const
+{
+    return _enum.hasEnums();
+}
+
+bool PropertyEnumeration::isValid() const
 {
     return _enum.isValid();
 }
@@ -413,8 +388,8 @@ void PropertyEnumeration::Save(Base::Writer &writer) const
         std::vector<std::string> items = getEnumVector();
         writer.Stream() << writer.ind() << "<CustomEnumList count=\"" <<  items.size() <<"\">" << endl;
         writer.incInd();
-        for(std::vector<std::string>::iterator it = items.begin(); it != items.end(); ++it) {
-            std::string val = encodeAttribute(*it);
+        for(auto & item : items) {
+            std::string val = encodeAttribute(item);
             writer.Stream() << writer.ind() << "<Enum value=\"" <<  val <<"\"/>" << endl;
         }
         writer.decInd();
@@ -428,6 +403,8 @@ void PropertyEnumeration::Restore(Base::XMLReader &reader)
     reader.readElement("Integer");
     // get the value of my Attribute
     long val = reader.getAttributeAsInteger("value");
+
+    aboutToSetValue();
 
     if (reader.hasAttribute("CustomEnum")) {
         reader.readElement("CustomEnumList");
@@ -446,19 +423,20 @@ void PropertyEnumeration::Restore(Base::XMLReader &reader)
 
     if (val < 0) {
         // If the enum is empty at this stage do not print a warning
-        if (_enum.getEnums())
-            Base::Console().Warning("Enumeration index %d is out of range, ignore it\n", val);
+        if (_enum.hasEnums()) {
+            Base::Console().DeveloperWarning(std::string("PropertyEnumeration"), "Enumeration index %d is out of range, ignore it\n", val);
+        }
         val = getValue();
     }
 
-    setValue(val);
+    _enum.setValue(val);
+    hasSetValue();
 }
 
-PyObject * PropertyEnumeration::getPyObject(void)
+PyObject * PropertyEnumeration::getPyObject()
 {
     if (!_enum.isValid()) {
-        PyErr_SetString(PyExc_AssertionError, "The enum is empty");
-        return 0;
+        Py_Return;
     }
 
     return Py_BuildValue("s", getValueAsString());
@@ -466,112 +444,87 @@ PyObject * PropertyEnumeration::getPyObject(void)
 
 void PropertyEnumeration::setPyObject(PyObject *value)
 {
-#if PY_MAJOR_VERSION < 3
-    if (PyInt_Check(value)) {
-        long val = PyInt_AsLong(value);
-#else
     if (PyLong_Check(value)) {
         long val = PyLong_AsLong(value);
-#endif
         if (_enum.isValid()) {
             aboutToSetValue();
             _enum.setValue(val, true);
             hasSetValue();
         }
+        return;
     }
-#if PY_MAJOR_VERSION < 3
-    else if (PyString_Check(value)) {
-        const char* str = PyString_AsString (value);
-        if (_enum.contains(str)) {
-            aboutToSetValue();
-            _enum.setValue(PyString_AsString (value));
-            hasSetValue();
-        }
-        else {
-            std::stringstream out;
-            out << "'" << str << "' is not part of the enumeration";
-            throw Base::ValueError(out.str());
-        }
-    }
-#endif
     else if (PyUnicode_Check(value)) {
-#if PY_MAJOR_VERSION >=3
         std::string str = PyUnicode_AsUTF8(value);
-#else
-        PyObject* unicode = PyUnicode_AsUTF8String(value);
-        std::string str = PyString_AsString(unicode);
-        Py_DECREF(unicode);
-#endif
         if (_enum.contains(str.c_str())) {
             aboutToSetValue();
             _enum.setValue(str);
             hasSetValue();
         }
         else {
-            std::stringstream out;
-            out << "'" << str << "' is not part of the enumeration";
-            throw Base::ValueError(out.str());
+            FC_THROWM(Base::ValueError, "'" << str
+                    << "' is not part of the enumeration in "
+                    << getFullName());
         }
+        return;
     }
     else if (PySequence_Check(value)) {
-        Py_ssize_t nSize = PySequence_Size(value);
-        std::vector<std::string> values;
-        values.resize(nSize);
 
-        for (Py_ssize_t i = 0; i < nSize; ++i) {
-            PyObject *item = PySequence_GetItem(value, i);
+        try {
+            std::vector<std::string> values;
 
-            if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
-                values[i] = PyUnicode_AsUTF8(item);
-#else
-                PyObject* unicode = PyUnicode_AsUTF8String(item);
-                values[i] = PyString_AsString(unicode);
-                Py_DECREF(unicode);
-#endif
+            int idx = -1;
+            Py::Sequence seq(value);
+
+            if(seq.size() == 2) {
+                Py::Object v(seq[0].ptr());
+                if(!v.isString() && v.isSequence()) {
+                    idx = Py::Int(seq[1].ptr());
+                    seq = v;
+                }
             }
-#if PY_MAJOR_VERSION < 3
-            else if (PyString_Check(item)) {
-                values[i] = PyString_AsString(item);
-            }
-#endif
-            else {
-                std::string error = std::string("type in list must be str or unicode, not ");
-                throw Base::TypeError(error + item->ob_type->tp_name);
-            }
+
+            values.resize(seq.size());
+
+            for (int i = 0; i < seq.size(); ++i)
+                values[i] = Py::Object(seq[i].ptr()).as_string();
+
+            aboutToSetValue();
+            _enum.setEnums(values);
+            if (idx>=0)
+                _enum.setValue(idx,true);
+            hasSetValue();
+            return;
+        } catch (Py::Exception &) {
+            Base::PyException e;
+            e.ReportException();
         }
-        _enum.setEnums(values);
-        setValue((long)0);
     }
-    else {
-        std::string error = std::string("type must be int, str or unicode not ");
-        throw Base::TypeError(error + value->ob_type->tp_name);
-    }
+
+    FC_THROWM(Base::TypeError, "PropertyEnumeration " << getFullName()
+            << " expects type to be int, string, or list(string), or list(list, int)");
 }
 
-Property * PropertyEnumeration::Copy(void) const
+Property * PropertyEnumeration::Copy() const
 {
     return new PropertyEnumeration(_enum);
 }
 
 void PropertyEnumeration::Paste(const Property &from)
 {
-    aboutToSetValue();
-
     const PropertyEnumeration& prop = dynamic_cast<const PropertyEnumeration&>(from);
-    _enum = prop._enum;
-
-    hasSetValue();
+    setValue(prop._enum);
 }
 
-void PropertyEnumeration::setPathValue(const ObjectIdentifier &path, const boost::any &value)
+void PropertyEnumeration::setPathValue(const ObjectIdentifier &, const boost::any &value)
 {
-    verifyPath(path);
-
     if (value.type() == typeid(int))
         setValue(boost::any_cast<int>(value));
+    else if (value.type() == typeid(long))
+        setValue(boost::any_cast<long>(value));
     else if (value.type() == typeid(double))
         setValue(boost::any_cast<double>(value));
+    else if (value.type() == typeid(float))
+        setValue(boost::any_cast<float>(value));
     else if (value.type() == typeid(short))
         setValue(boost::any_cast<short>(value));
     else if (value.type() == typeid(std::string))
@@ -580,8 +533,61 @@ void PropertyEnumeration::setPathValue(const ObjectIdentifier &path, const boost
         setValue(boost::any_cast<char*>(value));
     else if (value.type() == typeid(const char*))
         setValue(boost::any_cast<const char*>(value));
-    else
-        throw bad_cast();
+    else {
+        Base::PyGILStateLocker lock;
+        Py::Object pyValue = pyObjectFromAny(value);
+        setPyObject(pyValue.ptr());
+    }
+}
+
+bool PropertyEnumeration::setPyPathValue(const ObjectIdentifier &, const Py::Object &value)
+{
+    setPyObject(value.ptr());
+    return true;
+}
+
+const boost::any PropertyEnumeration::getPathValue(const ObjectIdentifier &path) const
+{
+    std::string p = path.getSubPathStr();
+    if (p == ".Enum" || p == ".All") {
+        Base::PyGILStateLocker lock;
+        Py::Object res;
+        getPyPathValue(path, res);
+        return pyObjectToAny(res,false);
+    }
+    else if (p == ".String") {
+        auto v = getValueAsString();
+        return std::string(v?v:"");
+    } else
+        return getValue();
+}
+
+bool PropertyEnumeration::getPyPathValue(const ObjectIdentifier &path, Py::Object &r) const
+{
+    std::string p = path.getSubPathStr();
+    if (p == ".Enum" || p == ".All") {
+        Base::PyGILStateLocker lock;
+        Py::Tuple res(_enum.maxValue()+1);
+        std::vector<std::string> enums = _enum.getEnumVector();
+        PropertyString tmp;
+        for(int i=0;i< int(enums.size());++i) {
+            tmp.setValue(enums[i]);
+            res.setItem(i,Py::asObject(tmp.getPyObject()));
+        }
+        if (p == ".Enum")
+            r = res;
+        else {
+            Py::Tuple tuple(2);
+            tuple.setItem(0, res);
+            tuple.setItem(1, Py::Int(getValue()));
+            r = tuple;
+        }
+    } else if (p == ".String") {
+        auto v = getValueAsString();
+        r = Py::String(v?v:"");
+    } else
+        r = Py::Int(getValue());
+    return true;
 }
 
 //**************************************************************************
@@ -595,12 +601,7 @@ TYPESYSTEM_SOURCE(App::PropertyIntegerConstraint, App::PropertyInteger)
 // Construction/Destruction
 
 
-PropertyIntegerConstraint::PropertyIntegerConstraint()
-  : _ConstStruct(0)
-{
-
-}
-
+PropertyIntegerConstraint::PropertyIntegerConstraint() = default;
 
 PropertyIntegerConstraint::~PropertyIntegerConstraint()
 {
@@ -618,20 +619,38 @@ void PropertyIntegerConstraint::setConstraints(const Constraints* sConstrain)
     _ConstStruct = sConstrain;
 }
 
-const PropertyIntegerConstraint::Constraints*  PropertyIntegerConstraint::getConstraints(void) const
+const PropertyIntegerConstraint::Constraints*  PropertyIntegerConstraint::getConstraints() const
 {
     return _ConstStruct;
 }
 
+long PropertyIntegerConstraint::getMinimum() const
+{
+    if (_ConstStruct)
+        return _ConstStruct->LowerBound;
+    // return the min of int, not long
+    return std::numeric_limits<int>::min();
+}
+
+long PropertyIntegerConstraint::getMaximum() const
+{
+    if (_ConstStruct)
+        return _ConstStruct->UpperBound;
+    // return the max of int, not long
+    return std::numeric_limits<int>::max();
+}
+
+long PropertyIntegerConstraint::getStepSize() const
+{
+    if (_ConstStruct)
+        return _ConstStruct->StepSize;
+    return 1;
+}
+
 void PropertyIntegerConstraint::setPyObject(PyObject *value)
 {
-#if PY_MAJOR_VERSION < 3
-    if (PyInt_Check(value)) {
-        long temp = PyInt_AsLong(value);
-#else
     if (PyLong_Check(value)) {
         long temp = PyLong_AsLong(value);
-#endif
         if (_ConstStruct) {
             if (temp > _ConstStruct->UpperBound)
                 temp = _ConstStruct->UpperBound;
@@ -648,13 +667,8 @@ void PropertyIntegerConstraint::setPyObject(PyObject *value)
         for (int i=0; i<4; i++) {
             PyObject* item;
             item = PyTuple_GetItem(value,i);
-#if PY_MAJOR_VERSION < 3
-            if (PyInt_Check(item))
-                values[i] = PyInt_AsLong(item);
-#else
             if (PyLong_Check(item))
                 values[i] = PyLong_AsLong(item);
-#endif
             else
                 throw Base::TypeError("Type in tuple must be int");
         }
@@ -699,9 +713,7 @@ PropertyPercent::PropertyPercent()
     _ConstStruct = &percent;
 }
 
-PropertyPercent::~PropertyPercent()
-{
-}
+PropertyPercent::~PropertyPercent() = default;
 
 //**************************************************************************
 //**************************************************************************
@@ -714,39 +726,24 @@ TYPESYSTEM_SOURCE(App::PropertyIntegerList , App::PropertyLists)
 // Construction/Destruction
 
 
-PropertyIntegerList::PropertyIntegerList()
-{
+PropertyIntegerList::PropertyIntegerList() = default;
 
-}
-
-PropertyIntegerList::~PropertyIntegerList()
-{
-
-}
+PropertyIntegerList::~PropertyIntegerList() = default;
 
 //**************************************************************************
 // Base class implementer
 
-PyObject *PropertyIntegerList::getPyObject(void)
+PyObject *PropertyIntegerList::getPyObject()
 {
     PyObject* list = PyList_New(getSize());
     for(int i = 0;i<getSize(); i++)
-#if PY_MAJOR_VERSION < 3
-        PyList_SetItem( list, i, PyInt_FromLong(_lValueList[i]));
-#else
         PyList_SetItem( list, i, PyLong_FromLong(_lValueList[i]));
-#endif
     return list;
 }
 
 long PropertyIntegerList::getPyValue(PyObject *item) const {
-#if PY_MAJOR_VERSION < 3
-    if (PyInt_Check(item))
-        return PyInt_AsLong(item);
-#else
     if (PyLong_Check(item))
         return PyLong_AsLong(item);
-#endif
     std::string error = std::string("type in list must be int, not ");
     error += item->ob_type->tp_name;
     throw Base::TypeError(error);
@@ -781,7 +778,7 @@ void PropertyIntegerList::Restore(Base::XMLReader &reader)
     setValues(values);
 }
 
-Property *PropertyIntegerList::Copy(void) const
+Property *PropertyIntegerList::Copy() const
 {
     PropertyIntegerList *p= new PropertyIntegerList();
     p->_lValueList = _lValueList;
@@ -793,7 +790,7 @@ void PropertyIntegerList::Paste(const Property &from)
     setValues(dynamic_cast<const PropertyIntegerList&>(from)._lValueList);
 }
 
-unsigned int PropertyIntegerList::getMemSize (void) const
+unsigned int PropertyIntegerList::getMemSize () const
 {
     return static_cast<unsigned int>(_lValueList.size() * sizeof(long));
 }
@@ -812,15 +809,9 @@ TYPESYSTEM_SOURCE(App::PropertyIntegerSet , App::Property)
 // Construction/Destruction
 
 
-PropertyIntegerSet::PropertyIntegerSet()
-{
+PropertyIntegerSet::PropertyIntegerSet() = default;
 
-}
-
-PropertyIntegerSet::~PropertyIntegerSet()
-{
-
-}
+PropertyIntegerSet::~PropertyIntegerSet() = default;
 
 
 //**************************************************************************
@@ -841,15 +832,11 @@ void PropertyIntegerSet::setValues(const std::set<long>& values)
     hasSetValue();
 }
 
-PyObject *PropertyIntegerSet::getPyObject(void)
+PyObject *PropertyIntegerSet::getPyObject()
 {
-    PyObject* set = PySet_New(NULL);
-    for(std::set<long>::const_iterator it=_lValueSet.begin();it!=_lValueSet.end();++it)
-#if PY_MAJOR_VERSION < 3
-        PySet_Add(set,PyInt_FromLong(*it));
-#else
-        PySet_Add(set,PyLong_FromLong(*it));
-#endif
+    PyObject* set = PySet_New(nullptr);
+    for(long it : _lValueSet)
+        PySet_Add(set,PyLong_FromLong(it));
     return set;
 }
 
@@ -857,37 +844,24 @@ void PropertyIntegerSet::setPyObject(PyObject *value)
 {
     if (PySequence_Check(value)) {
 
-        Py_ssize_t nSize = PySequence_Length(value);
+        Py::Sequence sequence(value);
+        Py_ssize_t nSize = sequence.size();
         std::set<long> values;
 
         for (Py_ssize_t i=0; i<nSize;++i) {
-            PyObject* item = PySequence_GetItem(value, i);
-#if PY_MAJOR_VERSION < 3
-            if (!PyInt_Check(item)) {
+            Py::Object item = sequence.getItem(i);
+            if (!PyLong_Check(item.ptr())) {
                 std::string error = std::string("type in list must be int, not ");
-                error += item->ob_type->tp_name;
+                error += item.ptr()->ob_type->tp_name;
                 throw Base::TypeError(error);
             }
-            values.insert(PyInt_AsLong(item));
-#else
-            if (!PyLong_Check(item)) {
-                std::string error = std::string("type in list must be int, not ");
-                error += item->ob_type->tp_name;
-                throw Base::TypeError(error);
-            }
-            values.insert(PyLong_AsLong(item));
-#endif
+            values.insert(PyLong_AsLong(item.ptr()));
         }
 
         setValues(values);
     }
-#if PY_MAJOR_VERSION < 3
-    else if (PyInt_Check(value)) {
-        setValue(PyInt_AsLong(value));
-#else
     else if (PyLong_Check(value)) {
         setValue(PyLong_AsLong(value));
-#endif
     }
     else {
         std::string error = std::string("type must be int or list of int, not ");
@@ -900,8 +874,8 @@ void PropertyIntegerSet::Save (Base::Writer &writer) const
 {
     writer.Stream() << writer.ind() << "<IntegerSet count=\"" <<  _lValueSet.size() <<"\">" << endl;
     writer.incInd();
-    for(std::set<long>::const_iterator it=_lValueSet.begin();it!=_lValueSet.end();++it)
-        writer.Stream() << writer.ind() << "<I v=\"" <<  *it <<"\"/>" << endl; ;
+    for(long it : _lValueSet)
+        writer.Stream() << writer.ind() << "<I v=\"" <<  it <<"\"/>" << endl; ;
     writer.decInd();
     writer.Stream() << writer.ind() << "</IntegerSet>" << endl ;
 }
@@ -925,7 +899,7 @@ void PropertyIntegerSet::Restore(Base::XMLReader &reader)
     setValues(values);
 }
 
-Property *PropertyIntegerSet::Copy(void) const
+Property *PropertyIntegerSet::Copy() const
 {
     PropertyIntegerSet *p= new PropertyIntegerSet();
     p->_lValueSet = _lValueSet;
@@ -939,7 +913,7 @@ void PropertyIntegerSet::Paste(const Property &from)
     hasSetValue();
 }
 
-unsigned int PropertyIntegerSet::getMemSize (void) const
+unsigned int PropertyIntegerSet::getMemSize () const
 {
     return static_cast<unsigned int>(_lValueSet.size() * sizeof(long));
 }
@@ -962,10 +936,7 @@ PropertyFloat::PropertyFloat()
     _dValue = 0.0;
 }
 
-PropertyFloat::~PropertyFloat()
-{
-
-}
+PropertyFloat::~PropertyFloat() = default;
 
 //**************************************************************************
 // Base class implementer
@@ -977,12 +948,12 @@ void PropertyFloat::setValue(double lValue)
     hasSetValue();
 }
 
-double PropertyFloat::getValue(void) const
+double PropertyFloat::getValue() const
 {
     return _dValue;
 }
 
-PyObject *PropertyFloat::getPyObject(void)
+PyObject *PropertyFloat::getPyObject()
 {
     return Py_BuildValue("d", _dValue);
 }
@@ -994,15 +965,9 @@ void PropertyFloat::setPyObject(PyObject *value)
         _dValue = PyFloat_AsDouble(value);
         hasSetValue();
     }
-#if PY_MAJOR_VERSION < 3
-    else if(PyInt_Check(value)) {
-        aboutToSetValue();
-        _dValue = PyInt_AsLong(value);
-#else
     else if(PyLong_Check(value)) {
         aboutToSetValue();
         _dValue = PyLong_AsLong(value);
-#endif
         hasSetValue();
     }
     else {
@@ -1025,7 +990,7 @@ void PropertyFloat::Restore(Base::XMLReader &reader)
     setValue(reader.getAttributeAsFloat("value"));
 }
 
-Property *PropertyFloat::Copy(void) const
+Property *PropertyFloat::Copy() const
 {
     PropertyFloat *p= new PropertyFloat();
     p->_dValue = _dValue;
@@ -1076,11 +1041,7 @@ TYPESYSTEM_SOURCE(App::PropertyFloatConstraint, App::PropertyFloat)
 // Construction/Destruction
 
 
-PropertyFloatConstraint::PropertyFloatConstraint()
-  : _ConstStruct(0)
-{
-
-}
+PropertyFloatConstraint::PropertyFloatConstraint() = default;
 
 PropertyFloatConstraint::~PropertyFloatConstraint()
 {
@@ -1097,9 +1058,30 @@ void PropertyFloatConstraint::setConstraints(const Constraints* sConstrain)
     _ConstStruct = sConstrain;
 }
 
-const PropertyFloatConstraint::Constraints*  PropertyFloatConstraint::getConstraints(void) const
+const PropertyFloatConstraint::Constraints*  PropertyFloatConstraint::getConstraints() const
 {
     return _ConstStruct;
+}
+
+double PropertyFloatConstraint::getMinimum() const
+{
+    if (_ConstStruct)
+        return _ConstStruct->LowerBound;
+    return std::numeric_limits<double>::min();
+}
+
+double PropertyFloatConstraint::getMaximum() const
+{
+    if (_ConstStruct)
+        return _ConstStruct->UpperBound;
+    return std::numeric_limits<double>::max();
+}
+
+double PropertyFloatConstraint::getStepSize() const
+{
+    if (_ConstStruct)
+        return _ConstStruct->StepSize;
+    return 1.0;
 }
 
 void PropertyFloatConstraint::setPyObject(PyObject *value)
@@ -1117,13 +1099,8 @@ void PropertyFloatConstraint::setPyObject(PyObject *value)
         _dValue = temp;
         hasSetValue();
     }
-#if PY_MAJOR_VERSION < 3
-    else if (PyInt_Check(value)) {
-        double temp = (double)PyInt_AsLong(value);
-#else
     else if (PyLong_Check(value)) {
         double temp = (double)PyLong_AsLong(value);
-#endif
         if (_ConstStruct) {
             if (temp > _ConstStruct->UpperBound)
                 temp = _ConstStruct->UpperBound;
@@ -1142,13 +1119,8 @@ void PropertyFloatConstraint::setPyObject(PyObject *value)
             item = PyTuple_GetItem(value,i);
             if (PyFloat_Check(item))
                 values[i] = PyFloat_AsDouble(item);
-#if PY_MAJOR_VERSION < 3
-            else if (PyInt_Check(item))
-                values[i] = PyInt_AsLong(item);
-#else
             else if (PyLong_Check(item))
                 values[i] = PyLong_AsLong(item);
-#endif
             else
                 throw Base::TypeError("Type in tuple must be float or int");
         }
@@ -1196,10 +1168,7 @@ PropertyPrecision::PropertyPrecision()
     setConstraints(&PrecisionStandard);
 }
 
-PropertyPrecision::~PropertyPrecision()
-{
-
-}
+PropertyPrecision::~PropertyPrecision() = default;
 
 
 //**************************************************************************
@@ -1212,20 +1181,14 @@ TYPESYSTEM_SOURCE(App::PropertyFloatList , App::PropertyLists)
 // Construction/Destruction
 
 
-PropertyFloatList::PropertyFloatList()
-{
+PropertyFloatList::PropertyFloatList() = default;
 
-}
-
-PropertyFloatList::~PropertyFloatList()
-{
-
-}
+PropertyFloatList::~PropertyFloatList() = default;
 
 //**************************************************************************
 // Base class implementer
 
-PyObject *PropertyFloatList::getPyObject(void)
+PyObject *PropertyFloatList::getPyObject()
 {
     PyObject* list = PyList_New(getSize());
     for (int i = 0;i<getSize(); i++)
@@ -1236,13 +1199,8 @@ PyObject *PropertyFloatList::getPyObject(void)
 double PropertyFloatList::getPyValue(PyObject *item) const {
     if (PyFloat_Check(item)) {
         return PyFloat_AsDouble(item);
-#if PY_MAJOR_VERSION >= 3
     } else if (PyLong_Check(item)) {
         return static_cast<double>(PyLong_AsLong(item));
-#else
-    } else if (PyInt_Check(item)) {
-        return static_cast<double>(PyInt_AsLong(item));
-#endif
     } else {
         std::string error = std::string("type in list must be float, not ");
         error += item->ob_type->tp_name;
@@ -1283,13 +1241,13 @@ void PropertyFloatList::SaveDocFile (Base::Writer &writer) const
     uint32_t uCt = (uint32_t)getSize();
     str << uCt;
     if (!isSinglePrecision()) {
-        for (std::vector<double>::const_iterator it = _lValueList.begin(); it != _lValueList.end(); ++it) {
-            str << *it;
+        for (double it : _lValueList) {
+            str << it;
         }
     }
     else {
-        for (std::vector<double>::const_iterator it = _lValueList.begin(); it != _lValueList.end(); ++it) {
-            float v = (float)*it;
+        for (double it : _lValueList) {
+            float v = static_cast<float>(it);
             str << v;
         }
     }
@@ -1302,21 +1260,21 @@ void PropertyFloatList::RestoreDocFile(Base::Reader &reader)
     str >> uCt;
     std::vector<double> values(uCt);
     if (!isSinglePrecision()) {
-        for (std::vector<double>::iterator it = values.begin(); it != values.end(); ++it) {
-            str >> *it;
+        for (double & it : values) {
+            str >> it;
         }
     }
     else {
-        for (std::vector<double>::iterator it = values.begin(); it != values.end(); ++it) {
+        for (double & it : values) {
             float val;
             str >> val;
-            (*it) = val;
+            it = val;
         }
     }
     setValues(values);
 }
 
-Property *PropertyFloatList::Copy(void) const
+Property *PropertyFloatList::Copy() const
 {
     PropertyFloatList *p= new PropertyFloatList();
     p->_lValueList = _lValueList;
@@ -1328,7 +1286,7 @@ void PropertyFloatList::Paste(const Property &from)
     setValues(dynamic_cast<const PropertyFloatList&>(from)._lValueList);
 }
 
-unsigned int PropertyFloatList::getMemSize (void) const
+unsigned int PropertyFloatList::getMemSize () const
 {
     return static_cast<unsigned int>(_lValueList.size() * sizeof(double));
 }
@@ -1340,19 +1298,14 @@ unsigned int PropertyFloatList::getMemSize (void) const
 
 TYPESYSTEM_SOURCE(App::PropertyString , App::Property)
 
-PropertyString::PropertyString()
-{
+PropertyString::PropertyString() = default;
 
-}
-
-PropertyString::~PropertyString()
-{
-
-}
+PropertyString::~PropertyString() = default;
 
 void PropertyString::setValue(const char* newLabel)
 {
-    if(!newLabel) return;
+    if(!newLabel)
+        return;
 
     if(_cValue == newLabel)
         return;
@@ -1364,7 +1317,7 @@ void PropertyString::setValue(const char* newLabel)
     auto obj = dynamic_cast<DocumentObject*>(getContainer());
     bool commit = false;
 
-    if(obj && obj->getNameInDocument() && this==&obj->Label &&
+    if(obj && obj->isAttachedToDocument() && this==&obj->Label &&
        (!obj->getDocument()->testStatus(App::Document::Restoring)||
         obj->getDocument()->testStatus(App::Document::Importing)) &&
        !obj->getDocument()->isPerformingTransaction())
@@ -1447,7 +1400,7 @@ void PropertyString::setValue(const char* newLabel)
             propChanges = PropertyLinkBase::updateLabelReferences(obj,newLabel);
         }
 
-        if(propChanges.size() && !GetApplication().getActiveTransaction()) {
+        if(!propChanges.empty() && !GetApplication().getActiveTransaction()) {
             commit = true;
             std::ostringstream str;
             str << "Change " << obj->getNameInDocument() << ".Label";
@@ -1471,14 +1424,14 @@ void PropertyString::setValue(const std::string &sString)
     setValue(sString.c_str());
 }
 
-const char* PropertyString::getValue(void) const
+const char* PropertyString::getValue() const
 {
     return _cValue.c_str();
 }
 
-PyObject *PropertyString::getPyObject(void)
+PyObject *PropertyString::getPyObject()
 {
-    PyObject *p = PyUnicode_DecodeUTF8(_cValue.c_str(),_cValue.size(),0);
+    PyObject *p = PyUnicode_DecodeUTF8(_cValue.c_str(),_cValue.size(),nullptr);
     if (!p) throw Base::UnicodeError("UTF8 conversion failure at PropertyString::getPyObject()");
     return p;
 }
@@ -1487,16 +1440,7 @@ void PropertyString::setPyObject(PyObject *value)
 {
     std::string string;
     if (PyUnicode_Check(value)) {
-#if PY_MAJOR_VERSION >= 3
         string = PyUnicode_AsUTF8(value);
-#else
-        PyObject* unicode = PyUnicode_AsUTF8String(value);
-        string = PyString_AsString(unicode);
-        Py_DECREF(unicode);
-    }
-    else if (PyString_Check(value)) {
-        string = PyString_AsString(value);
-#endif
     }
     else {
         std::string error = std::string("type must be str or unicode, not ");
@@ -1514,7 +1458,7 @@ void PropertyString::Save (Base::Writer &writer) const
     auto obj = dynamic_cast<DocumentObject*>(getContainer());
     writer.Stream() << writer.ind() << "<String ";
     bool exported = false;
-    if(obj && obj->getNameInDocument() &&
+    if(obj && obj->isAttachedToDocument() &&
        obj->isExporting() && &obj->Label==this)
     {
         if(obj->allowDuplicateLabel())
@@ -1551,7 +1495,7 @@ void PropertyString::Restore(Base::XMLReader &reader)
         setValue(reader.getAttribute("value"));
 }
 
-Property *PropertyString::Copy(void) const
+Property *PropertyString::Copy() const
 {
     PropertyString *p= new PropertyString();
     p->_cValue = _cValue;
@@ -1563,7 +1507,7 @@ void PropertyString::Paste(const Property &from)
     setValue(dynamic_cast<const PropertyString&>(from)._cValue);
 }
 
-unsigned int PropertyString::getMemSize (void) const
+unsigned int PropertyString::getMemSize () const
 {
     return static_cast<unsigned int>(_cValue.size());
 }
@@ -1604,15 +1548,9 @@ const boost::any PropertyString::getPathValue(const ObjectIdentifier &path) cons
 
 TYPESYSTEM_SOURCE(App::PropertyUUID , App::Property)
 
-PropertyUUID::PropertyUUID()
-{
+PropertyUUID::PropertyUUID() = default;
 
-}
-
-PropertyUUID::~PropertyUUID()
-{
-
-}
+PropertyUUID::~PropertyUUID() = default;
 
 void PropertyUUID::setValue(const Base::Uuid &id)
 {
@@ -1637,23 +1575,19 @@ void PropertyUUID::setValue(const std::string &sString)
     hasSetValue();
 }
 
-const std::string& PropertyUUID::getValueStr(void) const
+const std::string& PropertyUUID::getValueStr() const
 {
     return _uuid.getValue();
 }
 
-const Base::Uuid& PropertyUUID::getValue(void) const
+const Base::Uuid& PropertyUUID::getValue() const
 {
     return _uuid;
 }
 
-PyObject *PropertyUUID::getPyObject(void)
+PyObject *PropertyUUID::getPyObject()
 {
-#if PY_MAJOR_VERSION >= 3
     PyObject *p = PyUnicode_FromString(_uuid.getValue().c_str());
-#else
-    PyObject *p = PyString_FromString(_uuid.getValue().c_str());
-#endif
     return p;
 }
 
@@ -1661,16 +1595,7 @@ void PropertyUUID::setPyObject(PyObject *value)
 {
     std::string string;
     if (PyUnicode_Check(value)) {
-#if PY_MAJOR_VERSION >= 3
         string = PyUnicode_AsUTF8(value);
-#else
-        PyObject* unicode = PyUnicode_AsUTF8String(value);
-        string = PyString_AsString(unicode);
-        Py_DECREF(unicode);
-    }
-    else if (PyString_Check(value)) {
-        string = PyString_AsString(value);
-#endif
     }
     else {
         std::string error = std::string("type must be unicode or str, not ");
@@ -1702,7 +1627,7 @@ void PropertyUUID::Restore(Base::XMLReader &reader)
     setValue(reader.getAttribute("value"));
 }
 
-Property *PropertyUUID::Copy(void) const
+Property *PropertyUUID::Copy() const
 {
     PropertyUUID *p= new PropertyUUID();
     p->_uuid = _uuid;
@@ -1716,7 +1641,7 @@ void PropertyUUID::Paste(const Property &from)
     hasSetValue();
 }
 
-unsigned int PropertyUUID::getMemSize (void) const
+unsigned int PropertyUUID::getMemSize () const
 {
     return static_cast<unsigned int>(sizeof(_uuid));
 }
@@ -1727,15 +1652,9 @@ unsigned int PropertyUUID::getMemSize (void) const
 
 TYPESYSTEM_SOURCE(App::PropertyFont , App::PropertyString)
 
-PropertyFont::PropertyFont()
-{
+PropertyFont::PropertyFont() = default;
 
-}
-
-PropertyFont::~PropertyFont()
-{
-
-}
+PropertyFont::~PropertyFont() = default;
 
 //**************************************************************************
 // PropertyStringList
@@ -1743,15 +1662,9 @@ PropertyFont::~PropertyFont()
 
 TYPESYSTEM_SOURCE(App::PropertyStringList , App::PropertyLists)
 
-PropertyStringList::PropertyStringList()
-{
+PropertyStringList::PropertyStringList() = default;
 
-}
-
-PropertyStringList::~PropertyStringList()
-{
-
-}
+PropertyStringList::~PropertyStringList() = default;
 
 //**************************************************************************
 // Base class implementer
@@ -1765,12 +1678,12 @@ void PropertyStringList::setValues(const std::list<std::string>& lValue)
     setValues(vals);
 }
 
-PyObject *PropertyStringList::getPyObject(void)
+PyObject *PropertyStringList::getPyObject()
 {
     PyObject* list = PyList_New(getSize());
 
     for (int i = 0;i<getSize(); i++) {
-        PyObject* item = PyUnicode_DecodeUTF8(_lValueList[i].c_str(), _lValueList[i].size(), 0);
+        PyObject* item = PyUnicode_DecodeUTF8(_lValueList[i].c_str(), _lValueList[i].size(), nullptr);
         if (!item) {
             Py_DECREF(list);
             throw Base::UnicodeError("UTF8 conversion failure at PropertyStringList::getPyObject()");
@@ -1785,19 +1698,9 @@ std::string PropertyStringList::getPyValue(PyObject *item) const
 {
     std::string ret;
     if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
         ret = PyUnicode_AsUTF8(item);
-#else
-        PyObject* unicode = PyUnicode_AsUTF8String(item);
-        ret = PyString_AsString(unicode);
-        Py_DECREF(unicode);
-    } else if (PyString_Check(item)) {
-        ret = PyString_AsString(item);
-#endif
-#if PY_MAJOR_VERSION >= 3
     } else if (PyBytes_Check(item)) {
         ret = PyBytes_AsString(item);
-#endif
     } else {
         std::string error = std::string("type in list must be str or unicode, not ");
         error += item->ob_type->tp_name;
@@ -1806,7 +1709,7 @@ std::string PropertyStringList::getPyValue(PyObject *item) const
     return ret;
 }
 
-unsigned int PropertyStringList::getMemSize (void) const
+unsigned int PropertyStringList::getMemSize () const
 {
     size_t size=0;
     for(int i = 0;i<getSize(); i++)
@@ -1845,7 +1748,7 @@ void PropertyStringList::Restore(Base::XMLReader &reader)
     setValues(values);
 }
 
-Property *PropertyStringList::Copy(void) const
+Property *PropertyStringList::Copy() const
 {
     PropertyStringList *p= new PropertyStringList();
     p->_lValueList = _lValueList;
@@ -1864,21 +1767,15 @@ void PropertyStringList::Paste(const Property &from)
 
 TYPESYSTEM_SOURCE(App::PropertyMap , App::Property)
 
-PropertyMap::PropertyMap()
-{
+PropertyMap::PropertyMap() = default;
 
-}
-
-PropertyMap::~PropertyMap()
-{
-
-}
+PropertyMap::~PropertyMap() = default;
 
 //**************************************************************************
 // Base class implementer
 
 
-int PropertyMap::getSize(void) const
+int PropertyMap::getSize() const
 {
     return static_cast<int>(_lValueList.size());
 }
@@ -1910,17 +1807,18 @@ const std::string& PropertyMap::operator[] (const std::string& key) const
 }
 
 
-PyObject *PropertyMap::getPyObject(void)
+PyObject *PropertyMap::getPyObject()
 {
     PyObject* dict = PyDict_New();
 
     for (std::map<std::string,std::string>::const_iterator it = _lValueList.begin();it!= _lValueList.end(); ++it) {
-        PyObject* item = PyUnicode_DecodeUTF8(it->second.c_str(), it->second.size(), 0);
+        PyObject* item = PyUnicode_DecodeUTF8(it->second.c_str(), it->second.size(), nullptr);
         if (!item) {
             Py_DECREF(dict);
             throw Base::UnicodeError("UTF8 conversion failure at PropertyMap::getPyObject()");
         }
         PyDict_SetItemString(dict,it->first.c_str(),item);
+        Py_DECREF(item);
     }
 
     return dict;
@@ -1943,15 +1841,7 @@ void PropertyMap::setPyObject(PyObject *value)
             std::string keyStr;
             PyObject* key = PyList_GetItem(keyList, i);
             if (PyUnicode_Check(key)) {
-#if PY_MAJOR_VERSION >= 3
                 keyStr = PyUnicode_AsUTF8(key);
-#else
-                PyObject* unicode = PyUnicode_AsUTF8String(key);
-                keyStr = PyString_AsString(unicode);
-                Py_DECREF(unicode);
-            }else if (PyString_Check(key)) {
-                keyStr = PyString_AsString(key);
-#endif
             }
             else {
                 std::string error = std::string("type of the key need to be unicode or string, not");
@@ -1962,16 +1852,7 @@ void PropertyMap::setPyObject(PyObject *value)
             // check on the item:
             PyObject* item = PyList_GetItem(itemList, i);
             if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
                 values[keyStr] = PyUnicode_AsUTF8(item);
-#else
-                PyObject* unicode = PyUnicode_AsUTF8String(item);
-                values[keyStr] = PyString_AsString(unicode);
-                Py_DECREF(unicode);
-            }
-            else if (PyString_Check(item)) {
-                values[keyStr] = PyString_AsString(item);
-#endif
             }
             else {
                 std::string error = std::string("type in list must be string or unicode, not ");
@@ -1989,12 +1870,12 @@ void PropertyMap::setPyObject(PyObject *value)
     }
 }
 
-unsigned int PropertyMap::getMemSize (void) const
+unsigned int PropertyMap::getMemSize () const
 {
     size_t size=0;
-    for (std::map<std::string,std::string>::const_iterator it = _lValueList.begin();it!= _lValueList.end(); ++it) {
-        size += it->second.size();
-        size += it->first.size();
+    for (const auto & it : _lValueList) {
+        size += it.second.size();
+        size += it.first.size();
     }
     return size;
 }
@@ -2003,9 +1884,9 @@ void PropertyMap::Save (Base::Writer &writer) const
 {
     writer.Stream() << writer.ind() << "<Map count=\"" <<  getSize() <<"\">" << endl;
     writer.incInd();
-    for (std::map<std::string,std::string>::const_iterator it = _lValueList.begin();it!= _lValueList.end(); ++it) {
-        writer.Stream() << writer.ind() << "<Item key=\"" <<  encodeAttribute(it->first)
-                                        << "\" value=\"" <<  encodeAttribute(it->second) <<"\"/>" << endl;
+    for (const auto & it : _lValueList) {
+        writer.Stream() << writer.ind() << "<Item key=\"" <<  encodeAttribute(it.first)
+                                        << "\" value=\"" <<  encodeAttribute(it.second) <<"\"/>" << endl;
     }
 
     writer.decInd();
@@ -2031,7 +1912,7 @@ void PropertyMap::Restore(Base::XMLReader &reader)
     setValues(values);
 }
 
-Property *PropertyMap::Copy(void) const
+Property *PropertyMap::Copy() const
 {
     PropertyMap *p= new PropertyMap();
     p->_lValueList = _lValueList;
@@ -2063,10 +1944,7 @@ PropertyBool::PropertyBool()
     _lValue = false;
 }
 
-PropertyBool::~PropertyBool()
-{
-
-}
+PropertyBool::~PropertyBool() = default;
 
 //**************************************************************************
 // Setter/getter for the property
@@ -2078,27 +1956,21 @@ void PropertyBool::setValue(bool lValue)
     hasSetValue();
 }
 
-bool PropertyBool::getValue(void) const
+bool PropertyBool::getValue() const
 {
     return _lValue;
 }
 
-PyObject *PropertyBool::getPyObject(void)
+PyObject *PropertyBool::getPyObject()
 {
     return PyBool_FromLong(_lValue ? 1 : 0);
 }
 
 void PropertyBool::setPyObject(PyObject *value)
 {
-    if (PyBool_Check(value))
-        setValue(PyObject_IsTrue(value)!=0);
-#if PY_MAJOR_VERSION < 3
-    else if(PyInt_Check(value))
-        setValue(PyInt_AsLong(value)!=0);
-#else
-    else if(PyLong_Check(value))
-        setValue(PyLong_AsLong(value)!=0);
-#endif
+    if (PyBool_Check(value) || PyLong_Check(value)) {
+        setValue(Base::asBoolean(value));
+    }
     else {
         std::string error = std::string("type must be bool, not ");
         error += value->ob_type->tp_name;
@@ -2126,7 +1998,7 @@ void PropertyBool::Restore(Base::XMLReader &reader)
 }
 
 
-Property *PropertyBool::Copy(void) const
+Property *PropertyBool::Copy() const
 {
     PropertyBool *p= new PropertyBool();
     p->_lValue = _lValue;
@@ -2178,20 +2050,14 @@ TYPESYSTEM_SOURCE(App::PropertyBoolList , App::PropertyLists)
 // Construction/Destruction
 
 
-PropertyBoolList::PropertyBoolList()
-{
+PropertyBoolList::PropertyBoolList() = default;
 
-}
-
-PropertyBoolList::~PropertyBoolList()
-{
-
-}
+PropertyBoolList::~PropertyBoolList() = default;
 
 //**************************************************************************
 // Base class implementer
 
-PyObject *PropertyBoolList::getPyObject(void)
+PyObject *PropertyBoolList::getPyObject()
 {
     PyObject* tuple = PyTuple_New(getSize());
     for(int i = 0;i<getSize(); i++) {
@@ -2211,17 +2077,7 @@ void PropertyBoolList::setPyObject(PyObject *value)
     // string is also a sequence and must be treated differently
     std::string str;
     if (PyUnicode_Check(value)) {
-#if PY_MAJOR_VERSION >= 3
         str = PyUnicode_AsUTF8(value);
-#else
-        PyObject* unicode = PyUnicode_AsUTF8String(value);
-        str = PyString_AsString(unicode);
-        Py_DECREF(unicode);
-        boost::dynamic_bitset<> values(str);
-        setValues(values);
-    } else if (PyString_Check(value)) {
-        str = PyString_AsString(value);
-#endif
         boost::dynamic_bitset<> values(str);
         setValues(values);
     }else
@@ -2230,14 +2086,9 @@ void PropertyBoolList::setPyObject(PyObject *value)
 
 bool PropertyBoolList::getPyValue(PyObject *item) const {
     if (PyBool_Check(item)) {
-        return (PyObject_IsTrue(item) ? true : false);
-#if PY_MAJOR_VERSION < 3
-    } else if (PyInt_Check(item)) {
-        return (PyInt_AsLong(item) ? true : false);
-#else
+        return Base::asBoolean(item);
     } else if (PyLong_Check(item)) {
         return (PyLong_AsLong(item) ? true : false);
-#endif
     } else {
         std::string error = std::string("type in list must be bool or int, not ");
         error += item->ob_type->tp_name;
@@ -2264,7 +2115,7 @@ void PropertyBoolList::Restore(Base::XMLReader &reader)
     setValues(bitset);
 }
 
-Property *PropertyBoolList::Copy(void) const
+Property *PropertyBoolList::Copy() const
 {
     PropertyBoolList *p= new PropertyBoolList();
     p->_lValueList = _lValueList;
@@ -2276,7 +2127,7 @@ void PropertyBoolList::Paste(const Property &from)
     setValues(dynamic_cast<const PropertyBoolList&>(from)._lValueList);
 }
 
-unsigned int PropertyBoolList::getMemSize (void) const
+unsigned int PropertyBoolList::getMemSize () const
 {
     return static_cast<unsigned int>(_lValueList.size());
 }
@@ -2291,15 +2142,9 @@ TYPESYSTEM_SOURCE(App::PropertyColor , App::Property)
 //**************************************************************************
 // Construction/Destruction
 
-PropertyColor::PropertyColor()
-{
+PropertyColor::PropertyColor() = default;
 
-}
-
-PropertyColor::~PropertyColor()
-{
-
-}
+PropertyColor::~PropertyColor() = default;
 
 //**************************************************************************
 // Base class implementer
@@ -2325,12 +2170,12 @@ void PropertyColor::setValue(float r, float g, float b, float a)
     hasSetValue();
 }
 
-const Color& PropertyColor::getValue(void) const
+const Color& PropertyColor::getValue() const
 {
     return _cCol;
 }
 
-PyObject *PropertyColor::getPyObject(void)
+PyObject *PropertyColor::getPyObject()
 {
     PyObject* rgba = PyTuple_New(4);
     PyObject* r = PyFloat_FromDouble(_cCol.r);
@@ -2349,52 +2194,58 @@ PyObject *PropertyColor::getPyObject(void)
 void PropertyColor::setPyObject(PyObject *value)
 {
     App::Color cCol;
-    if (PyTuple_Check(value) && PyTuple_Size(value) == 3) {
+    if (PyTuple_Check(value) && (PyTuple_Size(value) == 3 || PyTuple_Size(value) == 4) ) {
         PyObject* item;
         item = PyTuple_GetItem(value,0);
-        if (PyFloat_Check(item))
+        if (PyFloat_Check(item)) {
             cCol.r = (float)PyFloat_AsDouble(item);
-        else
-            throw Base::TypeError("Type in tuple must be float");
-        item = PyTuple_GetItem(value,1);
-        if (PyFloat_Check(item))
-            cCol.g = (float)PyFloat_AsDouble(item);
-        else
-            throw Base::TypeError("Type in tuple must be float");
-        item = PyTuple_GetItem(value,2);
-        if (PyFloat_Check(item))
-            cCol.b = (float)PyFloat_AsDouble(item);
-        else
-            throw Base::TypeError("Type in tuple must be float");
-    }
-    else if (PyTuple_Check(value) && PyTuple_Size(value) == 4) {
-        PyObject* item;
-        item = PyTuple_GetItem(value,0);
-        if (PyFloat_Check(item))
-            cCol.r = (float)PyFloat_AsDouble(item);
-        else
-            throw Base::TypeError("Type in tuple must be float");
-        item = PyTuple_GetItem(value,1);
-        if (PyFloat_Check(item))
-            cCol.g = (float)PyFloat_AsDouble(item);
-        else
-            throw Base::TypeError("Type in tuple must be float");
-        item = PyTuple_GetItem(value,2);
-        if (PyFloat_Check(item))
-            cCol.b = (float)PyFloat_AsDouble(item);
-        else
-            throw Base::TypeError("Type in tuple must be float");
-        item = PyTuple_GetItem(value,3);
-        if (PyFloat_Check(item))
-            cCol.a = (float)PyFloat_AsDouble(item);
-        else
-            throw Base::TypeError("Type in tuple must be float");
+            item = PyTuple_GetItem(value,1);
+            if (PyFloat_Check(item))
+                cCol.g = (float)PyFloat_AsDouble(item);
+            else
+                throw Base::TypeError("Type in tuple must be consistent (float)");
+            item = PyTuple_GetItem(value,2);
+            if (PyFloat_Check(item))
+                cCol.b = (float)PyFloat_AsDouble(item);
+            else
+                throw Base::TypeError("Type in tuple must be consistent (float)");
+            if (PyTuple_Size(value) == 4) {
+                item = PyTuple_GetItem(value,3);
+                if (PyFloat_Check(item))
+                    cCol.a = (float)PyFloat_AsDouble(item);
+                else
+                    throw Base::TypeError("Type in tuple must be consistent (float)");
+            }
+        }
+        else if (PyLong_Check(item)) {
+            cCol.r = PyLong_AsLong(item)/255.0;
+            item = PyTuple_GetItem(value,1);
+            if (PyLong_Check(item))
+                cCol.g = PyLong_AsLong(item)/255.0;
+            else
+                throw Base::TypeError("Type in tuple must be consistent (integer)");
+            item = PyTuple_GetItem(value,2);
+            if (PyLong_Check(item))
+                cCol.b = PyLong_AsLong(item)/255.0;
+            else
+                throw Base::TypeError("Type in tuple must be consistent (integer)");
+            if (PyTuple_Size(value) == 4) {
+                item = PyTuple_GetItem(value,3);
+                if (PyLong_Check(item))
+                    cCol.a = PyLong_AsLong(item)/255.0;
+                else
+                    throw Base::TypeError("Type in tuple must be consistent (integer)");
+            }
+        }
+        else {
+            throw Base::TypeError("Type in tuple must be float or integer");
+        }
     }
     else if (PyLong_Check(value)) {
         cCol.setPackedValue(PyLong_AsUnsignedLong(value));
     }
     else {
-        std::string error = std::string("type must be int or tuple of float, not ");
+        std::string error = std::string("type must be integer or tuple of float or tuple integer, not ");
         error += value->ob_type->tp_name;
         throw Base::TypeError(error);
     }
@@ -2417,7 +2268,7 @@ void PropertyColor::Restore(Base::XMLReader &reader)
     setValue(rgba);
 }
 
-Property *PropertyColor::Copy(void) const
+Property *PropertyColor::Copy() const
 {
     PropertyColor *p= new PropertyColor();
     p->_cCol = _cCol;
@@ -2440,20 +2291,14 @@ TYPESYSTEM_SOURCE(App::PropertyColorList , App::PropertyLists)
 //**************************************************************************
 // Construction/Destruction
 
-PropertyColorList::PropertyColorList()
-{
+PropertyColorList::PropertyColorList() = default;
 
-}
-
-PropertyColorList::~PropertyColorList()
-{
-
-}
+PropertyColorList::~PropertyColorList() = default;
 
 //**************************************************************************
 // Base class implementer
 
-PyObject *PropertyColorList::getPyObject(void)
+PyObject *PropertyColorList::getPyObject()
 {
     PyObject* list = PyList_New(getSize());
 
@@ -2507,8 +2352,8 @@ void PropertyColorList::SaveDocFile (Base::Writer &writer) const
     Base::OutputStream str(writer.Stream());
     uint32_t uCt = (uint32_t)getSize();
     str << uCt;
-    for (std::vector<App::Color>::const_iterator it = _lValueList.begin(); it != _lValueList.end(); ++it) {
-        str << it->getPackedValue();
+    for (auto it : _lValueList) {
+        str << it.getPackedValue();
     }
 }
 
@@ -2519,14 +2364,14 @@ void PropertyColorList::RestoreDocFile(Base::Reader &reader)
     str >> uCt;
     std::vector<Color> values(uCt);
     uint32_t value; // must be 32 bit long
-    for (std::vector<App::Color>::iterator it = values.begin(); it != values.end(); ++it) {
+    for (auto & it : values) {
         str >> value;
-        it->setPackedValue(value);
+        it.setPackedValue(value);
     }
     setValues(values);
 }
 
-Property *PropertyColorList::Copy(void) const
+Property *PropertyColorList::Copy() const
 {
     PropertyColorList *p= new PropertyColorList();
     p->_lValueList = _lValueList;
@@ -2538,7 +2383,7 @@ void PropertyColorList::Paste(const Property &from)
     setValues(dynamic_cast<const PropertyColorList&>(from)._lValueList);
 }
 
-unsigned int PropertyColorList::getMemSize (void) const
+unsigned int PropertyColorList::getMemSize () const
 {
     return static_cast<unsigned int>(_lValueList.size() * sizeof(Color));
 }
@@ -2548,26 +2393,35 @@ unsigned int PropertyColorList::getMemSize (void) const
 // PropertyMaterial
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-TYPESYSTEM_SOURCE(App::PropertyMaterial , App::Property)
+TYPESYSTEM_SOURCE(App::PropertyMaterial, App::Property)
 
-PropertyMaterial::PropertyMaterial()
-{
+PropertyMaterial::PropertyMaterial() = default;
 
-}
+PropertyMaterial::~PropertyMaterial() = default;
 
-PropertyMaterial::~PropertyMaterial()
-{
-
-}
-
-void PropertyMaterial::setValue(const Material &mat)
+void PropertyMaterial::setValue(const Material& mat)
 {
     aboutToSetValue();
-    _cMat=mat;
+    _cMat = mat;
     hasSetValue();
 }
 
-const Material& PropertyMaterial::getValue(void) const
+void PropertyMaterial::setValue(const Color& col)
+{
+    setDiffuseColor(col);
+}
+
+void PropertyMaterial::setValue(float r, float g, float b, float a)
+{
+    setDiffuseColor(r, g, b, a);
+}
+
+void PropertyMaterial::setValue(uint32_t rgba)
+{
+    setDiffuseColor(rgba);
+}
+
+const Material& PropertyMaterial::getValue() const
 {
     return _cMat;
 }
@@ -2579,10 +2433,38 @@ void PropertyMaterial::setAmbientColor(const Color& col)
     hasSetValue();
 }
 
+void PropertyMaterial::setAmbientColor(float r, float g, float b, float a)
+{
+    aboutToSetValue();
+    _cMat.ambientColor.set(r, g, b, a);
+    hasSetValue();
+}
+
+void PropertyMaterial::setAmbientColor(uint32_t rgba)
+{
+    aboutToSetValue();
+    _cMat.ambientColor.setPackedValue(rgba);
+    hasSetValue();
+}
+
 void PropertyMaterial::setDiffuseColor(const Color& col)
 {
     aboutToSetValue();
     _cMat.diffuseColor = col;
+    hasSetValue();
+}
+
+void PropertyMaterial::setDiffuseColor(float r, float g, float b, float a)
+{
+    aboutToSetValue();
+    _cMat.diffuseColor.set(r, g, b, a);
+    hasSetValue();
+}
+
+void PropertyMaterial::setDiffuseColor(uint32_t rgba)
+{
+    aboutToSetValue();
+    _cMat.diffuseColor.setPackedValue(rgba);
     hasSetValue();
 }
 
@@ -2593,10 +2475,38 @@ void PropertyMaterial::setSpecularColor(const Color& col)
     hasSetValue();
 }
 
+void PropertyMaterial::setSpecularColor(float r, float g, float b, float a)
+{
+    aboutToSetValue();
+    _cMat.specularColor.set(r, g, b, a);
+    hasSetValue();
+}
+
+void PropertyMaterial::setSpecularColor(uint32_t rgba)
+{
+    aboutToSetValue();
+    _cMat.specularColor.setPackedValue(rgba);
+    hasSetValue();
+}
+
 void PropertyMaterial::setEmissiveColor(const Color& col)
 {
     aboutToSetValue();
     _cMat.emissiveColor = col;
+    hasSetValue();
+}
+
+void PropertyMaterial::setEmissiveColor(float r, float g, float b, float a)
+{
+    aboutToSetValue();
+    _cMat.emissiveColor.set(r, g, b, a);
+    hasSetValue();
+}
+
+void PropertyMaterial::setEmissiveColor(uint32_t rgba)
+{
+    aboutToSetValue();
+    _cMat.emissiveColor.setPackedValue(rgba);
     hasSetValue();
 }
 
@@ -2614,36 +2524,69 @@ void PropertyMaterial::setTransparency(float val)
     hasSetValue();
 }
 
-PyObject *PropertyMaterial::getPyObject(void)
+const Color& PropertyMaterial::getAmbientColor() const
+{
+    return _cMat.ambientColor;
+}
+
+const Color& PropertyMaterial::getDiffuseColor() const
+{
+    return _cMat.diffuseColor;
+}
+
+const Color& PropertyMaterial::getSpecularColor() const
+{
+    return _cMat.specularColor;
+}
+
+const Color& PropertyMaterial::getEmissiveColor() const
+{
+    return _cMat.emissiveColor;
+}
+
+double PropertyMaterial::getShininess() const
+{
+    return _cMat.shininess;
+}
+
+double PropertyMaterial::getTransparency() const
+{
+    return _cMat.transparency;
+}
+
+PyObject* PropertyMaterial::getPyObject()
 {
     return new MaterialPy(new Material(_cMat));
 }
 
-void PropertyMaterial::setPyObject(PyObject *value)
+void PropertyMaterial::setPyObject(PyObject* value)
 {
     if (PyObject_TypeCheck(value, &(MaterialPy::Type))) {
         setValue(*static_cast<MaterialPy*>(value)->getMaterialPtr());
     }
     else {
-        std::string error = std::string("type must be 'Material', not ");
-        error += value->ob_type->tp_name;
-        throw Base::TypeError(error);
+        setValue(MaterialPy::toColor(value));
     }
 }
 
-void PropertyMaterial::Save (Base::Writer &writer) const
+void PropertyMaterial::Save(Base::Writer& writer) const
 {
-    writer.Stream() << writer.ind() << "<PropertyMaterial ambientColor=\""
-        <<  _cMat.ambientColor.getPackedValue()
-        << "\" diffuseColor=\""  <<  _cMat.diffuseColor.getPackedValue()
-        << "\" specularColor=\"" <<  _cMat.specularColor.getPackedValue()
-        << "\" emissiveColor=\"" <<  _cMat.emissiveColor.getPackedValue()
-        << "\" shininess=\""     <<  _cMat.shininess
-        << "\" transparency=\""  <<  _cMat.transparency
-        << "\"/>" << endl;
+    // clang-format off
+    writer.Stream() << writer.ind()
+                    << "<PropertyMaterial ambientColor=\"" << _cMat.ambientColor.getPackedValue()
+                    << "\" diffuseColor=\"" << _cMat.diffuseColor.getPackedValue()
+                    << "\" specularColor=\"" << _cMat.specularColor.getPackedValue()
+                    << "\" emissiveColor=\"" << _cMat.emissiveColor.getPackedValue()
+                    << "\" shininess=\"" << _cMat.shininess
+                    << "\" transparency=\"" << _cMat.transparency
+                    << "\" image=\"" << _cMat.image
+                    << "\" imagePath=\"" << _cMat.imagePath
+                    << "\" uuid=\"" << _cMat.uuid
+                    << "\"/>" << std::endl;
+    // clang-format on
 }
 
-void PropertyMaterial::Restore(Base::XMLReader &reader)
+void PropertyMaterial::Restore(Base::XMLReader& reader)
 {
     // read my Element
     reader.readElement("PropertyMaterial");
@@ -2655,24 +2598,34 @@ void PropertyMaterial::Restore(Base::XMLReader &reader)
     _cMat.emissiveColor.setPackedValue(reader.getAttributeAsUnsigned("emissiveColor"));
     _cMat.shininess = (float)reader.getAttributeAsFloat("shininess");
     _cMat.transparency = (float)reader.getAttributeAsFloat("transparency");
+    if (reader.hasAttribute("image")) {
+        _cMat.image = reader.getAttribute("image");
+    }
+    if (reader.hasAttribute("imagePath")) {
+        _cMat.imagePath = reader.getAttribute("imagePath");
+    }
+    if (reader.hasAttribute("uuid")) {
+        _cMat.uuid = reader.getAttribute("uuid");
+    }
     hasSetValue();
 }
 
-const char* PropertyMaterial::getEditorName(void) const
+const char* PropertyMaterial::getEditorName() const
 {
-    if(testStatus(MaterialEdit))
+    if (testStatus(MaterialEdit)) {
         return "Gui::PropertyEditor::PropertyMaterialItem";
+    }
     return "";
 }
 
-Property *PropertyMaterial::Copy(void) const
+Property* PropertyMaterial::Copy() const
 {
-    PropertyMaterial *p= new PropertyMaterial();
+    PropertyMaterial* p = new PropertyMaterial();
     p->_cMat = _cMat;
     return p;
 }
 
-void PropertyMaterial::Paste(const Property &from)
+void PropertyMaterial::Paste(const Property& from)
 {
     aboutToSetValue();
     _cMat = dynamic_cast<const PropertyMaterial&>(from)._cMat;
@@ -2690,31 +2643,456 @@ TYPESYSTEM_SOURCE(App::PropertyMaterialList, App::PropertyLists)
 
 PropertyMaterialList::PropertyMaterialList()
 {
-
+    setMinimumSizeOne();
 }
 
-PropertyMaterialList::~PropertyMaterialList()
-{
-
-}
+PropertyMaterialList::~PropertyMaterialList() = default;
 
 //**************************************************************************
 // Base class implementer
 
-PyObject *PropertyMaterialList::getPyObject(void)
+void PropertyMaterialList::setValues(const std::vector<App::Material>& newValues)
+{
+    if (!newValues.empty()) {
+        PropertyListsT<Material>::setValues(newValues);
+    }
+    else {
+        aboutToSetValue();
+        setSize(1);
+        hasSetValue();
+    }
+}
+
+PyObject* PropertyMaterialList::getPyObject()
 {
     Py::Tuple tuple(getSize());
 
-    for (int i = 0; i<getSize(); i++) {
+    for (int i = 0; i < getSize(); i++) {
         tuple.setItem(i, Py::asObject(new MaterialPy(new Material(_lValueList[i]))));
     }
 
     return Py::new_reference_to(tuple);
 }
 
-Material PropertyMaterialList::getPyValue(PyObject *value) const {
-    if (PyObject_TypeCheck(value, &(MaterialPy::Type)))
+void PropertyMaterialList::verifyIndex(int index) const
+{
+    int size = getSize();
+    if (index < -1 || index > size) {
+        throw Base::RuntimeError("index out of bound");
+    }
+}
+
+void PropertyMaterialList::setMinimumSizeOne()
+{
+    int size = getSize();
+    if (size < 1) {
+        setSize(1);
+    }
+}
+
+int PropertyMaterialList::resizeByOneIfNeeded(int index)
+{
+    int size = getSize();
+    if (index == -1 || index == size) {
+        index = size;
+        setSize(size + 1);
+    }
+
+    return index;
+}
+
+void PropertyMaterialList::setValue()
+{
+    Material empty;
+    setValue(empty);
+}
+
+void PropertyMaterialList::setValue(const Material& mat)
+{
+    aboutToSetValue();
+    setSize(1);
+    for (auto& material : _lValueList) {
+        material = mat;
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setValue(int index, const Material& mat)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index] = mat;
+    hasSetValue();
+}
+
+void PropertyMaterialList::setAmbientColor(const Color& col)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.ambientColor = col;
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setAmbientColor(float r, float g, float b, float a)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.ambientColor.set(r, g, b, a);
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setAmbientColor(uint32_t rgba)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.ambientColor.setPackedValue(rgba);
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setAmbientColor(int index, const Color& col)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].ambientColor = col;
+    hasSetValue();
+}
+
+void PropertyMaterialList::setAmbientColor(int index, float r, float g, float b, float a)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].ambientColor.set(r, g, b, a);
+    hasSetValue();
+}
+
+void PropertyMaterialList::setAmbientColor(int index, uint32_t rgba)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].ambientColor.setPackedValue(rgba);
+    hasSetValue();
+}
+
+void PropertyMaterialList::setDiffuseColor(const Color& col)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.diffuseColor = col;
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setDiffuseColor(float r, float g, float b, float a)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.diffuseColor.set(r, g, b, a);
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setDiffuseColor(uint32_t rgba)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.diffuseColor.setPackedValue(rgba);
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setDiffuseColor(int index, const Color& col)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].diffuseColor = col;
+    hasSetValue();
+}
+
+void PropertyMaterialList::setDiffuseColor(int index, float r, float g, float b, float a)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].diffuseColor.set(r, g, b, a);
+    hasSetValue();
+}
+
+void PropertyMaterialList::setDiffuseColor(int index, uint32_t rgba)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].diffuseColor.setPackedValue(rgba);
+    hasSetValue();
+}
+
+void PropertyMaterialList::setDiffuseColors(const std::vector<App::Color>& colors)
+{
+    aboutToSetValue();
+    setSize(colors.size(), _lValueList[0]);
+
+    for (std::size_t i = 0; i < colors.size(); i++) {
+        _lValueList[i].diffuseColor = colors[i];
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setSpecularColor(const Color& col)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.specularColor = col;
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setSpecularColor(float r, float g, float b, float a)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.specularColor.set(r, g, b, a);
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setSpecularColor(uint32_t rgba)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.specularColor.setPackedValue(rgba);
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setSpecularColor(int index, const Color& col)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].specularColor = col;
+    hasSetValue();
+}
+
+void PropertyMaterialList::setSpecularColor(int index, float r, float g, float b, float a)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].specularColor.set(r, g, b, a);
+    hasSetValue();
+}
+
+void PropertyMaterialList::setSpecularColor(int index, uint32_t rgba)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].specularColor.setPackedValue(rgba);
+    hasSetValue();
+}
+
+void PropertyMaterialList::setEmissiveColor(const Color& col)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.emissiveColor = col;
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setEmissiveColor(float r, float g, float b, float a)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.emissiveColor.set(r, g, b, a);
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setEmissiveColor(uint32_t rgba)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.emissiveColor.setPackedValue(rgba);
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setEmissiveColor(int index, const Color& col)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].emissiveColor = col;
+    hasSetValue();
+}
+
+void PropertyMaterialList::setEmissiveColor(int index, float r, float g, float b, float a)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].emissiveColor.set(r, g, b, a);
+    hasSetValue();
+}
+
+void PropertyMaterialList::setEmissiveColor(int index, uint32_t rgba)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].emissiveColor.setPackedValue(rgba);
+    hasSetValue();
+}
+
+void PropertyMaterialList::setShininess(float val)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.shininess = val;
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setShininess(int index, float val)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].shininess = val;
+    hasSetValue();
+}
+
+void PropertyMaterialList::setTransparency(float val)
+{
+    aboutToSetValue();
+    setMinimumSizeOne();
+    for (auto& material : _lValueList) {
+        material.transparency = val;
+    }
+    hasSetValue();
+}
+
+void PropertyMaterialList::setTransparency(int index, float val)
+{
+    verifyIndex(index);
+
+    aboutToSetValue();
+    index = resizeByOneIfNeeded(index);
+    _lValueList[index].transparency = val;
+    hasSetValue();
+}
+
+const Color& PropertyMaterialList::getAmbientColor() const
+{
+    return _lValueList[0].ambientColor;
+}
+
+const Color& PropertyMaterialList::getAmbientColor(int index) const
+{
+    return _lValueList[index].ambientColor;
+}
+
+const Color& PropertyMaterialList::getDiffuseColor() const
+{
+    return _lValueList[0].diffuseColor;
+}
+
+const Color& PropertyMaterialList::getDiffuseColor(int index) const
+{
+    return _lValueList[index].diffuseColor;
+}
+
+std::vector<App::Color> PropertyMaterialList::getDiffuseColors() const
+{
+    std::vector<App::Color> list;
+    for (auto& material : _lValueList) {
+        list.push_back(material.diffuseColor);
+    }
+
+    return list;
+}
+
+const Color& PropertyMaterialList::getSpecularColor() const
+{
+    return _lValueList[0].specularColor;
+}
+
+const Color& PropertyMaterialList::getSpecularColor(int index) const
+{
+    return _lValueList[index].specularColor;
+}
+
+const Color& PropertyMaterialList::getEmissiveColor() const
+{
+    return _lValueList[0].emissiveColor;
+}
+
+const Color& PropertyMaterialList::getEmissiveColor(int index) const
+{
+    return _lValueList[index].emissiveColor;
+}
+
+float PropertyMaterialList::getShininess() const
+{
+    return _lValueList[0].shininess;
+}
+
+float PropertyMaterialList::getShininess(int index) const
+{
+    return _lValueList[index].shininess;
+}
+
+float PropertyMaterialList::getTransparency() const
+{
+    return _lValueList[0].transparency;
+}
+
+float PropertyMaterialList::getTransparency(int index) const
+{
+    return _lValueList[index].transparency;
+}
+
+Material PropertyMaterialList::getPyValue(PyObject* value) const
+{
+    if (PyObject_TypeCheck(value, &(MaterialPy::Type))) {
         return *static_cast<MaterialPy*>(value)->getMaterialPtr();
+    }
     else {
         std::string error = std::string("type must be 'Material', not ");
         error += value->ob_type->tp_name;
@@ -2722,19 +3100,24 @@ Material PropertyMaterialList::getPyValue(PyObject *value) const {
     }
 }
 
-void PropertyMaterialList::Save(Base::Writer &writer) const
+void PropertyMaterialList::Save(Base::Writer& writer) const
 {
     if (!writer.isForceXML()) {
-        writer.Stream() << writer.ind() << "<MaterialList file=\"" <<
-            (getSize()?writer.addFile(getName(), this):"") << "\"/>" << std::endl;
+        writer.Stream() << writer.ind() << "<MaterialList file=\""
+                        << (getSize() ? writer.addFile(getName(), this) : "") << "\""
+                        << " version=\"3\"/>"
+                        << std::endl;
     }
 }
 
-void PropertyMaterialList::Restore(Base::XMLReader &reader)
+void PropertyMaterialList::Restore(Base::XMLReader& reader)
 {
     reader.readElement("MaterialList");
     if (reader.hasAttribute("file")) {
         std::string file(reader.getAttribute("file"));
+        if (reader.hasAttribute("version")) {
+            formatVersion = static_cast<Format>(reader.getAttributeAsInteger("version"));
+        }
 
         if (!file.empty()) {
             // initiate a file read
@@ -2743,66 +3126,150 @@ void PropertyMaterialList::Restore(Base::XMLReader &reader)
     }
 }
 
-void PropertyMaterialList::SaveDocFile(Base::Writer &writer) const
+void PropertyMaterialList::SaveDocFile(Base::Writer& writer) const
 {
     Base::OutputStream str(writer.Stream());
     uint32_t uCt = (uint32_t)getSize();
     str << uCt;
-    for (std::vector<App::Material>::const_iterator it = _lValueList.begin(); it != _lValueList.end(); ++it) {
-        str << it->ambientColor.getPackedValue();
-        str << it->diffuseColor.getPackedValue();
-        str << it->specularColor.getPackedValue();
-        str << it->emissiveColor.getPackedValue();
-        str << it->shininess;
-        str << it->transparency;
+    for (const auto& it : _lValueList) {
+        str << it.ambientColor.getPackedValue();
+        str << it.diffuseColor.getPackedValue();
+        str << it.specularColor.getPackedValue();
+        str << it.emissiveColor.getPackedValue();
+        str << it.shininess;
+        str << it.transparency;
+    }
+
+    // Apply the latest changes last for backwards compatibility
+    for (const auto& it : _lValueList) {
+        writeString(str, it.image);
+        writeString(str, it.imagePath);
+        writeString(str, it.uuid);
     }
 }
 
-void PropertyMaterialList::RestoreDocFile(Base::Reader &reader)
+void PropertyMaterialList::writeString(Base::OutputStream& str, const std::string &value) const
+{
+    uint32_t uCt = (uint32_t)value.size();
+    str << uCt;
+    str.write(value.c_str(), uCt);
+}
+
+void PropertyMaterialList::RestoreDocFile(Base::Reader& reader)
 {
     Base::InputStream str(reader);
-    uint32_t uCt = 0;
-    str >> uCt;
-    std::vector<Material> values(uCt);
-    uint32_t value; // must be 32 bit long
-    float valueF;
-    for (std::vector<App::Material>::iterator it = values.begin(); it != values.end(); ++it) {
+    if (formatVersion == Version_2) {
+        // V2 is same as V0
+        uint32_t count = 0;
+        str >> count;
+        RestoreDocFileV0(count, reader);
+    }
+    else if (formatVersion == Version_3) {
+        // Default to the latest
+        RestoreDocFileV3(reader);
+    }
+    else {
+        int32_t version;
+        str >> version;
+        if (version < 0) {
+            // This was a failed attempt at versioning, but is included
+            // to support files created during development. In can be removed
+            // in a future release once dev files are migrated.
+            uint32_t count = 0;
+            str >> count;
+            RestoreDocFileV0(count, reader);
+        }
+        else {
+            uint32_t uCt = static_cast<uint32_t>(version);
+            RestoreDocFileV0(uCt, reader);
+        }
+    }
+}
+
+void PropertyMaterialList::RestoreDocFileV0(uint32_t count, Base::Reader& reader)
+{
+    Base::InputStream str(reader);
+    std::vector<Material> values(count);
+    uint32_t value {};  // must be 32 bit long
+    float valueF {};
+    for (auto& it : values) {
         str >> value;
-        it->ambientColor.setPackedValue(value);
+        it.ambientColor.setPackedValue(value);
         str >> value;
-        it->diffuseColor.setPackedValue(value);
+        it.diffuseColor.setPackedValue(value);
         str >> value;
-        it->specularColor.setPackedValue(value);
+        it.specularColor.setPackedValue(value);
         str >> value;
-        it->emissiveColor.setPackedValue(value);
+        it.emissiveColor.setPackedValue(value);
         str >> valueF;
-        it->shininess = valueF;
+        it.shininess = valueF;
         str >> valueF;
-        it->transparency = valueF;
+        it.transparency = valueF;
     }
     setValues(values);
 }
 
-const char* PropertyMaterialList::getEditorName(void) const
+void PropertyMaterialList::RestoreDocFileV3(Base::Reader& reader)
 {
-    if(testStatus(NoMaterialListEdit))
+    Base::InputStream str(reader);
+    uint32_t count = 0;
+    str >> count;
+    std::vector<Material> values(count);
+    uint32_t value {};  // must be 32 bit long
+    float valueF {};
+    for (auto& it : values) {
+        str >> value;
+        it.ambientColor.setPackedValue(value);
+        str >> value;
+        it.diffuseColor.setPackedValue(value);
+        str >> value;
+        it.specularColor.setPackedValue(value);
+        str >> value;
+        it.emissiveColor.setPackedValue(value);
+        str >> valueF;
+        it.shininess = valueF;
+        str >> valueF;
+        it.transparency = valueF;
+    }
+    for (auto& it : values) {
+        readString(str, it.image);
+        readString(str, it.imagePath);
+        readString(str, it.uuid);
+    }
+    setValues(values);
+}
+
+void PropertyMaterialList::readString(Base::InputStream& str, std::string& value)
+{
+    uint32_t uCt {};
+    str >> uCt;
+
+    std::vector<char> temp(uCt);
+    str.read(temp.data(), uCt);
+    value.assign(temp.data(), temp.size());
+}
+
+const char* PropertyMaterialList::getEditorName() const
+{
+    if (testStatus(NoMaterialListEdit)) {
         return "";
+    }
     return "Gui::PropertyEditor::PropertyMaterialListItem";
 }
 
-Property *PropertyMaterialList::Copy(void) const
+Property* PropertyMaterialList::Copy() const
 {
-    PropertyMaterialList *p = new PropertyMaterialList();
+    PropertyMaterialList* p = new PropertyMaterialList();
     p->_lValueList = _lValueList;
     return p;
 }
 
-void PropertyMaterialList::Paste(const Property &from)
+void PropertyMaterialList::Paste(const Property& from)
 {
     setValues(dynamic_cast<const PropertyMaterialList&>(from)._lValueList);
 }
 
-unsigned int PropertyMaterialList::getMemSize(void) const
+unsigned int PropertyMaterialList::getMemSize() const
 {
     return static_cast<unsigned int>(_lValueList.size() * sizeof(Material));
 }
@@ -2813,7 +3280,7 @@ unsigned int PropertyMaterialList::getMemSize(void) const
 
 TYPESYSTEM_SOURCE(App::PropertyPersistentObject , App::PropertyString)
 
-PyObject *PropertyPersistentObject::getPyObject(void){
+PyObject *PropertyPersistentObject::getPyObject(){
     if(_pObject)
         return _pObject->getPyObject();
     return inherited::getPyObject();
@@ -2839,7 +3306,7 @@ void PropertyPersistentObject::Restore(Base::XMLReader &reader){
     reader.readEndElement(ELEMENT_PERSISTENT_OBJ);
 }
 
-Property *PropertyPersistentObject::Copy(void) const{
+Property *PropertyPersistentObject::Copy() const{
     auto *p= new PropertyPersistentObject();
     p->_cValue = _cValue;
     p->_pObject = _pObject;
@@ -2856,7 +3323,7 @@ void PropertyPersistentObject::Paste(const Property &from){
     }
 }
 
-unsigned int PropertyPersistentObject::getMemSize (void) const{
+unsigned int PropertyPersistentObject::getMemSize () const{
     auto size = inherited::getMemSize();
     if(_pObject)
         size += _pObject->getMemSize();

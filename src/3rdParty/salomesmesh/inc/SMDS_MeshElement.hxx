@@ -20,7 +20,7 @@
 // See http://www.salome-platform.org/ or email : webmaster.salome@opencascade.com
 //
 
-//  SMESH SMDS : implementaion of Salome mesh data structure
+//  SMESH SMDS : implementation of Salome mesh data structure
 //  File   : SMDS_MeshElement.hxx
 //  Module : SMESH
 //
@@ -40,11 +40,16 @@
 
 #include <vtkType.h>
 #include <vtkCellType.h>
+#include <vtkCellArray.h>
 
 //typedef unsigned short UShortType;
 typedef short ShortType;
 typedef int   LongType;
-
+#ifdef VTK_CELL_ARRAY_V2
+typedef const vtkIdType* vtkIdTypePtr;
+#else
+typedef vtkIdType* vtkIdTypePtr;
+#endif
 class SMDS_MeshNode;
 class SMDS_MeshEdge;
 class SMDS_MeshFace;
@@ -192,7 +197,7 @@ protected:
   //! Element index in vector SMDS_Mesh::myNodes or SMDS_Mesh::myCells
   int myID;
   //! index in vtkUnstructuredGrid
-  int myVtkID;
+  vtkIdType myVtkID;
   //! SMDS_Mesh identification in SMESH
   ShortType myMeshId;
   //! SubShape and SubMesh identification in SMESHDS
@@ -216,8 +221,8 @@ struct TIDTypeCompare {
 // WARNING: this comparator makes impossible to store both nodes and elements in the same set
 // because there are nodes and elements with the same ID. Use TIDTypeCompare for such containers.
 struct TIDCompare {
-  bool operator () (const SMDS_MeshElement* e1, const SMDS_MeshElement* e2) const
-  { return e1->GetID() < e2->GetID(); }
+  template<typename T> bool operator () (const T* e1, const T* e2) const
+  { return static_cast<const SMDS_MeshElement*>(e1)->GetID() < static_cast<const SMDS_MeshElement*>(e2)->GetID(); }
 };
 
 #endif

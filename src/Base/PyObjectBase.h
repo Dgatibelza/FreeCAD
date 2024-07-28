@@ -23,6 +23,8 @@
 #ifndef BASE_PYOBJECTBASE_H
 #define BASE_PYOBJECTBASE_H
 
+// clang-format off
+// NOLINTBEGIN(cppcoreguidelines-macro-usage)
 // Std. configurations
 
 // (re-)defined in pyconfig.h
@@ -47,16 +49,13 @@
 #endif
 #define slots
 #include <bitset>
+#include <cstring>
 
-#include <typeinfo>
 #include "Exception.h"
-#if PY_MAJOR_VERSION > 2
-#  ifndef PYCXX_PYTHON_2TO3
-#  define PYCXX_PYTHON_2TO3
-#  endif
+#ifndef PYCXX_PYTHON_2TO3
+#define PYCXX_PYTHON_2TO3
 #endif
 #include <CXX/Objects.hxx>
-
 
 
 /** Python static class macro for definition
@@ -91,26 +90,8 @@
 
 /** Macro for initialization function of Python modules.
  */
-#if PY_MAJOR_VERSION >= 3
-# define PyMOD_INIT_FUNC(name) PyMODINIT_FUNC PyInit_##name(void)
-#else
-# define PyMOD_INIT_FUNC(name) PyMODINIT_FUNC init##name(void)
-#endif
-
-#if PY_MAJOR_VERSION >= 3
-# define PyMOD_Return(name) return name
-#else
-# define PyMOD_Return(name) return (void)name
-#endif
-
-/**
- * Union to convert from PyTypeObject to PyObject pointer.
- */
-union PyType_Object {
-    PyTypeObject *t;
-    PyObject *o;
-};
-
+#define PyMOD_INIT_FUNC(name) PyMODINIT_FUNC PyInit_##name(void)
+#define PyMOD_Return(name) return name
 
 
 /*------------------------------
@@ -135,6 +116,18 @@ inline void Assert(int expr, char *msg)         // C++ assert
     };
 }
 
+inline PyObject* getTypeAsObject(PyTypeObject* type) {
+    // See https://en.cppreference.com/w/cpp/string/byte/memcpy
+    // and https://en.cppreference.com/w/cpp/language/reinterpret_cast
+    PyObject* obj{};
+    std::memcpy(&obj, &type, sizeof type);
+    return obj;
+}
+
+inline bool asBoolean(PyObject *obj) {
+    return PyObject_IsTrue(obj) != 0;
+}
+
 }
 
 /*------------------------------
@@ -146,15 +139,15 @@ inline void Assert(int expr, char *msg)         // C++ assert
 /// return with no return value if nothing happens
 #define Py_Return return Py_INCREF(Py_None), Py_None
 /// returns an error
-#define Py_Error(E, M)   _Py_Error(return(NULL),E,M)
+#define Py_Error(E, M)   _Py_Error(return(nullptr),E,M)
 #define _Py_Error(R, E, M)   {PyErr_SetString(E, M); R;}
 /// returns an error
-#define Py_ErrorObj(E, O)   _Py_ErrorObj(return(NULL),E,O)
+#define Py_ErrorObj(E, O)   _Py_ErrorObj(return(nullptr),E,O)
 #define _Py_ErrorObj(R, E, O)   {PyErr_SetObject(E, O); R;}
 /// checks on a condition and returns an error on failure
 #define Py_Try(F) {if (!(F)) return NULL;}
 /// assert which returns with an error on failure
-#define Py_Assert(A,E,M) {if (!(A)) {PyErr_SetString(E, M); return NULL;}}
+#define Py_Assert(A,E,M) {if (!(A)) {PyErr_SetString(E, M); return nullptr;}}
 
 
 /// This must be the first line of each PyC++ class
@@ -193,7 +186,7 @@ namespace Base
  *  @see Py_Try
  *  @see Py_Assert
  */
-class BaseExport PyObjectBase : public PyObject
+class BaseExport PyObjectBase : public PyObject //NOLINT
 {
     /** Py_Header struct from python.h.
      *  Every PyObjectBase object is also a python object. So you can use
@@ -227,9 +220,14 @@ public:
     static void PyDestructor(PyObject *P)   // python wrapper
     {  delete ((PyObjectBase *) P);  }
     /// incref method wrapper (see python extending manual)
-    PyObjectBase* IncRef(void) {Py_INCREF(this);return this;}
+    PyObjectBase* IncRef() {Py_INCREF(this);return this;}
     /// decref method wrapper (see python extending manual)
-    PyObjectBase* DecRef(void) {Py_DECREF(this);return this;}
+    PyObjectBase* DecRef() {Py_DECREF(this);return this;}
+
+    /// Get the pointer of the twin object
+    void* getTwinPointer() const {
+        return _pcTwinPointer;
+    }
 
     /** GetAttribute implementation
      *  This method implements the retrieval of object attributes.
@@ -268,12 +266,12 @@ public:
     * }
     * \endcode
     */
-    virtual PyObject *_repr(void);
+    virtual PyObject *_repr();
     /// python wrapper for the _repr() function
     static  PyObject *__repr(PyObject *PyObj)	{
         if (!((PyObjectBase*) PyObj)->isValid()){
             PyErr_Format(PyExc_ReferenceError, "Cannot print representation of deleted object");
-            return NULL;
+            return nullptr;
         }
         return ((PyObjectBase*) PyObj)->_repr();
     }
@@ -296,7 +294,7 @@ public:
         // first bit is not set, i.e. invalid
         StatusBits.reset(Valid);
         clearAttributes();
-        _pcTwinPointer = 0;
+        _pcTwinPointer = nullptr;
     }
 
     bool isValid() {
@@ -330,7 +328,7 @@ public:
         return StatusBits.test(NoTrack);
     }
 
-    typedef void* PointerType;
+    using PointerType = void*;
 
 private:
     void setAttributeOf(const char* attr, PyObject* par);
@@ -341,12 +339,15 @@ private:
     void clearAttributes();
 
 protected:
-    std::bitset<32> StatusBits;
+    std::bitset<32> StatusBits; //NOLINT
     /// pointer to the handled class
-    void * _pcTwinPointer;
+    void * _pcTwinPointer; //NOLINT
+
+public:
+    PyObject* baseProxy{nullptr}; //NOLINT
 
 private:
-    PyObject* attrDict;
+    PyObject* attrDict{nullptr};
 };
 
 
@@ -415,11 +416,20 @@ static PyObject * s##DFUNC (PyObject *self, PyObject *args, PyObject * /*kwd*/){
  */
 #define PYMETHODEDEF(FUNC)	{"" #FUNC "",(PyCFunction) s##FUNC,Py_NEWARGS},
 
-BaseExport extern PyObject* BaseExceptionFreeCADError;
-#define PY_FCERROR (Base::BaseExceptionFreeCADError ? \
- BaseExceptionFreeCADError : PyExc_RuntimeError)
+BaseExport extern PyObject* PyExc_FC_GeneralError;
+#define PY_FCERROR (Base::PyExc_FC_GeneralError ? \
+ PyExc_FC_GeneralError : PyExc_RuntimeError)
 
-BaseExport extern PyObject* BaseExceptionFreeCADAbort;
+BaseExport extern PyObject* PyExc_FC_FreeCADAbort;
+BaseExport extern PyObject* PyExc_FC_XMLBaseException;
+BaseExport extern PyObject* PyExc_FC_XMLParseException;
+BaseExport extern PyObject* PyExc_FC_XMLAttributeError;
+BaseExport extern PyObject* PyExc_FC_UnknownProgramOption;
+BaseExport extern PyObject* PyExc_FC_BadFormatError;
+BaseExport extern PyObject* PyExc_FC_BadGraphError;
+BaseExport extern PyObject* PyExc_FC_ExpressionError;
+BaseExport extern PyObject* PyExc_FC_ParserError;
+BaseExport extern PyObject* PyExc_FC_CADKernelError;
 
 /** Exception handling for python callback functions
  * Is a convenience macro to manage the exception handling of python callback
@@ -429,14 +439,14 @@ BaseExport extern PyObject* BaseExceptionFreeCADAbort;
  * PYFUNCIMP_D(DocTypeStdPy,AddFeature)
  * {
  *   char *pstr;
- *   if (!PyArg_ParseTuple(args, "s", &pstr))     // convert args: Python->C
- *      return NULL;                             // NULL triggers exception
+ *   if (!PyArg_ParseTuple(args, "s", &pstr))
+ *      return nullptr;
  *
  *   try {
  *     Feature *pcFtr = _pcDocTypeStd->AddFeature(pstr);
  *   }catch(...)                                                        \
  *   {                                                                 \
- * 	 	Py_Error(Base::BaseExceptionFreeCADError,"Unknown C++ exception");          \
+ * 	 	Py_Error(Base::PyExc_FC_GeneralError,"Unknown C++ exception");          \
  *   }catch(FCException e) ..... // and so on....                                                               \
  * }
  * \endcode
@@ -445,8 +455,8 @@ BaseExport extern PyObject* BaseExceptionFreeCADAbort;
  * PYFUNCIMP_D(DocTypeStdPy,AddFeature)
  * {
  *   char *pstr;
- *   if (!PyArg_ParseTuple(args, "s", &pstr))     // convert args: Python->C
- *      return NULL;                             // NULL triggers exception
+ *   if (!PyArg_ParseTuple(args, "s", &pstr))
+ *      return nullptr;
  *
  *  PY_TRY {
  *    Feature *pcFtr = _pcDocTypeStd->AddFeature(pstr);
@@ -461,30 +471,20 @@ BaseExport extern PyObject* BaseExceptionFreeCADAbort;
 #define PY_TRY	try
 
 #define __PY_CATCH(R)                                               \
-    catch(Base::AbortException &e)                                  \
-    {                                                               \
-        e.ReportException();                                        \
-        _Py_ErrorObj(R,Base::BaseExceptionFreeCADAbort,e.getPyObject());\
-    }                                                               \
     catch(Base::Exception &e)                                       \
     {                                                               \
-        e.ReportException();                                        \
         auto pye = e.getPyExceptionType();                          \
         if(!pye)                                                    \
-            pye = Base::BaseExceptionFreeCADError;                  \
+            pye = Base::PyExc_FC_GeneralError;                      \
         _Py_ErrorObj(R,pye,e.getPyObject());                        \
     }                                                               \
-    catch(std::exception &e)                                        \
+    catch(const std::exception &e)                                  \
     {                                                               \
-        _Py_Error(R,Base::BaseExceptionFreeCADError,e.what());      \
+        _Py_Error(R,Base::PyExc_FC_GeneralError, e.what());         \
     }                                                               \
     catch(const Py::Exception&)                                     \
     {                                                               \
         R;                                                          \
-    }                                                               \
-    catch(const char *e)                                            \
-    {                                                               \
-        _Py_Error(R,Base::BaseExceptionFreeCADError,e);             \
     }                                                               \
 
 #ifndef DONT_CATCH_CXX_EXCEPTIONS
@@ -493,7 +493,7 @@ BaseExport extern PyObject* BaseExceptionFreeCADAbort;
     __PY_CATCH(R)                                                   \
     catch(...)                                                      \
     {                                                               \
-        _Py_Error(R,Base::BaseExceptionFreeCADError,"Unknown C++ exception"); \
+        _Py_Error(R,Base::PyExc_FC_GeneralError,"Unknown C++ exception"); \
     }
 
 #else
@@ -501,7 +501,7 @@ BaseExport extern PyObject* BaseExceptionFreeCADAbort;
 #  define _PY_CATCH(R) __PY_CATCH(R)
 #endif  // DONT_CATCH_CXX_EXCEPTIONS
 
-#define PY_CATCH _PY_CATCH(return(NULL))
+#define PY_CATCH _PY_CATCH(return(nullptr))
 
 /** Python helper class
  *  This class encapsulate the Decoding of UTF8 to a python object.
@@ -510,9 +510,11 @@ BaseExport extern PyObject* BaseExceptionFreeCADAbort;
 inline PyObject * PyAsUnicodeObject(const char *str)
 {
     // Returns a new reference, don't increment it!
-    PyObject *p = PyUnicode_DecodeUTF8(str,strlen(str),0);
-    if(!p)
+    Py_ssize_t len = Py_SAFE_DOWNCAST(strlen(str), size_t, Py_ssize_t);
+    PyObject *p = PyUnicode_DecodeUTF8(str, len, nullptr);
+    if (!p) {
         throw Base::UnicodeError("UTF8 conversion failure at PyAsUnicodeString()");
+    }
     return p;
 }
 
@@ -521,8 +523,41 @@ inline PyObject * PyAsUnicodeObject(const std::string &str)
     return PyAsUnicodeObject(str.c_str());
 }
 
+/** Helper functions to check if a python object is of a specific type or None,
+ *  otherwise raise an exception.
+ *  If the object is None, the pointer is set to nullptr.
+ */
+inline void PyTypeCheck(PyObject** ptr, PyTypeObject* type, const char* msg=nullptr)
+{
+    if (*ptr == Py_None) {
+        *ptr = nullptr;
+        return;
+    }
+    if (!PyObject_TypeCheck(*ptr, type)) {
+        if (!msg) {
+            std::stringstream str;
+            str << "Type must be " << type->tp_name << " or None, not " << (*ptr)->ob_type->tp_name;
+            throw Base::TypeError(str.str());
+        }
+        throw Base::TypeError(msg);
+    }
+}
+
+inline void PyTypeCheck(PyObject** ptr, int (*method)(PyObject*), const char* msg)
+{
+    if (*ptr == Py_None) {
+        *ptr = nullptr;
+        return;
+    }
+    if (!method(*ptr)) {
+        throw Base::TypeError(msg);
+    }
+}
+
 
 } // namespace Base
 
+// NOLINTEND(cppcoreguidelines-macro-usage)
+// clang-format on
 
-#endif // BASE_PYOBJECTBASE_H
+#endif  // BASE_PYOBJECTBASE_H

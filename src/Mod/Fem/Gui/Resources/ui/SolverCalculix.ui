@@ -42,7 +42,7 @@
          <bool>true</bool>
         </property>
         <property name="text">
-         <string>...</string>
+         <string notr="true">...</string>
         </property>
        </widget>
       </item>
@@ -61,7 +61,7 @@
       <property name="bottomMargin">
        <number>9</number>
       </property>
-      <item row="0" column="0">
+      <item row="1" column="0">
        <widget class="Gui::PrefRadioButton" name="rb_static_analysis">
         <property name="text">
          <string>Static</string>
@@ -71,24 +71,31 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="1" column="2">
        <widget class="Gui::PrefRadioButton" name="rb_frequency_analysis">
         <property name="text">
          <string>Frequency</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="2" column="0">
        <widget class="Gui::PrefRadioButton" name="rb_thermomech_analysis">
         <property name="text">
          <string>Thermo mechanical</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
+      <item row="2" column="2">
        <widget class="Gui::PrefRadioButton" name="rb_check_mesh">
         <property name="text">
          <string>Check Mesh</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="Gui::PrefRadioButton" name="rb_buckling_analysis">
+        <property name="text">
+         <string>Buckling</string>
         </property>
        </widget>
       </item>

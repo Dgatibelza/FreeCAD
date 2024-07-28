@@ -32,10 +32,9 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
+# include <QApplication>
 # include <QGraphicsView>
 # include <QMouseEvent>
-# include <QApplication>
-# include <QScrollBar>
 # include <qmath.h>
 #endif
 
@@ -70,16 +69,15 @@ void GraphicsViewZoom::set_zoom_factor_base(double value) {
 
 bool GraphicsViewZoom::eventFilter(QObject *object, QEvent *event) {
   if (event->type() == QEvent::MouseMove) {
-    QMouseEvent* mouse_event = static_cast<QMouseEvent*>(event);
+      auto mouse_event = static_cast<QMouseEvent*>(event);
     QPointF delta = target_viewport_pos - mouse_event->pos();
     if (qAbs(delta.x()) > 5 || qAbs(delta.y()) > 5) {
       target_viewport_pos = mouse_event->pos();
       target_scene_pos = _view->mapToScene(mouse_event->pos());
     }
   } else if (event->type() == QEvent::Wheel) {
-    QWheelEvent* wheel_event = static_cast<QWheelEvent*>(event);
+      auto wheel_event = static_cast<QWheelEvent*>(event);
     if (QApplication::keyboardModifiers() == _modifiers) {
-#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
       QPoint delta = wheel_event->angleDelta();
       if (qAbs(delta.y()) > qAbs(delta.x())) { // vertical
         double angle = -delta.y();
@@ -89,16 +87,6 @@ bool GraphicsViewZoom::eventFilter(QObject *object, QEvent *event) {
         gentle_zoom(factor);
         return true;
       }
-#else
-      if (wheel_event->orientation() == Qt::Vertical) {
-        double angle = -wheel_event->delta();
-        if (m_invert_zoom)
-          angle = -angle;
-        double factor = qPow(_zoom_factor_base, angle);
-        gentle_zoom(factor);
-        return true;
-      }
-#endif
     }
   }
   Q_UNUSED(object);

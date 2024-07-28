@@ -20,19 +20,21 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
+# include <memory>
+
 # include <BRepAlgoAPI_BooleanOperation.hxx>
 # include <BRepCheck_Analyzer.hxx>
 # include <Standard_Failure.hxx>
-# include <memory>
 #endif
 
-#include "FeaturePartBoolean.h"
-#include "modelRefine.h"
 #include <App/Application.h>
 #include <Base/Parameter.h>
+
+#include "FeaturePartBoolean.h"
+#include "TopoShapeOpCode.h"
+#include "modelRefine.h"
 
 
 using namespace Part;
@@ -40,10 +42,10 @@ using namespace Part;
 PROPERTY_SOURCE_ABSTRACT(Part::Boolean, Part::Feature)
 
 
-Boolean::Boolean(void)
+Boolean::Boolean()
 {
-    ADD_PROPERTY(Base,(0));
-    ADD_PROPERTY(Tool,(0));
+    ADD_PROPERTY(Base,(nullptr));
+    ADD_PROPERTY(Tool,(nullptr));
     ADD_PROPERTY_TYPE(History,(ShapeHistory()), "Boolean", (App::PropertyType)
         (App::Prop_Output|App::Prop_Transient|App::Prop_Hidden), "Shape history");
     History.setSize(0);
@@ -59,33 +61,46 @@ Boolean::Boolean(void)
 short Boolean::mustExecute() const
 {
     if (Base.getValue() && Tool.getValue()) {
-        if (Base.isTouched())
+        if (Base.isTouched()) {
             return 1;
-        if (Tool.isTouched())
+        }
+        if (Tool.isTouched()) {
             return 1;
+        }
     }
     return 0;
 }
 
-App::DocumentObjectExecReturn *Boolean::execute(void)
+const char *Boolean::opCode() const
+{
+    return Part::OpCodes::Boolean;
+}
+
+App::DocumentObjectExecReturn* Boolean::execute()
 {
     try {
-#if defined(__GNUC__) && defined (FC_OS_LINUX)
+#if defined(__GNUC__) && defined(FC_OS_LINUX)
         Base::SignalException se;
 #endif
         auto base = Base.getValue();
         auto tool = Tool.getValue();
 
-        if (!base || !tool)
+        if (!base || !tool) {
             return new App::DocumentObjectExecReturn("Linked object is not a Part object");
-
+        }
+        std::vector<TopoShape> shapes;
+        shapes.reserve(2);
         // Now, let's get the TopoDS_Shape
-        TopoDS_Shape BaseShape = Feature::getShape(base);
-        if (BaseShape.IsNull())
+        shapes.push_back(Feature::getTopoShape(Base.getValue()));
+        auto BaseShape = shapes[0].getShape();
+        if (BaseShape.IsNull()) {
             throw NullShapeException("Base shape is null");
-        TopoDS_Shape ToolShape = Feature::getShape(tool);
-        if (ToolShape.IsNull())
+        }
+        shapes.push_back(Feature::getTopoShape(Tool.getValue()));
+        auto ToolShape = shapes[1].getShape();
+        if (ToolShape.IsNull()) {
             throw NullShapeException("Tool shape is null");
+        }
 
         std::unique_ptr<BRepAlgoAPI_BooleanOperation> mkBool(makeOperation(BaseShape, ToolShape));
         if (!mkBool->IsDone()) {
@@ -103,19 +118,22 @@ App::DocumentObjectExecReturn *Boolean::execute(void)
         if (resShape.IsNull()) {
             return new App::DocumentObjectExecReturn("Resulting shape is null");
         }
-        Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
-            .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/Part/Boolean");
+        Base::Reference<ParameterGrp> hGrp = App::GetApplication()
+                                                 .GetUserParameter()
+                                                 .GetGroup("BaseApp")
+                                                 ->GetGroup("Preferences")
+                                                 ->GetGroup("Mod/Part/Boolean");
 
-        if (hGrp->GetBool("CheckModel", false)) {
+        if (hGrp->GetBool("CheckModel", true)) {
             BRepCheck_Analyzer aChecker(resShape);
-            if (! aChecker.IsValid() ) {
+            if (!aChecker.IsValid()) {
                 return new App::DocumentObjectExecReturn("Resulting shape is invalid");
             }
         }
-
+#ifndef FC_USE_TNP_FIX
         std::vector<ShapeHistory> history;
-        history.push_back(buildHistory(*mkBool.get(), TopAbs_FACE, resShape, BaseShape));
-        history.push_back(buildHistory(*mkBool.get(), TopAbs_FACE, resShape, ToolShape));
+        history.push_back(buildHistory(*mkBool, TopAbs_FACE, resShape, BaseShape));
+        history.push_back(buildHistory(*mkBool, TopAbs_FACE, resShape, ToolShape));
 
         if (this->Refine.getValue()) {
             try {
@@ -134,8 +152,18 @@ App::DocumentObjectExecReturn *Boolean::execute(void)
         this->Shape.setValue(resShape);
         this->History.setValues(history);
         return App::DocumentObject::StdReturn;
+#else
+        TopoShape res(0);
+        res.makeElementShape(*mkBool, shapes, opCode());
+        if (this->Refine.getValue()) {
+            res = res.makeElementRefine();
+        }
+        this->Shape.setValue(res);
+        return Part::Feature::execute();
+#endif
     }
     catch (...) {
-        return new App::DocumentObjectExecReturn("A fatal error occurred when running boolean operation");
+        return new App::DocumentObjectExecReturn(
+            "A fatal error occurred when running boolean operation");
     }
 }

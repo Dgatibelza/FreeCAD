@@ -32,14 +32,15 @@ mainly implemented by the :mod:`femsolver.task` and :mod:`femsolver.signal`
 modules.
 """
 
-__title__  = "FreeCAD FEM solver run"
+__title__ = "FreeCAD FEM solver run"
 __author__ = "Markus Hovorka, Bernd Hahnebach"
-__url__    = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 import os
 import os.path
 import shutil
 import tempfile
+
 # import threading  # not used ATM
 
 import FreeCAD as App
@@ -69,7 +70,7 @@ _dirTypes = {}
 
 
 def run_fem_solver(solver, working_dir=None):
-    """ Execute *solver* of the solver framework.
+    """Execute *solver* of the solver framework.
 
     Uses :meth:`getMachine <femsolver.solverbase.Proxy.getMachine>` to obtain a
     :class:`Machine` instance of the solver. It than executes the Machine with
@@ -95,18 +96,20 @@ def run_fem_solver(solver, working_dir=None):
 
     :note:
         There is some legacy code to execute the old Calculix solver
-        (pre-framework) which behaives differently because it doesn't use a
-        :class:`Machine`.
+        (pre-framework) which behaives differently because it does not
+        use a :class:`Machine`.
     """
 
     if solver.Proxy.Type == "Fem::SolverCcxTools":
-        App.Console.PrintMessage("CalxuliX ccx tools solver!\n")
         from femtools.ccxtools import CcxTools as ccx
+
+        App.Console.PrintMessage("Run of CalxuliX ccx tools solver started.\n")
         fea = ccx(solver)
         fea.reset_mesh_purge_results_checked()
         if working_dir is None:
-            fea.run()
+            fea.run()  # standard, no working dir is given in solver
         else:
+            # not the standard way
             fea.update_objects()
             fea.setup_working_dir(working_dir)
             fea.setup_ccx()
@@ -116,7 +119,8 @@ def run_fem_solver(solver, working_dir=None):
                 fea.ccx_run()
                 fea.load_results()
             else:
-                App.Console.PrintError("Houston, we have a problem ...!\n{}\n".format(message))
+                App.Console.PrintError(f"Houston, we have a problem...!\n{message}\n")
+        App.Console.PrintMessage("Run of CalxuliX ccx tools solver finished.\n")
     else:
         # App.Console.PrintMessage("Frame work solver!\n")
         try:
@@ -128,14 +132,12 @@ def run_fem_solver(solver, working_dir=None):
             error_message = (
                 "Please save the file before executing the solver. "
                 "This must be done because the location of the working "
-                "directory is set to \"Beside *.FCStd File\"."
+                'directory is set to "Beside *.FCStd File".'
             )
             App.Console.PrintError(error_message + "\n")
             if App.GuiUp:
                 QtGui.QMessageBox.critical(
-                    FreeCADGui.getMainWindow(),
-                    "Can't start Solver",
-                    error_message
+                    FreeCADGui.getMainWindow(), "Can't start Solver", error_message
                 )
             return
         except DirectoryDoesNotExistError:
@@ -143,9 +145,7 @@ def run_fem_solver(solver, working_dir=None):
             App.Console.PrintError(error_message + "\n")
             if App.GuiUp:
                 QtGui.QMessageBox.critical(
-                    FreeCADGui.getMainWindow(),
-                    "Can't start Solver",
-                    error_message
+                    FreeCADGui.getMainWindow(), "Can't start Solver", error_message
                 )
             return
         if not machine.running:
@@ -156,6 +156,7 @@ def run_fem_solver(solver, working_dir=None):
             if machine.failed is True:
                 App.Console.PrintError("Machine failed to run.\n")
                 from .report import displayLog
+
                 displayLog(machine.report)
                 if App.GuiUp:
                     error_message = (
@@ -163,11 +164,12 @@ def run_fem_solver(solver, working_dir=None):
                         "of the following errors are resolved."
                     )
                     from .report import display
+
                     display(machine.report, "Run Report", error_message)
 
 
 def getMachine(solver, path=None):
-    """ Get or create :class:`Machine` using caching mechanism.
+    """Get or create :class:`Machine` using caching mechanism.
 
     :param solver:
         A document object which must be a framework compliant solver. This means
@@ -250,19 +252,17 @@ def _getBesideBase(solver):
     # doc=App.newDocument()
     # doc.FileName
     # the above returns an empty string in FreeCAD 0.19
-    # https://forum.freecadweb.org/viewtopic.php?f=10&t=48842
+    # https://forum.freecad.org/viewtopic.php?f=10&t=48842
     if path == "":
         error_message = (
             "Please save the file before executing the solver. "
             "This must be done because the location of the working "
-            "directory is set to \"Beside *.FCStd File\"."
+            'directory is set to "Beside *.FCStd File".'
         )
         App.Console.PrintError(error_message + "\n")
         if App.GuiUp:
             QtGui.QMessageBox.critical(
-                FreeCADGui.getMainWindow(),
-                "Can't start Solver",
-                error_message
+                FreeCADGui.getMainWindow(), "Can't start Solver", error_message
             )
         raise MustSaveError()
         # TODO may be do not abort but use a temporary directory
@@ -271,8 +271,7 @@ def _getBesideBase(solver):
 
 def _getCustomDir(solver):
     base = _getCustomBase(solver)
-    specificPath = os.path.join(
-        base, solver.Document.Name, solver.Label)
+    specificPath = os.path.join(base, solver.Document.Name, solver.Label)
     specificPath = _getUniquePath(specificPath)
     if not os.path.isdir(specificPath):
         os.makedirs(specificPath)
@@ -286,9 +285,7 @@ def _getCustomBase(solver):
         App.Console.PrintError(error_message + "\n")
         if App.GuiUp:
             QtGui.QMessageBox.critical(
-                FreeCADGui.getMainWindow(),
-                "Can't start Solver",
-                error_message
+                FreeCADGui.getMainWindow(), "Can't start Solver", error_message
             )
         raise DirectoryDoesNotExistError("Invalid path")
     return path
@@ -307,7 +304,7 @@ def _getUniquePath(path):
 class BaseTask(task.Thread):
 
     def __init__(self):
-        super(BaseTask, self).__init__()
+        super().__init__()
         self.solver = None
         self.directory = None
         self.testmode = None
@@ -319,10 +316,8 @@ class BaseTask(task.Thread):
 
 class Machine(BaseTask):
 
-    def __init__(
-            self, solver, directory, check,
-            prepare, solve, results, testmode):
-        super(Machine, self).__init__()
+    def __init__(self, solver, directory, check, prepare, solve, results, testmode):
+        super().__init__()
         self.solver = solver
         self.directory = directory
         self.signalState = set()
@@ -344,11 +339,7 @@ class Machine(BaseTask):
         self._confTasks()
         self._isReset = False
         self._pendingState = self.state
-        while (
-            not self.aborted
-            and not self.failed
-            and self._pendingState <= self.target
-        ):
+        while not self.aborted and not self.failed and self._pendingState <= self.target:
             task = self._getTask(self._pendingState)
             self._runTask(task)
             self.report.extend(task.report)
@@ -361,21 +352,14 @@ class Machine(BaseTask):
         self._applyPending()
 
     def reset(self, newState=CHECK):
-        state = (self.state
-                 if self._pendingState is None
-                 else self._pendingState)
+        state = self.state if self._pendingState is None else self._pendingState
         if newState < state:
             self._isReset = True
             self._state = newState
             signal.notify(self.signalState)
 
     def _confTasks(self):
-        tasks = [
-            self.check,
-            self.prepare,
-            self.solve,
-            self.results
-        ]
+        tasks = [self.check, self.prepare, self.solve, self.results]
         for t in tasks:
             t.solver = self.solver
             t.directory = self.directory
@@ -395,6 +379,7 @@ class Machine(BaseTask):
 
         def killer():
             task.abort()
+
         self.signalAbort.add(killer)
         task.signalStatus.add(statusProxy)
         task.start()
@@ -416,28 +401,77 @@ class Machine(BaseTask):
 
 class Check(BaseTask):
 
-    def checkMesh(self):
-        meshes = membertools.get_member(
-            self.analysis, "Fem::FemMeshObject")
+    def get_several_member(self, t):
+        return membertools.get_several_member(self.analysis, t)
+
+    def check_mesh_exists(self):
+        meshes = self.get_several_member("Fem::FemMeshObject")
         if len(meshes) == 0:
             self.report.error("Missing a mesh object.")
             self.fail()
             return False
         elif len(meshes) > 1:
-            self.report.error(
-                "Too many meshes. "
-                "More than one mesh is not supported.")
+            self.report.error("Too many meshes. More than one mesh is not supported.")
             self.fail()
             return False
         return True
 
-    def checkMaterial(self):
-        matObjs = membertools.get_member(
-            self.analysis, "App::MaterialObjectPython")
-        if len(matObjs) == 0:
+    def check_material_exists(self):
+        objs = self.get_several_member("App::MaterialObjectPython")
+        if len(objs) == 0:
+            self.report.error("Missing a material object. At least one material is required.")
+            self.fail()
+            return False
+        return True
+
+    def check_material_single(self):
+        objs = self.get_several_member("App::MaterialObjectPython")
+        if len(objs) > 1:
+            self.report.error("Only one Material is supported for this solver.")
+            self.fail()
+            return False
+        return True
+
+    def check_geos_beamsection_no(self):
+        objs = self.get_several_member("Fem::ElementGeometry1D")
+        if len(objs) > 0:
+            self.report.error("Beamsections are not supported for this solver.")
+            self.fail()
+            return False
+        return True
+
+    def check_geos_beamsection_single(self):
+        objs = self.get_several_member("Fem::ElementGeometry1D")
+        if len(objs) > 1:
+            self.report.error("Only one beamsection is supported for this solver.")
+            self.fail()
+            return False
+        return True
+
+    def check_geos_shellthickness_no(self):
+        objs = self.get_several_member("Fem::ElementGeometry2D")
+        if len(objs) > 0:
+            self.report.error("Shellsections are not supported for this solver.")
+            self.fail()
+            return False
+        return True
+
+    def check_geos_shellthickness_single(self):
+        objs = self.get_several_member("Fem::ElementGeometry2D")
+        if len(objs) > 1:
+            self.report.error("Only one shellthickness is supported for this solver.")
+            self.fail()
+            return False
+        return True
+
+    def check_geos_beamsection_and_shellthickness(self):
+        beamsec_obj = self.get_several_member("Fem::ElementGeometry1D")
+        shellth_obj = self.get_several_member("Fem::ElementGeometry2D")
+        if len(beamsec_obj) > 0 and len(shellth_obj) > 0:
             self.report.error(
-                "No material object found. "
-                "At least one material is required.")
+                "Either beamsection or shellthickness objects are "
+                "supported for this solver, but not both in one analysis."
+            )
             self.fail()
             return False
         return True
@@ -450,8 +484,7 @@ class Check(BaseTask):
                     if femutils.is_of_type(m, *sc):
                         supported = True
                 if not supported:
-                    self.report.warning(
-                        "Ignored unsupported constraint: %s" % m.Label)
+                    self.report.warning(f"Ignored unsupported constraint: {m.Label}")
         return True
 
 
@@ -479,7 +512,7 @@ class Results(BaseTask):
     pass
 
 
-class _DocObserver(object):
+class _DocObserver:
 
     _instance = None
     _WHITELIST = [
@@ -487,11 +520,7 @@ class _DocObserver(object):
         "App::MaterialObject",
         "Fem::FemMeshObject",
     ]
-    _BLACKLIST_PROPS = [
-        "Label",
-        "ElmerOutput",
-        "ElmerResult"
-    ]
+    _BLACKLIST_PROPS = ["Label", "ElmerOutput", "ElmerResult"]
 
     def __init__(self):
         self._saved = {}

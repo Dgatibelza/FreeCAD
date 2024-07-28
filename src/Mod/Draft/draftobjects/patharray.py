@@ -67,9 +67,9 @@ import FreeCAD as App
 import DraftVecUtils
 import lazy_loader.lazy_loader as lz
 
-from draftutils.messages import _msg, _wrn, _err
-from draftutils.translate import _tr
-
+from draftutils.messages import _wrn, _err
+from draftutils.translate import translate
+def QT_TRANSLATE_NOOP(ctx,txt): return txt
 from draftobjects.base import DraftObject
 from draftobjects.draftlink import DraftLink
 
@@ -124,10 +124,18 @@ class PathArray(DraftLink):
         It defaults to `False`.
         If it is `True`, and `AlignMode` is `'Original'` or `'Tangent'`,
         it will use the vector in `VerticalVector` as the `Z` axis.
+
+    StartOffset: float
+        It defaults to 0.0.
+        It is the length from the start of the path to the first copy.
+
+    EndOffset: float
+        It defaults to 0.0.
+        It is the length from the end of the path to the last copy.
     """
 
     def __init__(self, obj):
-        super(PathArray, self).__init__(obj, "PathArray")
+        super().__init__(obj, "PathArray")
 
     def attach(self, obj):
         """Set up the properties when the object is attached.
@@ -147,7 +155,7 @@ class PathArray(DraftLink):
         to attach the proxy before creating the C++ view provider.
         """
         self.set_properties(obj)
-        super(PathArray, self).attach(obj)
+        super().attach(obj)
 
     def set_properties(self, obj):
         """Set properties only if they don't exist."""
@@ -165,7 +173,7 @@ class PathArray(DraftLink):
     def set_general_properties(self, obj, properties):
         """Set general properties only if they don't exist."""
         if "Base" not in properties:
-            _tip = _tr("The base object that will be duplicated")
+            _tip = QT_TRANSLATE_NOOP("App::Property","The base object that will be duplicated")
             obj.addProperty("App::PropertyLinkGlobal",
                             "Base",
                             "Objects",
@@ -173,9 +181,7 @@ class PathArray(DraftLink):
             obj.Base = None
 
         if "PathObject" not in properties:
-            _tip = _tr("The object along which "
-                       "the copies will be distributed. "
-                       "It must contain 'Edges'.")
+            _tip = QT_TRANSLATE_NOOP("App::Property","The object along which the copies will be distributed. It must contain 'Edges'.")
             obj.addProperty("App::PropertyLinkGlobal",
                             "PathObject",
                             "Objects",
@@ -190,19 +196,26 @@ class PathArray(DraftLink):
         # as this property can be used to select a single object,
         # or a single object with its subelements.
         if "PathSubelements" not in properties:
-            _tip = _tr("List of connected edges in the 'Path Object'.\n"
-                       "If these are present, the copies will be created "
-                       "along these subelements only.\n"
-                       "Leave this property empty to create copies along "
-                       "the entire 'Path Object'.")
+            _tip = QT_TRANSLATE_NOOP("App::Property","List of connected edges in the 'Path Object'.\nIf these are present, the copies will be created along these subelements only.\nLeave this property empty to create copies along the entire 'Path Object'.")
             obj.addProperty("App::PropertyLinkSubListGlobal",
                             "PathSubelements",
                             "Objects",
                             _tip)
             obj.PathSubelements = []
 
+        if "Fuse" not in properties:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                                     "Specifies if the copies "
+                                     "should be fused together "
+                                     "if they touch each other (slower)")
+            obj.addProperty("App::PropertyBool",
+                            "Fuse",
+                            "Objects",
+                            _tip)
+            obj.Fuse = False
+
         if "Count" not in properties:
-            _tip = _tr("Number of copies to create")
+            _tip = QT_TRANSLATE_NOOP("App::Property","Number of copies to create")
             obj.addProperty("App::PropertyInteger",
                             "Count",
                             "Objects",
@@ -210,8 +223,7 @@ class PathArray(DraftLink):
             obj.Count = 4
 
         if self.use_link and "ExpandArray" not in properties:
-            _tip = _tr("Show the individual array elements "
-                       "(only for Link arrays)")
+            _tip = QT_TRANSLATE_NOOP("App::Property","Show the individual array elements (only for Link arrays)")
             obj.addProperty("App::PropertyBool",
                             "ExpandArray",
                             "Objects",
@@ -222,10 +234,7 @@ class PathArray(DraftLink):
     def set_align_properties(self, obj, properties):
         """Set general properties only if they don't exist."""
         if "ExtraTranslation" not in properties:
-            _tip = _tr("Additional translation "
-                       "that will be applied to each copy.\n"
-                       "This is useful to adjust for the difference "
-                       "between shape centre and shape reference point.")
+            _tip = QT_TRANSLATE_NOOP("App::Property","Additional translation that will be applied to each copy.\nThis is useful to adjust for the difference between shape centre and shape reference point.")
             obj.addProperty("App::PropertyVectorDistance",
                             "ExtraTranslation",
                             "Alignment",
@@ -233,7 +242,7 @@ class PathArray(DraftLink):
             obj.ExtraTranslation = App.Vector(0, 0, 0)
 
         if "TangentVector" not in properties:
-            _tip = _tr("Alignment vector for 'Tangent' mode")
+            _tip = QT_TRANSLATE_NOOP("App::Property","Alignment vector for 'Tangent' mode")
             obj.addProperty("App::PropertyVector",
                             "TangentVector",
                             "Alignment",
@@ -241,8 +250,7 @@ class PathArray(DraftLink):
             obj.TangentVector = App.Vector(1, 0, 0)
 
         if "ForceVertical" not in properties:
-            _tip = _tr("Force use of 'Vertical Vector' as local Z direction "
-                       "when using 'Original' or 'Tangent' alignment mode")
+            _tip = QT_TRANSLATE_NOOP("App::Property","Force use of 'Vertical Vector' as local Z direction when using 'Original' or 'Tangent' alignment mode")
             obj.addProperty("App::PropertyBool",
                             "ForceVertical",
                             "Alignment",
@@ -250,8 +258,7 @@ class PathArray(DraftLink):
             obj.ForceVertical = False
 
         if "VerticalVector" not in properties:
-            _tip = _tr("Direction of the local Z axis "
-                       "when 'Force Vertical' is true")
+            _tip = QT_TRANSLATE_NOOP("App::Property","Direction of the local Z axis when 'Force Vertical' is true")
             obj.addProperty("App::PropertyVector",
                             "VerticalVector",
                             "Alignment",
@@ -259,16 +266,7 @@ class PathArray(DraftLink):
             obj.VerticalVector = App.Vector(0, 0, 1)
 
         if "AlignMode" not in properties:
-            _tip = _tr("Method to orient the copies along the path.\n"
-                       "- Original: X is curve tangent, Y is normal, "
-                       "and Z is the cross product.\n"
-                       "- Frenet: aligns the object following the local "
-                       "coordinate system along the path.\n"
-                       "- Tangent: similar to 'Original' but the local X "
-                       "axis is pre-aligned to 'Tangent Vector'.\n"
-                       "\n"
-                       "To get better results with 'Original' or 'Tangent' "
-                       "you may have to set 'Force Vertical' to true.")
+            _tip = QT_TRANSLATE_NOOP("App::Property","Method to orient the copies along the path.\n- Original: X is curve tangent, Y is normal, and Z is the cross product.\n- Frenet: aligns the object following the local coordinate system along the path.\n- Tangent: similar to 'Original' but the local X axis is pre-aligned to 'Tangent Vector'.\n\nTo get better results with 'Original' or 'Tangent' you may have to set 'Force Vertical' to true.")
             obj.addProperty("App::PropertyEnumeration",
                             "AlignMode",
                             "Alignment",
@@ -276,13 +274,26 @@ class PathArray(DraftLink):
             obj.AlignMode = ['Original', 'Frenet', 'Tangent']
             obj.AlignMode = 'Original'
 
+        if "StartOffset" not in properties:
+            _tip = QT_TRANSLATE_NOOP("App::Property","Length from the start of the path to the first copy.")
+            obj.addProperty("App::PropertyLength",
+                            "StartOffset",
+                            "Alignment",
+                            _tip)
+            obj.StartOffset = 0.0
+
+        if "EndOffset" not in properties:
+            _tip = QT_TRANSLATE_NOOP("App::Property","Length from the end of the path to the last copy.")
+            obj.addProperty("App::PropertyLength",
+                            "EndOffset",
+                            "Alignment",
+                            _tip)
+            obj.EndOffset = 0.0
+
         # The Align property must be attached after other align properties
         # so that onChanged works properly
         if "Align" not in properties:
-            _tip = _tr("Orient the copies along the path depending "
-                       "on the 'Align Mode'.\n"
-                       "Otherwise the copies will have the same orientation "
-                       "as the original Base object.")
+            _tip = QT_TRANSLATE_NOOP("App::Property","Orient the copies along the path depending on the 'Align Mode'.\nOtherwise the copies will have the same orientation as the original Base object.")
             obj.addProperty("App::PropertyBool",
                             "Align",
                             "Alignment",
@@ -291,12 +302,15 @@ class PathArray(DraftLink):
 
     def linkSetup(self, obj):
         """Set up the object as a link object."""
-        super(PathArray, self).linkSetup(obj)
+        super().linkSetup(obj)
         obj.configLinkProperty(ElementCount='Count')
 
     def execute(self, obj):
         """Execute when the object is created or recomputed."""
-        if not obj.Base or not obj.PathObject:
+        if self.props_changed_placement_only(obj) \
+                or not obj.Base \
+                or not obj.PathObject:
+            self.props_changed_clear()
             return
 
         # placement of entire PathArray object
@@ -305,7 +319,7 @@ class PathArray(DraftLink):
         w = self.get_wires(obj.PathObject, obj.PathSubelements)
         if not w:
             _err(obj.PathObject.Label
-                 + _tr(", path object doesn't have 'Edges'."))
+                 + translate("draft",", path object doesn't have 'Edges'."))
             return
 
         base_rotation = obj.Base.Shape.Placement.Rotation
@@ -325,11 +339,13 @@ class PathArray(DraftLink):
                                              obj.ExtraTranslation,
                                              obj.Align, obj.AlignMode,
                                              obj.ForceVertical,
-                                             obj.VerticalVector)
+                                             obj.VerticalVector,
+                                             obj.StartOffset.Value,
+                                             obj.EndOffset.Value)
 
-        return super(PathArray, self).buildShape(obj,
-                                                 array_placement,
-                                                 copy_placements)
+        self.buildShape(obj, array_placement, copy_placements)
+        self.props_changed_clear()
+        return (not self.use_link)
 
     def get_wires(self, path_object, subelements):
         """Get wires from the path object."""
@@ -352,84 +368,67 @@ class PathArray(DraftLink):
             for n in edgeNames:
                 e = sub[0].Shape.getElement(n)
                 sl.append(e)
-        return Part.Wire(sl)
+        return Part.Wire(Part.__sortEdges__(sl))
 
     def onChanged(self, obj, prop):
         """Execute when a property is changed."""
-        super(PathArray, self).onChanged(obj, prop)
+        super().onChanged(obj, prop)
         self.show_and_hide(obj, prop)
 
     def show_and_hide(self, obj, prop):
-        """Show and hide the properties depending on the touched property."""
-        # The minus sign removes the Hidden property (show)
-        if prop == "Align":
+        """Show and hide the properties depending on the touched property.
+
+        Note that when the array is created, some properties will change
+        more than once in a seemingly random order.
+        """
+        # The minus sign removes the Hidden property (show).
+        if prop in ("Align", "AlignMode"):
+
+            # Check if all referenced properties are available:
+            for pr in ("Align", "AlignMode", "ForceVertical",
+                       "VerticalVector", "TangentVector"):
+                if not hasattr(obj, pr):
+                    return
+
             if obj.Align:
-                for pr in ("AlignMode", "ForceVertical", "VerticalVector",
-                           "TangentVector"):
-                    obj.setPropertyStatus(pr, "-Hidden")
+                obj.setPropertyStatus("AlignMode", "-Hidden")
+
+                if obj.AlignMode == "Frenet":
+                    for pr in ("ForceVertical", "VerticalVector"):
+                        obj.setPropertyStatus(pr, "Hidden")
+                else:
+                    for pr in ("ForceVertical", "VerticalVector"):
+                        obj.setPropertyStatus(pr, "-Hidden")
+
+                if obj.AlignMode == "Tangent":
+                    obj.setPropertyStatus("TangentVector", "-Hidden")
+                else:
+                    obj.setPropertyStatus("TangentVector", "Hidden")
+
             else:
-                for pr in ("AlignMode", "ForceVertical", "VerticalVector",
-                           "TangentVector"):
+                for pr in ("AlignMode", "ForceVertical",
+                           "VerticalVector", "TangentVector"):
                     obj.setPropertyStatus(pr, "Hidden")
-
-        if prop == "AlignMode":
-            if obj.AlignMode == "Original":
-                for pr in ("ForceVertical", "VerticalVector"):
-                    obj.setPropertyStatus(pr, "-Hidden")
-
-                obj.setPropertyStatus("TangentVector", "Hidden")
-
-            elif obj.AlignMode == "Frenet":
-                for pr in ("ForceVertical", "VerticalVector",
-                           "TangentVector"):
-                    obj.setPropertyStatus(pr, "Hidden")
-
-            elif obj.AlignMode == "Tangent":
-                for pr in ("ForceVertical", "VerticalVector",
-                           "TangentVector"):
-                    obj.setPropertyStatus(pr, "-Hidden")
 
     def onDocumentRestored(self, obj):
-        """Execute code when the document is restored.
-
-        Add properties that don't exist.
-        """
-        super(PathArray, self).migrate_attributes(obj)
+        super().onDocumentRestored(obj)
+        # Fuse property was added in v1.0, obj should be OK if it is present:
+        if hasattr(obj, "Fuse"):
+            return
         self.set_properties(obj)
-        self.migrate_properties_0v19(obj)
-
-        if self.use_link:
-            self.linkSetup(obj)
-        else:
-            obj.setPropertyStatus('Shape', '-Transient')
-
-        if obj.Shape.isNull():
-            if getattr(obj, 'PlacementList', None):
-                self.buildShape(obj, obj.Placement, obj.PlacementList)
-            else:
-                self.execute(obj)
-
-    def migrate_properties_0v19(self, obj):
-        """Migrate properties of this class, not from the parent class."""
-        properties = obj.PropertiesList
-
-        if "PathObj" in properties:
+        if hasattr(obj, "PathObj"):
+            _wrn("v0.19, " + obj.Label + ", " + translate("draft", "migrated 'PathObj' property to 'PathObject'"))
             obj.PathObject = obj.PathObj
             obj.removeProperty("PathObj")
-            _info = "'PathObj' property will be migrated to 'PathObject'"
-            _wrn("v0.19, " + obj.Label + ", " + _tr(_info))
-
-        if "PathSubs" in properties:
+        if hasattr(obj, "PathSubs"):
+            _wrn("v0.19, " + obj.Label + ", " + translate("draft", "migrated 'PathSubs' property to 'PathSubelements'"))
             obj.PathSubelements = obj.PathSubs
             obj.removeProperty("PathSubs")
-            _info = "'PathSubs' property will be migrated to 'PathSubelements'"
-            _wrn("v0.19, " + obj.Label + ", " + _tr(_info))
-
-        if "Xlate" in properties:
+        if hasattr(obj, "Xlate"):
+            _wrn("v0.19, " + obj.Label + ", " + translate("draft", "migrated 'Xlate' property to 'ExtraTranslation'"))
             obj.ExtraTranslation = obj.Xlate
             obj.removeProperty("Xlate")
-            _info = "'Xlate' property will be migrated to 'ExtraTranslation'"
-            _wrn("v0.19, " + obj.Label + ", " + _tr(_info))
+        _wrn("v1.0, " + obj.Label + ", " + translate("draft", "added 'Fuse' property"))
 
 
 # Alias for compatibility with v0.18 and earlier
@@ -437,79 +436,70 @@ _PathArray = PathArray
 
 
 def placements_on_path(shapeRotation, pathwire, count, xlate, align,
-                       mode='Original', forceNormal=False,
-                       normalOverride=None):
+                       mode="Original", forceNormal=False,
+                       normalOverride=None,
+                       startOffset=0.0, endOffset=0.0):
     """Calculate the placements of a shape along a given path.
 
-    Each copy will be distributed evenly.
+    Copies will be distributed evenly.
     """
-    closedpath = DraftGeomUtils.isReallyClosed(pathwire)
-    normal = DraftGeomUtils.get_normal(pathwire)
-    # for backward compatibility with previous getNormal implementation
-    if normal == None:
-        normal = App.Vector(0, 0, 1)
+    if mode == "Frenet":
+        forceNormal = False
 
     if forceNormal and normalOverride:
         normal = normalOverride
+    else:
+        normal = DraftGeomUtils.get_normal(pathwire)
+        if normal is None:
+            normal = App.Vector(0, 0, 1)
 
     path = Part.__sortEdges__(pathwire.Edges)
-    ends = []
-    cdist = 0
 
-    for e in path:  # find cumulative edge end distance
+    # find cumulative edge end distance
+    cdist = 0
+    ends = []
+    for e in path:
         cdist += e.Length
         ends.append(cdist)
 
+    if startOffset > (cdist - 1e-6):
+        _wrn(translate("draft", "Start Offset too large for path length. Using zero instead."))
+        start = 0
+    else:
+        start = startOffset
+
+    if endOffset > (cdist - start - 1e-6):
+        _wrn(translate("draft", "End Offset too large for path length minus Start Offset. Using zero instead."))
+        end = 0
+    else:
+        end = endOffset
+
+    cdist = cdist - start - end
+    step = cdist / (count if (DraftGeomUtils.isReallyClosed(pathwire) and not (start or end)) else count - 1)
+    remains = 0
+    travel = start
     placements = []
 
-    # place the start shape
-    pt = path[0].Vertexes[0].Point
-    _place = calculate_placement(shapeRotation,
-                                 path[0], 0, pt, xlate, align, normal,
-                                 mode, forceNormal)
-    placements.append(_place)
-
-    # closed path doesn't need shape on last vertex
-    if not closedpath:
-        # place the end shape
-        pt = path[-1].Vertexes[-1].Point
-        _place = calculate_placement(shapeRotation,
-                                     path[-1], path[-1].Length,
-                                     pt, xlate, align, normal,
-                                     mode, forceNormal)
-        placements.append(_place)
-
-    if count < 3:
-        return placements
-
-    # place the middle shapes
-    if closedpath:
-        stop = count
-    else:
-        stop = count - 1
-    step = float(cdist) / stop
-    remains = 0
-    travel = step
-    for i in range(1, stop):
+    for i in range(0, count):
         # which edge in path should contain this shape?
-        # avoids problems with float math travel > ends[-1]
-        iend = len(ends) - 1
-
         for j in range(0, len(ends)):
             if travel <= ends[j]:
                 iend = j
+                remains = ends[iend] - travel
+                offset = path[iend].Length - remains
                 break
+        else:
+            # avoids problems with float math travel > ends[-1]
+            iend = len(ends) - 1
+            offset = path[iend].Length
 
         # place shape at proper spot on proper edge
-        remains = ends[iend] - travel
-        offset = path[iend].Length - remains
         pt = path[iend].valueAt(get_parameter_from_v0(path[iend], offset))
-
-        _place = calculate_placement(shapeRotation,
-                                     path[iend], offset,
-                                     pt, xlate, align, normal,
-                                     mode, forceNormal)
-        placements.append(_place)
+        place = calculate_placement(shapeRotation,
+                                    path[iend], offset,
+                                    pt, xlate, align, normal,
+                                    mode, forceNormal)
+        placements.append(place)
 
         travel += step
 
@@ -520,86 +510,80 @@ calculatePlacementsOnPath = placements_on_path
 
 
 def calculate_placement(globalRotation,
-                        edge, offset, RefPt, xlate, align, normal=None,
-                        mode='Original', overrideNormal=False):
-    """Orient shape to a local coordinate system (tangent, normal, binormal).
-
-    Orient shape at parameter offset, normally length.
+                        edge, offset, RefPt, xlate, align,
+                        normal=App.Vector(0.0, 0.0, 1.0),
+                        mode="Original", overrideNormal=False):
+    """Orient shape in the local coordinate system at parameter offset.
 
     http://en.wikipedia.org/wiki/Euler_angles (previous version)
     http://en.wikipedia.org/wiki/Quaternions
     """
-    # Start with a null Placement so the translation goes to the right place.
-    # Then apply the global orientation.
+    # Default Placement:
     placement = App.Placement()
     placement.Rotation = globalRotation
+    placement.Base = RefPt + placement.Rotation.multVec(xlate)
 
-    placement.move(RefPt + xlate)
     if not align:
         return placement
 
-    nullv = App.Vector(0, 0, 0)
-    defNormal = App.Vector(0.0, 0.0, 1.0)
-    if normal:
-        defNormal = normal
+    tol = 1e-6 # App.Rotation() tolerance is 1e-7. Shorter vectors are ignored.
+    nullv = App.Vector()
 
-    try:
-        t = edge.tangentAt(get_parameter_from_v0(edge, offset))
-        t.normalize()
-    except:
-        _wrn(_tr("Cannot calculate path tangent. Copy not aligned."))
+    t = edge.tangentAt(get_parameter_from_v0(edge, offset))
+    if t.isEqual(nullv, tol):
+        _wrn(translate("draft", "Length of tangent vector is zero. Copy not aligned."))
         return placement
 
-    if mode in ('Original', 'Tangent'):
-        if normal is None:
-            n = defNormal
-        else:
-            n = normal
-            n.normalize()
+    # If the length of the normal is zero or if it is parallel to the tangent,
+    # we make the vectors equal (n = t). The App.Rotation() algorithm will
+    # then replace the normal with a default axis.
+    # For the vector with the lowest App.Rotation() priority we use a null
+    # vector. Calculating this binormal would not make sense in the mentioned
+    # cases. And in all other cases calculating it is not necessary as
+    # App.Rotation() will ignore it.
 
-        try:
-            b = t.cross(n)
-            b.normalize()
-        except:
-            # weird special case, tangent and normal parallel
-            b = nullv
-            _wrn(_tr("Tangent and normal are parallel. Copy not aligned."))
-            return placement
+    if mode in ("Original", "Tangent"):
+        n = normal
+        if n.isEqual(nullv, tol):
+            _wrn(translate("draft", "Length of normal vector is zero. Using a default axis instead."))
+            n = t
+        else:
+            n_nor = n.normalize()
+            t_nor = t.normalize()
+            if n_nor.isEqual(t_nor, tol) or n_nor.isEqual(t_nor.negative(), tol):
+                _wrn(translate("draft", "Tangent and normal vectors are parallel. Normal replaced by a default axis."))
+                n = t
 
         if overrideNormal:
-            priority = "XZY"
-            newRot = App.Rotation(t, b, n, priority)  # t/x, b/y, n/z
+            newRot = App.Rotation(t, nullv, n, "XZY") # priority = "XZY"
         else:
-            # must follow X, try to follow Z, Y is what it is
-            priority = "XZY"
-            newRot = App.Rotation(t, n, b, priority)
+            newRot = App.Rotation(t, n, nullv, "XYZ") # priority = "XYZ"
 
-    elif mode == 'Frenet':
+    elif mode == "Frenet":
         try:
             n = edge.normalAt(get_parameter_from_v0(edge, offset))
-            n.normalize()
-        except App.Base.FreeCADError:  # no/infinite normals here
-            n = defNormal
-            _msg(_tr("Cannot calculate path normal, using default."))
+        except App.Base.FreeCADError: # no/infinite normals here
+            _wrn(translate("draft", "Cannot calculate normal vector. Using the default normal instead."))
+            n = normal
 
-        try:
-            b = t.cross(n)
-            b.normalize()
-        except:
-            b = nullv
-            _wrn(_tr("Cannot calculate path binormal. Copy not aligned."))
-            return placement
+        if n.isEqual(nullv, tol):
+            _wrn(translate("draft", "Length of normal vector is zero. Using a default axis instead."))
+            n = t
+        else:
+            n_nor = n.normalize()
+            t_nor = t.normalize()
+            if n_nor.isEqual(t_nor, tol) or n_nor.isEqual(t_nor.negative(), tol):
+                _wrn(translate("draft", "Tangent and normal vectors are parallel. Normal replaced by a default axis."))
+                n = t
 
-        priority = "XZY"
-        newRot = App.Rotation(t, n, b, priority)  # t/x, n/y, b/z
+        newRot = App.Rotation(t, n, nullv, "XYZ") # priority = "XYZ"
+
     else:
-        _msg(_tr("AlignMode {} is not implemented".format(mode)))
+        _err(translate("draft", "AlignMode {} is not implemented").format(mode))
         return placement
 
-    # Have valid tangent, normal, binormal
-    newGRot = newRot.multiply(globalRotation)
-
-    placement.Rotation = newGRot
+    placement.Rotation = newRot.multiply(globalRotation)
+    placement.Base = RefPt + placement.Rotation.multVec(xlate)
     return placement
 
 

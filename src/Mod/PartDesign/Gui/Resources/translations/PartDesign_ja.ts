@@ -1,20 +1,162 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE TS>
-<TS version="2.0" language="ja" sourcelanguage="en">
+<TS version="2.1" language="ja" sourcelanguage="en">
   <context>
-    <name>CmdPartDesignAdditiveLoft</name>
+    <name>App::Property</name>
     <message>
-      <location filename="../../Command.cpp" line="1403"/>
+      <location filename="../../../App/FeatureHelix.cpp" line="73"/>
+      <source>The center point of the helix' start; derived from the reference axis.</source>
+      <translation>参照軸から決定されるらせん開始位置の中心点</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="75"/>
+      <source>The helix' direction; derived from the reference axis.</source>
+      <translation>参照軸から決定されるらせん方向</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="77"/>
+      <source>The reference axis of the helix.</source>
+      <translation>らせんの参照軸</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="79"/>
+      <source>The helix input mode specifies which properties are set by the user.
+Dependent properties are then calculated.</source>
+      <translation>らせん入力モードでは、どのプロパティをユーザー設定とするかを指定します。
+この時、依存プロパティが計算されます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="83"/>
+      <source>The axial distance between two turns.</source>
+      <translation>2つの巻き間の軸距離</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="85"/>
+      <source>The height of the helix' path, not accounting for the extent of the profile.</source>
+      <translation>プロファイル範囲に基づかないらせんパスの高さ</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="87"/>
+      <source>The number of turns in the helix.</source>
+      <translation>らせんの巻き数</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="90"/>
+      <source>The angle of the cone that forms a hull around the helix.
+Non-zero values turn the helix into a conical spiral.
+Positive values make the radius grow, nevatige shrink.</source>
+      <translation>らせんの周りに外殻を形成する円錐の角度。
+0 以外の値を設定すると、らせんは円錐形になります。
+正の値では半径が大きくなり、負の値では半径が小さくなります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="95"/>
+      <source>The growth of the helix' radius per turn.
+Non-zero values turn the helix into a conical spiral.</source>
+      <translation>1巻きあたりのらせん半径の増加率。
+ゼロ以外の値では、らせんが円錐形らせんになります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="98"/>
+      <source>Sets the turning direction to left handed,
+i.e. counter-clockwise when moving along its axis.</source>
+      <translation>回転方向を左手系に設定。
+つまり軸に沿って移動する時に反時計回りになります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="101"/>
+      <source>Determines whether the helix points in the opposite direction of the axis.</source>
+      <translation>らせんの点を軸反対方向に配置するかどうかを指定</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="103"/>
+      <source>If set, the result will be the intersection of the profile and the preexisting body.</source>
+      <translation>設定されている場合、プロファイルと既存ボディーの交点となります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="105"/>
+      <source>If false, the tool will propose an initial value for the pitch based on the profile bounding box,
+so that self intersection is avoided.</source>
+      <translation>False の場合、ツールは自己交差を回避するようにプロファイルのバウンディングボックスに基づいてピッチの初期値を提案します。</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="98"/>
+      <source>Number of gear teeth</source>
+      <translation>歯数</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="104"/>
+      <source>Pressure angle of gear teeth</source>
+      <translation>歯の圧力角</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="101"/>
+      <source>Module of the gear</source>
+      <translation type="unfinished">Module of the gear</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="108"/>
+      <source>True=2 curves with each 3 control points, False=1 curve with 4 control points.</source>
+      <translation type="unfinished">True=2 curves with each 3 control points, False=1 curve with 4 control points.</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="111"/>
+      <source>True=external Gear, False=internal Gear</source>
+      <translation type="unfinished">True=external Gear, False=internal Gear</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="115"/>
+      <source>The height of the tooth from the pitch circle up to its tip, normalized by the module.</source>
+      <translation>モジュールによって正規化された、ピッチ円から歯先までの歯の高さ</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="119"/>
+      <source>The height of the tooth from the pitch circle down to its root, normalized by the module.</source>
+      <translation>モジュールによって正規化された、ピッチ円から歯元までの歯の高さ</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="123"/>
+      <source>The radius of the fillet at the root of the tooth, normalized by the module.</source>
+      <translation>モジュールによって正規化された、歯の根元のフィレットの半径</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="127"/>
+      <source>The distance by which the reference profile is shifted outwards, normalized by the module.</source>
+      <translation>モジュールによって正規化された、参照プロファイルを外方向にシフトする距離</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdPartDesignAdditiveHelix</name>
+    <message>
+      <location filename="../../Command.cpp" line="1535"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1404"/>
+      <location filename="../../Command.cpp" line="1536"/>
+      <source>Additive helix</source>
+      <translation>加算らせん</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="1537"/>
+      <source>Sweep a selected sketch along a helix</source>
+      <translation>選択したスケッチをらせん状にスイープ</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdPartDesignAdditiveLoft</name>
+    <message>
+      <location filename="../../Command.cpp" line="1434"/>
+      <source>PartDesign</source>
+      <translation>パートデザイン</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="1435"/>
       <source>Additive loft</source>
       <translation>加算ロフト</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1405"/>
+      <location filename="../../Command.cpp" line="1436"/>
       <source>Loft a selected profile through other profile sections</source>
       <translation>選択されたプロファイルを別のプロファイル断面を通過するようにロフト</translation>
     </message>
@@ -22,17 +164,17 @@
   <context>
     <name>CmdPartDesignAdditivePipe</name>
     <message>
-      <location filename="../../Command.cpp" line="1303"/>
+      <location filename="../../Command.cpp" line="1332"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1304"/>
+      <location filename="../../Command.cpp" line="1333"/>
       <source>Additive pipe</source>
       <translation>加算パイプ</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1305"/>
+      <location filename="../../Command.cpp" line="1334"/>
       <source>Sweep a selected sketch along a path or to other profiles</source>
       <translation>選択したスケッチを、パスや他のプロファイルに沿ってスイープ</translation>
     </message>
@@ -40,17 +182,17 @@
   <context>
     <name>CmdPartDesignBody</name>
     <message>
-      <location filename="../../CommandBody.cpp" line="91"/>
+      <location filename="../../CommandBody.cpp" line="86"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="92"/>
+      <location filename="../../CommandBody.cpp" line="87"/>
       <source>Create body</source>
       <translation>ボディーを作成</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="93"/>
+      <location filename="../../CommandBody.cpp" line="88"/>
       <source>Create a new body and make it active</source>
       <translation>新しいボディーを作成してそれをアクティブ化</translation>
     </message>
@@ -58,17 +200,17 @@
   <context>
     <name>CmdPartDesignBoolean</name>
     <message>
-      <location filename="../../Command.cpp" line="2235"/>
+      <location filename="../../Command.cpp" line="2379"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="2236"/>
+      <location filename="../../Command.cpp" line="2380"/>
       <source>Boolean operation</source>
       <translation>ブーリアン演算</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="2237"/>
+      <location filename="../../Command.cpp" line="2381"/>
       <source>Boolean operation with two or more bodies</source>
       <translation>複数のボディーを使用したブーリアン演算</translation>
     </message>
@@ -76,17 +218,17 @@
   <context>
     <name>CmdPartDesignCS</name>
     <message>
-      <location filename="../../Command.cpp" line="242"/>
+      <location filename="../../Command.cpp" line="247"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="243"/>
+      <location filename="../../Command.cpp" line="248"/>
       <source>Create a local coordinate system</source>
       <translation>ローカル座標系を作成</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="244"/>
+      <location filename="../../Command.cpp" line="249"/>
       <source>Create a new local coordinate system</source>
       <translation>新しいローカル座標系を作成</translation>
     </message>
@@ -94,17 +236,17 @@
   <context>
     <name>CmdPartDesignChamfer</name>
     <message>
-      <location filename="../../Command.cpp" line="1635"/>
+      <location filename="../../Command.cpp" line="1829"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1636"/>
+      <location filename="../../Command.cpp" line="1830"/>
       <source>Chamfer</source>
       <translation>面取り</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1637"/>
+      <location filename="../../Command.cpp" line="1831"/>
       <source>Chamfer the selected edges of a shape</source>
       <translation>形状の選択されたエッジを面取り</translation>
     </message>
@@ -112,17 +254,17 @@
   <context>
     <name>CmdPartDesignClone</name>
     <message>
-      <location filename="../../Command.cpp" line="339"/>
+      <location filename="../../Command.cpp" line="429"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="340"/>
+      <location filename="../../Command.cpp" line="430"/>
       <source>Create a clone</source>
       <translation>クローンを作成</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="341"/>
+      <location filename="../../Command.cpp" line="431"/>
       <source>Create a new clone</source>
       <translation>新しいクローンを作成</translation>
     </message>
@@ -130,17 +272,17 @@
   <context>
     <name>CmdPartDesignDraft</name>
     <message>
-      <location filename="../../Command.cpp" line="1664"/>
+      <location filename="../../Command.cpp" line="1858"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1665"/>
+      <location filename="../../Command.cpp" line="1859"/>
       <source>Draft</source>
       <translation>抜き勾配</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1666"/>
+      <location filename="../../Command.cpp" line="1860"/>
       <source>Make a draft on a face</source>
       <translation>面上に抜き勾配を作成</translation>
     </message>
@@ -148,17 +290,17 @@
   <context>
     <name>CmdPartDesignDuplicateSelection</name>
     <message>
-      <location filename="../../CommandBody.cpp" line="632"/>
+      <location filename="../../CommandBody.cpp" line="610"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="633"/>
+      <location filename="../../CommandBody.cpp" line="611"/>
       <source>Duplicate selected object</source>
       <translation>選択したオブジェクトを複製</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="634"/>
+      <location filename="../../CommandBody.cpp" line="612"/>
       <source>Duplicates the selected object and adds it to the active body</source>
       <translation>選択したオブジェクトを複製し、アクティブなボディーに追加</translation>
     </message>
@@ -166,17 +308,17 @@
   <context>
     <name>CmdPartDesignFillet</name>
     <message>
-      <location filename="../../Command.cpp" line="1607"/>
+      <location filename="../../Command.cpp" line="1801"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1608"/>
+      <location filename="../../Command.cpp" line="1802"/>
       <source>Fillet</source>
       <translation>フィレット</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1609"/>
+      <location filename="../../Command.cpp" line="1803"/>
       <source>Make a fillet on an edge, face or body</source>
       <translation>面や立体のエッジにフィレットを作成</translation>
     </message>
@@ -184,35 +326,35 @@
   <context>
     <name>CmdPartDesignGroove</name>
     <message>
-      <location filename="../../Command.cpp" line="1235"/>
+      <location filename="../../Command.cpp" line="1265"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1236"/>
+      <location filename="../../Command.cpp" line="1266"/>
       <source>Groove</source>
       <translation>グルーブ</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1237"/>
+      <location filename="../../Command.cpp" line="1267"/>
       <source>Groove a selected sketch</source>
-      <translation>選択されたスケッチに溝を作成</translation>
+      <translation>選択したスケッチに溝を作成</translation>
     </message>
   </context>
   <context>
     <name>CmdPartDesignHole</name>
     <message>
-      <location filename="../../Command.cpp" line="1129"/>
+      <location filename="../../Command.cpp" line="1159"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1130"/>
+      <location filename="../../Command.cpp" line="1160"/>
       <source>Hole</source>
       <translation>ホール</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1131"/>
+      <location filename="../../Command.cpp" line="1161"/>
       <source>Create a hole with the selected sketch</source>
       <translation>選択されたスケッチでホールを作成</translation>
     </message>
@@ -220,17 +362,17 @@
   <context>
     <name>CmdPartDesignLine</name>
     <message>
-      <location filename="../../Command.cpp" line="186"/>
+      <location filename="../../Command.cpp" line="191"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="187"/>
+      <location filename="../../Command.cpp" line="192"/>
       <source>Create a datum line</source>
       <translation>データム線を作成</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="188"/>
+      <location filename="../../Command.cpp" line="193"/>
       <source>Create a new datum line</source>
       <translation>新しいデータム線を作成</translation>
     </message>
@@ -238,17 +380,17 @@
   <context>
     <name>CmdPartDesignLinearPattern</name>
     <message>
-      <location filename="../../Command.cpp" line="1941"/>
+      <location filename="../../Command.cpp" line="2098"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1942"/>
+      <location filename="../../Command.cpp" line="2099"/>
       <source>LinearPattern</source>
       <translation>直線状パターン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1943"/>
+      <location filename="../../Command.cpp" line="2100"/>
       <source>Create a linear pattern feature</source>
       <translation>直線状のパターン形状を作成</translation>
     </message>
@@ -256,17 +398,17 @@
   <context>
     <name>CmdPartDesignMigrate</name>
     <message>
-      <location filename="../../CommandBody.cpp" line="338"/>
+      <location filename="../../CommandBody.cpp" line="316"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="339"/>
+      <location filename="../../CommandBody.cpp" line="317"/>
       <source>Migrate</source>
       <translation>移行</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="340"/>
+      <location filename="../../CommandBody.cpp" line="318"/>
       <source>Migrate document to the modern PartDesign workflow</source>
       <translation>新しいパートデザイン・ワークフローへドキュメントを移行</translation>
     </message>
@@ -274,17 +416,17 @@
   <context>
     <name>CmdPartDesignMirrored</name>
     <message>
-      <location filename="../../Command.cpp" line="1877"/>
+      <location filename="../../Command.cpp" line="2043"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1878"/>
+      <location filename="../../Command.cpp" line="2044"/>
       <source>Mirrored</source>
       <translation>鏡像</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1879"/>
+      <location filename="../../Command.cpp" line="2045"/>
       <source>Create a mirrored feature</source>
       <translation>鏡像を作成</translation>
     </message>
@@ -292,17 +434,17 @@
   <context>
     <name>CmdPartDesignMoveFeature</name>
     <message>
-      <location filename="../../CommandBody.cpp" line="688"/>
+      <location filename="../../CommandBody.cpp" line="666"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="689"/>
+      <location filename="../../CommandBody.cpp" line="667"/>
       <source>Move object to other body</source>
       <translation>オブジェクトを他のボディーへ移動</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="690"/>
+      <location filename="../../CommandBody.cpp" line="668"/>
       <source>Moves the selected object to another body</source>
       <translation>選択したオブジェクトを他のボディーへ移動</translation>
     </message>
@@ -310,17 +452,17 @@
   <context>
     <name>CmdPartDesignMoveFeatureInTree</name>
     <message>
-      <location filename="../../CommandBody.cpp" line="851"/>
+      <location filename="../../CommandBody.cpp" line="833"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="852"/>
+      <location filename="../../CommandBody.cpp" line="834"/>
       <source>Move object after other object</source>
       <translation>オブジェクトを他のオブジェクトの後へ移動</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="853"/>
+      <location filename="../../CommandBody.cpp" line="835"/>
       <source>Moves the selected object and insert it after another object</source>
       <translation>選択したオブジェクトを移動し、他のオブジェクトの後ろへ挿入</translation>
     </message>
@@ -328,17 +470,17 @@
   <context>
     <name>CmdPartDesignMoveTip</name>
     <message>
-      <location filename="../../CommandBody.cpp" line="552"/>
+      <location filename="../../CommandBody.cpp" line="531"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="553"/>
+      <location filename="../../CommandBody.cpp" line="532"/>
       <source>Set tip</source>
       <translation>チップ設定</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="554"/>
+      <location filename="../../CommandBody.cpp" line="533"/>
       <source>Move the tip of the body</source>
       <translation>ボディーのチップを移動</translation>
     </message>
@@ -346,17 +488,17 @@
   <context>
     <name>CmdPartDesignMultiTransform</name>
     <message>
-      <location filename="../../Command.cpp" line="2114"/>
+      <location filename="../../Command.cpp" line="2259"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="2115"/>
+      <location filename="../../Command.cpp" line="2260"/>
       <source>Create MultiTransform</source>
       <translation>マルチ変換を作成</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="2116"/>
+      <location filename="../../Command.cpp" line="2261"/>
       <source>Create a multitransform feature</source>
       <translation>マルチ変換による形状を作成</translation>
     </message>
@@ -364,17 +506,17 @@
   <context>
     <name>CmdPartDesignNewSketch</name>
     <message>
-      <location filename="../../Command.cpp" line="400"/>
+      <location filename="../../Command.cpp" line="503"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="401"/>
+      <location filename="../../Command.cpp" line="504"/>
       <source>Create sketch</source>
       <translation>スケッチを作成</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="402"/>
+      <location filename="../../Command.cpp" line="505"/>
       <source>Create a new sketch</source>
       <translation>新規スケッチを作成</translation>
     </message>
@@ -382,17 +524,17 @@
   <context>
     <name>CmdPartDesignPad</name>
     <message>
-      <location filename="../../Command.cpp" line="1031"/>
+      <location filename="../../Command.cpp" line="1095"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1032"/>
+      <location filename="../../Command.cpp" line="1096"/>
       <source>Pad</source>
       <translation>パッド</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1033"/>
+      <location filename="../../Command.cpp" line="1097"/>
       <source>Pad a selected sketch</source>
       <translation>選択されたスケッチを押し出し</translation>
     </message>
@@ -400,17 +542,17 @@
   <context>
     <name>CmdPartDesignPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="158"/>
+      <location filename="../../Command.cpp" line="163"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="159"/>
+      <location filename="../../Command.cpp" line="164"/>
       <source>Create a datum plane</source>
       <translation>データム平面を作成</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="160"/>
+      <location filename="../../Command.cpp" line="165"/>
       <source>Create a new datum plane</source>
       <translation>新しいデータム平面を作成</translation>
     </message>
@@ -418,17 +560,17 @@
   <context>
     <name>CmdPartDesignPocket</name>
     <message>
-      <location filename="../../Command.cpp" line="1082"/>
+      <location filename="../../Command.cpp" line="1127"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1083"/>
+      <location filename="../../Command.cpp" line="1128"/>
       <source>Pocket</source>
       <translation>ポケット</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1084"/>
+      <location filename="../../Command.cpp" line="1129"/>
       <source>Create a pocket with the selected sketch</source>
       <translation>選択されたスケッチでポケットを作成</translation>
     </message>
@@ -436,17 +578,17 @@
   <context>
     <name>CmdPartDesignPoint</name>
     <message>
-      <location filename="../../Command.cpp" line="214"/>
+      <location filename="../../Command.cpp" line="219"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="215"/>
+      <location filename="../../Command.cpp" line="220"/>
       <source>Create a datum point</source>
       <translation>データム点を作成</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="216"/>
+      <location filename="../../Command.cpp" line="221"/>
       <source>Create a new datum point</source>
       <translation>新しいデータム点を作成</translation>
     </message>
@@ -454,17 +596,17 @@
   <context>
     <name>CmdPartDesignPolarPattern</name>
     <message>
-      <location filename="../../Command.cpp" line="2007"/>
+      <location filename="../../Command.cpp" line="2155"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="2008"/>
+      <location filename="../../Command.cpp" line="2156"/>
       <source>PolarPattern</source>
       <translation>円状パターン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="2009"/>
+      <location filename="../../Command.cpp" line="2157"/>
       <source>Create a polar pattern feature</source>
       <translation>円状のパターン形状を作成</translation>
     </message>
@@ -472,17 +614,17 @@
   <context>
     <name>CmdPartDesignRevolution</name>
     <message>
-      <location filename="../../Command.cpp" line="1175"/>
+      <location filename="../../Command.cpp" line="1206"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1176"/>
+      <location filename="../../Command.cpp" line="1207"/>
       <source>Revolution</source>
       <translation>レボリューション</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1177"/>
+      <location filename="../../Command.cpp" line="1208"/>
       <source>Revolve a selected sketch</source>
       <translation>選択されたスケッチを回転押し出し</translation>
     </message>
@@ -490,17 +632,17 @@
   <context>
     <name>CmdPartDesignScaled</name>
     <message>
-      <location filename="../../Command.cpp" line="2074"/>
+      <location filename="../../Command.cpp" line="2214"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="2075"/>
+      <location filename="../../Command.cpp" line="2215"/>
       <source>Scaled</source>
       <translation>拡大縮小</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="2076"/>
+      <location filename="../../Command.cpp" line="2216"/>
       <source>Create a scaled feature</source>
       <translation>拡大縮小された形状を作成</translation>
     </message>
@@ -508,35 +650,67 @@
   <context>
     <name>CmdPartDesignShapeBinder</name>
     <message>
-      <location filename="../../Command.cpp" line="274"/>
+      <location filename="../../Command.cpp" line="279"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="275"/>
+      <location filename="../../Command.cpp" line="280"/>
       <source>Create a shape binder</source>
       <translation>シェイプバインダーを作成</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="276"/>
+      <location filename="../../Command.cpp" line="281"/>
       <source>Create a new shape binder</source>
       <translation>新しいシェイプバインダーを作成</translation>
     </message>
   </context>
   <context>
-    <name>CmdPartDesignSubtractiveLoft</name>
+    <name>CmdPartDesignSubShapeBinder</name>
     <message>
-      <location filename="../../Command.cpp" line="1453"/>
+      <location filename="../../Command.cpp" line="345"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1454"/>
+      <location filename="../../Command.cpp" line="346"/>
+      <location filename="../../Command.cpp" line="347"/>
+      <source>Create a sub-object(s) shape binder</source>
+      <translation>サブオブジェクト形状のバインダーを作成</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdPartDesignSubtractiveHelix</name>
+    <message>
+      <location filename="../../Command.cpp" line="1612"/>
+      <source>PartDesign</source>
+      <translation>パートデザイン</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="1613"/>
+      <source>Subtractive helix</source>
+      <translation>減算らせん</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="1614"/>
+      <source>Sweep a selected sketch along a helix and remove it from the body</source>
+      <translation>らせん状に沿って選択したスケッチをスイープしてボディーから削除します</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdPartDesignSubtractiveLoft</name>
+    <message>
+      <location filename="../../Command.cpp" line="1485"/>
+      <source>PartDesign</source>
+      <translation>パートデザイン</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="1486"/>
       <source>Subtractive loft</source>
       <translation>減算ロフト</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1455"/>
+      <location filename="../../Command.cpp" line="1487"/>
       <source>Loft a selected profile through other profile sections and remove it from the body</source>
       <translation>選択されたプロファイルを別のプロファイル断面を通過するようにロフトし、さらにボディーから除去</translation>
     </message>
@@ -544,17 +718,17 @@
   <context>
     <name>CmdPartDesignSubtractivePipe</name>
     <message>
-      <location filename="../../Command.cpp" line="1353"/>
+      <location filename="../../Command.cpp" line="1383"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1354"/>
+      <location filename="../../Command.cpp" line="1384"/>
       <source>Subtractive pipe</source>
       <translation>減算パイプ</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1355"/>
+      <location filename="../../Command.cpp" line="1385"/>
       <source>Sweep a selected sketch along a path or to other profiles and remove it from the body</source>
       <translation>パスまたは他のプロファイルに沿って選択したスケッチをスイープした後、ボディーから削除</translation>
     </message>
@@ -562,17 +736,17 @@
   <context>
     <name>CmdPartDesignThickness</name>
     <message>
-      <location filename="../../Command.cpp" line="1721"/>
+      <location filename="../../Command.cpp" line="1926"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1722"/>
+      <location filename="../../Command.cpp" line="1927"/>
       <source>Thickness</source>
       <translation>厚み</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1723"/>
+      <location filename="../../Command.cpp" line="1928"/>
       <source>Make a thick solid</source>
       <translation>厚みのあるソリッドの作成</translation>
     </message>
@@ -591,42 +765,42 @@
       <translation>加算プリミティブを作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="191"/>
+      <location filename="../../CommandPrimitive.cpp" line="199"/>
       <source>Additive Box</source>
       <translation>加算直方体</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="195"/>
+      <location filename="../../CommandPrimitive.cpp" line="203"/>
       <source>Additive Cylinder</source>
       <translation>加算円柱</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="199"/>
+      <location filename="../../CommandPrimitive.cpp" line="207"/>
       <source>Additive Sphere</source>
       <translation>加算球</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="203"/>
+      <location filename="../../CommandPrimitive.cpp" line="211"/>
       <source>Additive Cone</source>
       <translation>加算円錐</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="207"/>
+      <location filename="../../CommandPrimitive.cpp" line="215"/>
       <source>Additive Ellipsoid</source>
       <translation>加算楕円体</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="211"/>
+      <location filename="../../CommandPrimitive.cpp" line="219"/>
       <source>Additive Torus</source>
       <translation>加算トーラス</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="215"/>
+      <location filename="../../CommandPrimitive.cpp" line="223"/>
       <source>Additive Prism</source>
       <translation>加算角柱</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="219"/>
+      <location filename="../../CommandPrimitive.cpp" line="227"/>
       <source>Additive Wedge</source>
       <translation>加算ウェッジ</translation>
     </message>
@@ -634,91 +808,191 @@
   <context>
     <name>CmdPrimtiveCompSubtractive</name>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="235"/>
+      <location filename="../../CommandPrimitive.cpp" line="243"/>
       <source>PartDesign</source>
       <translation>パートデザイン</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="236"/>
-      <location filename="../../CommandPrimitive.cpp" line="237"/>
+      <location filename="../../CommandPrimitive.cpp" line="244"/>
+      <location filename="../../CommandPrimitive.cpp" line="245"/>
       <source>Create a subtractive primitive</source>
       <translation>減算プリミティブを作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="356"/>
+      <location filename="../../CommandPrimitive.cpp" line="355"/>
       <source>Subtractive Box</source>
       <translation>減算直方体</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="360"/>
+      <location filename="../../CommandPrimitive.cpp" line="359"/>
       <source>Subtractive Cylinder</source>
       <translation>減算円柱</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="364"/>
+      <location filename="../../CommandPrimitive.cpp" line="363"/>
       <source>Subtractive Sphere</source>
       <translation>減算球</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="368"/>
+      <location filename="../../CommandPrimitive.cpp" line="367"/>
       <source>Subtractive Cone</source>
       <translation>減算円錐</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="372"/>
+      <location filename="../../CommandPrimitive.cpp" line="371"/>
       <source>Subtractive Ellipsoid</source>
       <translation>減算楕円体</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="376"/>
+      <location filename="../../CommandPrimitive.cpp" line="375"/>
       <source>Subtractive Torus</source>
       <translation>減算トーラス</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="380"/>
+      <location filename="../../CommandPrimitive.cpp" line="379"/>
       <source>Subtractive Prism</source>
       <translation>減算角柱</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="384"/>
+      <location filename="../../CommandPrimitive.cpp" line="383"/>
       <source>Subtractive Wedge</source>
       <translation>減算ウェッジ</translation>
     </message>
   </context>
   <context>
+    <name>Command</name>
+    <message>
+      <location filename="../../Command.cpp" line="300"/>
+      <source>Edit ShapeBinder</source>
+      <translation>シェイプバインダーを編集</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="309"/>
+      <source>Create ShapeBinder</source>
+      <translation>シェイプバインダーを作成</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="392"/>
+      <source>Create SubShapeBinder</source>
+      <translation>サブシェイプバインダーを作成</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="447"/>
+      <source>Create Clone</source>
+      <translation>クローンを作成</translation>
+    </message>
+    <message>
+      <location filename="../../SketchWorkflow.cpp" line="297"/>
+      <location filename="../../Command.cpp" line="995"/>
+      <source>Make copy</source>
+      <translation>コピーの作成</translation>
+    </message>
+    <message>
+      <location filename="../../SketchWorkflow.cpp" line="247"/>
+      <source>Create a Sketch on Face</source>
+      <translation>面上にスケッチを作成</translation>
+    </message>
+    <message>
+      <location filename="../../SketchWorkflow.cpp" line="487"/>
+      <source>Create a new Sketch</source>
+      <translation>新規スケッチを作成</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="2309"/>
+      <source>Convert to MultiTransform feature</source>
+      <translation>マルチトランスフォームフィーチャに変換</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="2397"/>
+      <source>Create Boolean</source>
+      <translation>Bool変数の作成</translation>
+    </message>
+    <message>
+      <location filename="../../DlgActiveBody.cpp" line="102"/>
+      <location filename="../../CommandBody.cpp" line="190"/>
+      <source>Add a Body</source>
+      <translation>ボディーを追加</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="434"/>
+      <source>Migrate legacy Part Design features to Bodies</source>
+      <translation type="unfinished">Migrate legacy Part Design features to Bodies</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="579"/>
+      <source>Move tip to selected feature</source>
+      <translation>選択したフィーチャーにチップを移動</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="624"/>
+      <source>Duplicate a PartDesign object</source>
+      <translation>PartDesign オブジェクトを複製</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="747"/>
+      <source>Move an object</source>
+      <translation>オブジェクトを移動</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="898"/>
+      <source>Move an object inside tree</source>
+      <translation>ツリー内のオブジェクトを移動</translation>
+    </message>
+    <message>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="267"/>
+      <source>Mirrored</source>
+      <translation>鏡像</translation>
+    </message>
+    <message>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="304"/>
+      <source>Make LinearPattern</source>
+      <translation>直線状パターンを作成</translation>
+    </message>
+    <message>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="348"/>
+      <source>PolarPattern</source>
+      <translation>円状パターン</translation>
+    </message>
+    <message>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="385"/>
+      <source>Scaled</source>
+      <translation>拡大縮小</translation>
+    </message>
+  </context>
+  <context>
     <name>FeaturePickDialog</name>
     <message>
-      <location filename="../../FeaturePickDialog.cpp" line="45"/>
+      <location filename="../../FeaturePickDialog.cpp" line="42"/>
       <source>Valid</source>
       <translation>有効</translation>
     </message>
     <message>
-      <location filename="../../FeaturePickDialog.cpp" line="46"/>
+      <location filename="../../FeaturePickDialog.cpp" line="43"/>
       <source>Invalid shape</source>
       <translation>無効な形状です。</translation>
     </message>
     <message>
-      <location filename="../../FeaturePickDialog.cpp" line="47"/>
+      <location filename="../../FeaturePickDialog.cpp" line="44"/>
       <source>No wire in sketch</source>
       <translation>スケッチ上にワイヤーがありません。</translation>
     </message>
     <message>
-      <location filename="../../FeaturePickDialog.cpp" line="48"/>
+      <location filename="../../FeaturePickDialog.cpp" line="45"/>
       <source>Sketch already used by other feature</source>
       <translation>スケッチはすでに他の形状に使用されています。</translation>
     </message>
     <message>
-      <location filename="../../FeaturePickDialog.cpp" line="49"/>
+      <location filename="../../FeaturePickDialog.cpp" line="46"/>
       <source>Sketch belongs to another Body feature</source>
       <translation>スケッチは他のボディーフィーチャーに属しています</translation>
     </message>
     <message>
-      <location filename="../../FeaturePickDialog.cpp" line="50"/>
+      <location filename="../../FeaturePickDialog.cpp" line="47"/>
       <source>Base plane</source>
       <translation>ベース平面</translation>
     </message>
     <message>
-      <location filename="../../FeaturePickDialog.cpp" line="51"/>
+      <location filename="../../FeaturePickDialog.cpp" line="48"/>
       <source>Feature is located after the Tip feature</source>
       <translation>フィーチャーはチップフィーチャーの後に位置しています。</translation>
     </message>
@@ -726,17 +1000,32 @@
   <context>
     <name>Gui::TaskView::TaskWatcherCommands</name>
     <message>
-      <location filename="../../Workbench.cpp" line="52"/>
+      <location filename="../../Workbench.cpp" line="54"/>
       <source>Face tools</source>
       <translation>表面ツール</translation>
     </message>
     <message>
-      <location filename="../../Workbench.cpp" line="53"/>
-      <source>Sketch tools</source>
-      <translation>スケッチツール</translation>
+      <location filename="../../Workbench.cpp" line="55"/>
+      <source>Edge tools</source>
+      <translation>エッジツール</translation>
     </message>
     <message>
-      <location filename="../../Workbench.cpp" line="54"/>
+      <location filename="../../Workbench.cpp" line="56"/>
+      <source>Boolean tools</source>
+      <translation>ブーリアン操作ツール</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="57"/>
+      <source>Helper tools</source>
+      <translation>補助ツール</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="58"/>
+      <source>Modeling tools</source>
+      <translation>モデリングツール</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="59"/>
       <source>Create Geometry</source>
       <translation>ジオメトリーを作成</translation>
     </message>
@@ -755,7 +1044,7 @@
     </message>
     <message>
       <location filename="../../../InvoluteGearFeature.ui" line="40"/>
-      <source>Modules:</source>
+      <source>Module:</source>
       <translation>モジュール:</translation>
     </message>
     <message>
@@ -785,50 +1074,52 @@
       <source>External gear:</source>
       <translation>外歯車:</translation>
     </message>
-  </context>
-  <context>
-    <name>PartDesign::Groove</name>
     <message>
-      <location filename="../../../App/FeatureGroove.cpp" line="106"/>
-      <source>The requested feature cannot be created. The reason may be that:
-
-  â¢ the active Body does not contain a base shape, so there is no
-  material to be removed;
-  â¢ the selected sketch does not belong to the active Body.</source>
-      <translation>要求されたフィーチャーを作成できません。原因は以下である可能性があります。
-
-・ アクティブなボディーにベースシェイプが無くて、それらは削除されているのでマテリアルが存在しないのでしょう。
-・ 選択されたスケッチがアクティブなボディーに属していない。</translation>
+      <location filename="../../../InvoluteGearFeature.ui" line="179"/>
+      <source>Addendum Coefficient</source>
+      <translation>歯先のたけ係数</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.ui" line="199"/>
+      <source>Dedendum Coefficient</source>
+      <translation>歯元のたけ係数</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.ui" line="219"/>
+      <source>Root Fillet Coefficient</source>
+      <translation>ルートフィレット係数</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.ui" line="239"/>
+      <source>Profile Shift Coefficient</source>
+      <translation>プロファイルシフト係数</translation>
     </message>
   </context>
   <context>
-    <name>PartDesign::Hole</name>
+    <name>PartDesignGui::DlgActiveBody</name>
     <message>
-      <location filename="../../../App/FeatureHole.cpp" line="956"/>
-      <source>The requested feature cannot be created. The reason may be that:
-
-  â¢ the active Body does not contain a base shape, so there is no
-  material to be removed;
-  â¢ the selected sketch does not belong to the active Body.</source>
-      <translation>要求されたフィーチャーを作成できません。原因は以下である可能性があります。
-
-・ アクティブなボディーにベースシェイプが無くて、それらは削除されているのでマテリアルが存在しないのでしょう。
-・ 選択されたスケッチがアクティブなボディーに属していない。</translation>
+      <location filename="../../DlgActiveBody.ui" line="14"/>
+      <source>Active Body Required</source>
+      <translation>アクティブなボディーが必要です。</translation>
     </message>
-  </context>
-  <context>
-    <name>PartDesign::Pocket</name>
     <message>
-      <location filename="../../../App/FeaturePocket.cpp" line="121"/>
-      <source>The requested feature cannot be created. The reason may be that:
+      <location filename="../../DlgActiveBody.ui" line="20"/>
+      <source>To create a new PartDesign object, there must be an active Body object in the document.
 
-  â¢ the active Body does not contain a base shape, so there is no
-  material to be removed;
-  â¢ the selected sketch does not belong to the active Body.</source>
-      <translation>要求されたフィーチャーを作成できません。原因は以下である可能性があります。
+Please select a body from below, or create a new body.</source>
+      <translation>新しいPartDesignオブジェクトを作成するには、ドキュメント内にアクティブなボディーオブジェクトが存在する必要があります。
 
-・ アクティブなボディーにベースシェイプが無くて、それらは削除されているのでマテリアルが存在しないのでしょう。
-・ 選択されたスケッチがアクティブなボディーに属していない。</translation>
+以下からボディーを選択するか、新しいボディーを作成してください。</translation>
+    </message>
+    <message>
+      <location filename="../../DlgActiveBody.ui" line="36"/>
+      <source>Create new body</source>
+      <translation>新しいボディーを作成</translation>
+    </message>
+    <message>
+      <location filename="../../DlgActiveBody.cpp" line="55"/>
+      <source>Please select</source>
+      <translation>選択して下さい</translation>
     </message>
   </context>
   <context>
@@ -839,207 +1130,262 @@
       <translation>幾何プリミティブ</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="54"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="161"/>
-      <source>Width:</source>
-      <translation>幅：</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="61"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="154"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="62"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="153"/>
       <source>Length:</source>
       <translation>長さ:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="147"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="258"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="378"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="913"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1152"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="82"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="173"/>
+      <source>Width:</source>
+      <translation>幅：</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="193"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="287"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="505"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1254"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1580"/>
       <source>Height:</source>
       <translation>高さ:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="198"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="305"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1159"/>
-      <source>Angle:</source>
-      <translation>角度:</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="251"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="525"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1138"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1260"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1325"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="267"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="625"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1600"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1749"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1805"/>
       <source>Radius:</source>
       <translation>半径:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="385"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="585"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="839"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="307"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1274"/>
+      <source>Angle in first direction:</source>
+      <translation>最初の方向の角度:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="314"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1281"/>
+      <source>Angle in first direction</source>
+      <translation>最初の方向の角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="333"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1300"/>
+      <source>Angle in second direction:</source>
+      <translation>2番目の方向の角度:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="340"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1307"/>
+      <source>Angle in second direction</source>
+      <translation>2番目の方向の角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="391"/>
+      <source>Rotation angle:</source>
+      <translation>回転角度:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="465"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="797"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1016"/>
       <source>Radius 1:</source>
       <translation>半径 1:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="392"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="592"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="832"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="485"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="820"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1039"/>
       <source>Radius 2:</source>
       <translation>半径 2:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="455"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="646"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="551"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1620"/>
+      <source>Angle:</source>
+      <translation>角度:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="674"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="896"/>
       <source>U parameter:</source>
       <translation>Uパラメーター:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="462"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="694"/>
       <source>V parameters:</source>
       <translation>Vパラメーター:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="599"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="804"/>
+      <source>Radius in local z-direction</source>
+      <translation>ローカルZ方向の半径</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="827"/>
+      <source>Radius in local x-direction</source>
+      <translation>ローカルX方向の半径</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="843"/>
       <source>Radius 3:</source>
       <translation>半径 3:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="669"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="759"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="850"/>
+      <source>Radius in local y-direction
+If zero, it is equal to Radius2</source>
+      <translation>ローカルY方向の半径
+ゼロの場合はRadius2と等しい。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="916"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1111"/>
       <source>V parameter:</source>
       <translation>Vパラメーター:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="736"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1023"/>
+      <source>Radius in local xy-plane</source>
+      <translation>ローカルxy平面における半径</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1046"/>
+      <source>Radius in local xz-plane</source>
+      <translation>ローカルxz平面における半径</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1091"/>
       <source>U Parameter:</source>
       <translation>Uパラメーター:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="886"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1768"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1214"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2290"/>
       <source>Polygon:</source>
       <translation>角数:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="906"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1788"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1234"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2313"/>
       <source>Circumradius:</source>
       <translation>外接円の半径:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="957"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1353"/>
       <source>X min/max:</source>
       <translation>X の最小値/最大値:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="964"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1383"/>
       <source>Y min/max:</source>
       <translation>Y の最小値/最大値:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="971"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1413"/>
       <source>Z min/max:</source>
       <translation>Z の最小値/最大値:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="978"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1443"/>
       <source>X2 min/max:</source>
       <translation>X2 の最小値/最大値:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="985"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1476"/>
       <source>Z2 min/max:</source>
       <translation>Z2 の最小値/最大値:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1145"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1560"/>
       <source>Pitch:</source>
       <translation>ピッチ:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1166"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1637"/>
       <source>Coordinate system:</source>
       <translation>座標系:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1174"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1645"/>
       <source>Right-handed</source>
       <translation>右手系</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1179"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1650"/>
       <source>Left-handed</source>
       <translation>左手系</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1267"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1709"/>
       <source>Growth:</source>
       <translation>渦の線間：</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1274"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1729"/>
       <source>Number of rotations:</source>
       <translation>渦の回数：</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1332"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1435"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1825"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1947"/>
       <source>Angle 1:</source>
       <translation>角度1:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1339"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1442"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1842"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1964"/>
       <source>Angle 2:</source>
       <translation>角度2:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1393"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1879"/>
       <source>From three points</source>
       <translation>3点から</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1421"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1907"/>
       <source>Major radius:</source>
       <translation>主半径</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1428"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="1927"/>
       <source>Minor radius:</source>
       <translation>副半径</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1510"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1591"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1645"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2005"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2093"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2170"/>
       <source>X:</source>
       <translation>X:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1520"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1601"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1655"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2025"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2113"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2193"/>
       <source>Y:</source>
       <translation>Y:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1530"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1611"/>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1665"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2045"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2133"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2216"/>
       <source>Z:</source>
       <translation>Z:</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1628"/>
-      <source>End point</source>
-      <translation>終点</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPrimitiveParameters.ui" line="1638"/>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2086"/>
       <source>Start point</source>
       <translation>始点</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.ui" line="2160"/>
+      <source>End point</source>
+      <translation>終点</translation>
     </message>
   </context>
   <context>
@@ -1051,8 +1397,8 @@
     </message>
     <message>
       <location filename="../../DlgReference.ui" line="20"/>
-      <source>You selected geometries which are not part of the active body. Please define how to handle those selections. If you do not want those references cancel the command.</source>
-      <translation>アクティブなボディーの一部でないジオメトリーが選択されています。これらの選択の処理方法を定義してください。これらを参照したくない場合はコマンドをキャンセルしてください。</translation>
+      <source>You selected geometries which are not part of the active body. Please define how to handle those selections. If you do not want those references, cancel the command.</source>
+      <translation>アクティブなボディの一部ではないジオメトリを選択しました。 これらの選択をどのように処理するかを定義してください。これらの参照を必要としない場合は、コマンドをキャンセルします。</translation>
     </message>
     <message>
       <location filename="../../DlgReference.ui" line="42"/>
@@ -1073,18 +1419,13 @@
   <context>
     <name>PartDesignGui::NoDependentsSelection</name>
     <message>
-      <location filename="../../ReferenceSelection.cpp" line="183"/>
+      <location filename="../../ReferenceSelection.cpp" line="270"/>
       <source>Selecting this will cause circular dependency.</source>
       <translation>これを選択すると依存関係の循環が発生します。</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskBooleanParameters</name>
-    <message>
-      <location filename="../../TaskBooleanParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
     <message>
       <location filename="../../TaskBooleanParameters.ui" line="22"/>
       <source>Add body</source>
@@ -1111,7 +1452,7 @@
       <translation>共通部分</translation>
     </message>
     <message>
-      <location filename="../../TaskBooleanParameters.cpp" line="55"/>
+      <location filename="../../TaskBooleanParameters.cpp" line="52"/>
       <source>Boolean parameters</source>
       <translation>ブーリアンパラメーター</translation>
     </message>
@@ -1124,12 +1465,34 @@
   <context>
     <name>PartDesignGui::TaskBoxPrimitives</name>
     <message>
-      <location filename="../../TaskPrimitiveParameters.cpp" line="54"/>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="49"/>
       <source>Primitive parameters</source>
       <translation>プリミティブパラメーター</translation>
     </message>
     <message>
-      <location filename="../../TaskPrimitiveParameters.cpp" line="646"/>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="830"/>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="835"/>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="840"/>
+      <source>Invalid wedge parameters</source>
+      <translation>無効なウェッジパラメーターです。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="831"/>
+      <source>X min must not be equal to X max!</source>
+      <translation>X minはX maxより小さい必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="836"/>
+      <source>Y min must not be equal to Y max!</source>
+      <translation>Y minはY maxより小さい必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="841"/>
+      <source>Z min must not be equal to Z max!</source>
+      <translation>Z minはZ maxは小さい必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="879"/>
       <source>Create primitive</source>
       <translation>プリミティブを作成</translation>
     </message>
@@ -1137,53 +1500,91 @@
   <context>
     <name>PartDesignGui::TaskChamferParameters</name>
     <message>
-      <location filename="../../TaskChamferParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
+      <location filename="../../TaskChamferParameters.ui" line="20"/>
+      <source>Click button to enter selection mode,
+click again to end selection</source>
+      <translation>ボタンをクリックして選択モードに入ります。
+もう一度クリックして選択モードを終了します。</translation>
     </message>
     <message>
-      <location filename="../../TaskChamferParameters.ui" line="22"/>
-      <source>Add ref</source>
-      <translation>参照を追加</translation>
+      <location filename="../../TaskChamferParameters.ui" line="24"/>
+      <source>Select</source>
+      <translation>選択</translation>
     </message>
     <message>
-      <location filename="../../TaskChamferParameters.ui" line="32"/>
-      <source>Remove ref</source>
-      <translation>参照を削除</translation>
+      <location filename="../../TaskChamferParameters.ui" line="34"/>
+      <source>- select an item to highlight it
+- double-click on an item to see the chamfers</source>
+      <translation>- 強調表示する項目を選択します
+- 項目をダブルクリックして面取りを表示します</translation>
     </message>
     <message>
-      <location filename="../../TaskChamferParameters.ui" line="50"/>
-      <source>Size:</source>
-      <translation>サイズ:</translation>
+      <location filename="../../TaskChamferParameters.ui" line="49"/>
+      <source>Type</source>
+      <translation>タイプ</translation>
     </message>
     <message>
-      <location filename="../../TaskChamferParameters.cpp" line="87"/>
-      <source>Remove</source>
-      <translation>削除</translation>
+      <location filename="../../TaskChamferParameters.ui" line="57"/>
+      <source>Equal distance</source>
+      <translation>等距離</translation>
     </message>
-  </context>
-  <context>
-    <name>PartDesignGui::TaskDatumParameters</name>
     <message>
-      <location filename="../../TaskDatumParameters.cpp" line="73"/>
-      <source> parameters</source>
-      <translation> パラメーター</translation>
+      <location filename="../../TaskChamferParameters.ui" line="62"/>
+      <source>Two distances</source>
+      <translation>2つの距離</translation>
+    </message>
+    <message>
+      <location filename="../../TaskChamferParameters.ui" line="67"/>
+      <source>Distance and angle</source>
+      <translation>距離と角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskChamferParameters.ui" line="80"/>
+      <source>Flip direction</source>
+      <translation>方向転換</translation>
+    </message>
+    <message>
+      <location filename="../../TaskChamferParameters.ui" line="101"/>
+      <source>Size</source>
+      <translation>サイズ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskChamferParameters.ui" line="120"/>
+      <source>Use All Edges</source>
+      <translation>すべてのエッジを使用</translation>
+    </message>
+    <message>
+      <location filename="../../TaskChamferParameters.ui" line="147"/>
+      <source>Size 2</source>
+      <translation>サイズ2</translation>
+    </message>
+    <message>
+      <location filename="../../TaskChamferParameters.ui" line="180"/>
+      <source>Angle</source>
+      <translation>角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskChamferParameters.cpp" line="323"/>
+      <source>Empty chamfer created !
+</source>
+      <translation>空の面取りが作成されました!
+</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskDlgBooleanParameters</name>
     <message>
-      <location filename="../../TaskBooleanParameters.cpp" line="327"/>
+      <location filename="../../TaskBooleanParameters.cpp" line="347"/>
       <source>Empty body list</source>
       <translation>ボディーのリストを空にする</translation>
     </message>
     <message>
-      <location filename="../../TaskBooleanParameters.cpp" line="328"/>
+      <location filename="../../TaskBooleanParameters.cpp" line="348"/>
       <source>The body list cannot be empty</source>
       <translation>このボディーのリストは空にできません</translation>
     </message>
     <message>
-      <location filename="../../TaskBooleanParameters.cpp" line="339"/>
+      <location filename="../../TaskBooleanParameters.cpp" line="360"/>
       <source>Boolean: Accept: Input error</source>
       <translation>ブーリアン: 許可: 入力エラー</translation>
     </message>
@@ -1191,12 +1592,12 @@
   <context>
     <name>PartDesignGui::TaskDlgDatumParameters</name>
     <message>
-      <location filename="../../TaskDatumParameters.cpp" line="121"/>
+      <location filename="../../TaskDatumParameters.cpp" line="101"/>
       <source>Incompatible reference set</source>
       <translation>互換性のない参照セットです。</translation>
     </message>
     <message>
-      <location filename="../../TaskDatumParameters.cpp" line="122"/>
+      <location filename="../../TaskDatumParameters.cpp" line="102"/>
       <source>There is no attachment mode that fits the current set of references. If you choose to continue, the feature will remain where it is now, and will not be moved as the references change. Continue?</source>
       <translation>現在の参照セットに合うアタッチメントモードがありません。続行を選択した場合、フィーチャーは今のまま残り、参照変更による移動は行われません。続行しますか？</translation>
     </message>
@@ -1204,15 +1605,7 @@
   <context>
     <name>PartDesignGui::TaskDlgFeatureParameters</name>
     <message>
-      <location filename="../../TaskFeatureParameters.cpp" line="140"/>
-      <source>Input error</source>
-      <translation>入力エラー</translation>
-    </message>
-  </context>
-  <context>
-    <name>PartDesignGui::TaskDlgPipeParameters</name>
-    <message>
-      <location filename="../../TaskPipeParameters.cpp" line="886"/>
+      <location filename="../../TaskFeatureParameters.cpp" line="130"/>
       <source>Input error</source>
       <translation>入力エラー</translation>
     </message>
@@ -1220,7 +1613,7 @@
   <context>
     <name>PartDesignGui::TaskDlgShapeBinder</name>
     <message>
-      <location filename="../../TaskShapeBinder.cpp" line="331"/>
+      <location filename="../../TaskShapeBinder.cpp" line="408"/>
       <source>Input error</source>
       <translation>入力エラー</translation>
     </message>
@@ -1228,53 +1621,147 @@
   <context>
     <name>PartDesignGui::TaskDraftParameters</name>
     <message>
-      <location filename="../../TaskDraftParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
+      <location filename="../../TaskDraftParameters.ui" line="20"/>
+      <source>Click button to enter selection mode,
+click again to end selection</source>
+      <translation>ボタンをクリックして選択モードに入ります。
+もう一度クリックして選択モードを終了します。</translation>
     </message>
     <message>
-      <location filename="../../TaskDraftParameters.ui" line="22"/>
-      <source>Add face</source>
-      <translation>面を追加</translation>
+      <location filename="../../TaskDraftParameters.ui" line="24"/>
+      <source>Select</source>
+      <translation>選択</translation>
     </message>
     <message>
-      <location filename="../../TaskDraftParameters.ui" line="32"/>
-      <source>Remove face</source>
-      <translation>面を削除</translation>
+      <location filename="../../TaskDraftParameters.ui" line="34"/>
+      <source>- select an item to highlight it
+- double-click on an item to see the drafts</source>
+      <translation>- 強調表示する項目を選択します
+- 項目をダブルクリックして下書きを表示します</translation>
     </message>
     <message>
-      <location filename="../../TaskDraftParameters.ui" line="49"/>
+      <location filename="../../TaskDraftParameters.ui" line="47"/>
       <source>Draft angle</source>
-      <translation>勾配の角度</translation>
+      <translation>抜き勾配の角度</translation>
     </message>
     <message>
-      <location filename="../../TaskDraftParameters.ui" line="79"/>
+      <location filename="../../TaskDraftParameters.ui" line="80"/>
       <source>Neutral plane</source>
       <translation>中立面</translation>
     </message>
     <message>
-      <location filename="../../TaskDraftParameters.ui" line="96"/>
+      <location filename="../../TaskDraftParameters.ui" line="97"/>
       <source>Pull direction</source>
       <translation>引き抜き方向</translation>
     </message>
     <message>
-      <location filename="../../TaskDraftParameters.ui" line="111"/>
+      <location filename="../../TaskDraftParameters.ui" line="112"/>
       <source>Reverse pull direction</source>
       <translation>引き抜き方向を反転</translation>
     </message>
     <message>
-      <location filename="../../TaskDraftParameters.cpp" line="100"/>
+      <location filename="../../TaskDraftParameters.cpp" line="281"/>
+      <source>Empty draft created !
+</source>
+      <translation>空の抜き勾配が作成されました!
+</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::TaskDressUpParameters</name>
+    <message>
+      <location filename="../../TaskDressUpParameters.cpp" line="84"/>
+      <source>Preview</source>
+      <translation>プレビュー</translation>
+    </message>
+    <message>
+      <location filename="../../TaskDressUpParameters.cpp" line="90"/>
+      <source>Select</source>
+      <translation>選択</translation>
+    </message>
+    <message>
+      <location filename="../../TaskDressUpParameters.cpp" line="301"/>
+      <source>Add all edges</source>
+      <translation>すべてのエッジを追加</translation>
+    </message>
+    <message>
+      <location filename="../../TaskDressUpParameters.cpp" line="308"/>
+      <source>Adds all edges to the list box (active only when in add selection mode).</source>
+      <translation>リストボックスにすべてのエッジを追加 (追加選択モードでのみ有効)</translation>
+    </message>
+    <message>
+      <location filename="../../TaskDressUpParameters.cpp" line="316"/>
       <source>Remove</source>
       <translation>削除</translation>
     </message>
   </context>
   <context>
-    <name>PartDesignGui::TaskFeaturePick</name>
+    <name>PartDesignGui::TaskExtrudeParameters</name>
     <message>
-      <location filename="../../TaskFeaturePick.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
+      <location filename="../../TaskExtrudeParameters.cpp" line="1159"/>
+      <source>No face selected</source>
+      <translation>面が選択されていません</translation>
     </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="156"/>
+      <location filename="../../TaskExtrudeParameters.cpp" line="997"/>
+      <source>Face</source>
+      <translation>面</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="172"/>
+      <source>Remove</source>
+      <translation>削除</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="258"/>
+      <source>Preview</source>
+      <translation>プレビュー</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="261"/>
+      <source>Select faces</source>
+      <translation>面を選択</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="481"/>
+      <source>No shape selected</source>
+      <translation>図形が選択されていません</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="583"/>
+      <source>Sketch normal</source>
+      <translation>スケッチ法線</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="585"/>
+      <source>Face normal</source>
+      <translation>面の法線</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="588"/>
+      <source>Select reference...</source>
+      <translation>参照を選択...</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="592"/>
+      <location filename="../../TaskExtrudeParameters.cpp" line="594"/>
+      <source>Custom direction</source>
+      <translation>カスタム方向</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="950"/>
+      <source>Click on a shape in the model</source>
+      <translation>モデルのシェイプをクリック</translation>
+    </message>
+    <message>
+      <location filename="../../TaskExtrudeParameters.cpp" line="1154"/>
+      <source>Click on a face in the model</source>
+      <translation>モデルの面をクリック</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::TaskFeaturePick</name>
     <message>
       <location filename="../../TaskFeaturePick.ui" line="23"/>
       <source>Allow used features</source>
@@ -1311,118 +1798,297 @@
       <translation>相互参照を作成</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="65"/>
+      <location filename="../../TaskFeaturePick.cpp" line="61"/>
       <source>Valid</source>
       <translation>有効</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="66"/>
+      <location filename="../../TaskFeaturePick.cpp" line="62"/>
       <source>Invalid shape</source>
       <translation>無効な形状です。</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="67"/>
+      <location filename="../../TaskFeaturePick.cpp" line="63"/>
       <source>No wire in sketch</source>
       <translation>スケッチ上にワイヤーがありません。</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="68"/>
+      <location filename="../../TaskFeaturePick.cpp" line="64"/>
       <source>Sketch already used by other feature</source>
       <translation>スケッチはすでに他の形状に使用されています。</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="69"/>
+      <location filename="../../TaskFeaturePick.cpp" line="65"/>
       <source>Belongs to another body</source>
       <translation>他のボディーに属しています。</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="70"/>
+      <location filename="../../TaskFeaturePick.cpp" line="66"/>
       <source>Belongs to another part</source>
       <translation>他のパーツに属しています。</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="71"/>
+      <location filename="../../TaskFeaturePick.cpp" line="67"/>
       <source>Doesn't belong to any body</source>
       <translation>どのボディーにも属していません。</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="72"/>
+      <location filename="../../TaskFeaturePick.cpp" line="68"/>
       <source>Base plane</source>
       <translation>ベース平面</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="73"/>
+      <location filename="../../TaskFeaturePick.cpp" line="69"/>
       <source>Feature is located after the tip feature</source>
       <translation>フィーチャーはチップフィーチャーの後に位置しています。</translation>
     </message>
     <message>
-      <location filename="../../TaskFeaturePick.cpp" line="83"/>
-      <source>Select feature</source>
-      <translation>フィーチャーを選択</translation>
+      <location filename="../../TaskFeaturePick.cpp" line="80"/>
+      <source>Select attachment</source>
+      <translation>アタッチメントを選択</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskFilletParameters</name>
     <message>
-      <location filename="../../TaskFilletParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
+      <location filename="../../TaskFilletParameters.ui" line="20"/>
+      <source>Click button to enter selection mode,
+click again to end selection</source>
+      <translation>ボタンをクリックして選択モードに入ります。
+もう一度クリックして選択モードを終了します。</translation>
     </message>
     <message>
-      <location filename="../../TaskFilletParameters.ui" line="22"/>
-      <source>Add ref</source>
-      <translation>参照を追加</translation>
+      <location filename="../../TaskFilletParameters.ui" line="24"/>
+      <source>Select</source>
+      <translation>選択</translation>
     </message>
     <message>
-      <location filename="../../TaskFilletParameters.ui" line="32"/>
-      <source>Remove ref</source>
-      <translation>参照を削除</translation>
+      <location filename="../../TaskFilletParameters.ui" line="34"/>
+      <source>- select an item to highlight it
+- double-click on an item to see the fillets</source>
+      <translation>- 強調表示する項目を選択します
+- 項目をダブルクリックしてフィレットを表示します</translation>
     </message>
     <message>
-      <location filename="../../TaskFilletParameters.ui" line="49"/>
+      <location filename="../../TaskFilletParameters.ui" line="47"/>
       <source>Radius:</source>
       <translation>半径:</translation>
     </message>
     <message>
-      <location filename="../../TaskFilletParameters.cpp" line="87"/>
-      <source>Remove</source>
-      <translation>削除</translation>
+      <location filename="../../TaskFilletParameters.ui" line="63"/>
+      <source>Use All Edges</source>
+      <translation>すべてのエッジを使用</translation>
+    </message>
+    <message>
+      <location filename="../../TaskFilletParameters.cpp" line="190"/>
+      <source>Empty fillet created!</source>
+      <translation>空のフィレットが作成されました!</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::TaskHelixParameters</name>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="22"/>
+      <source>Status:</source>
+      <translation>ステータス:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="29"/>
+      <source>Valid</source>
+      <translation>有効</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="40"/>
+      <source>Axis:</source>
+      <translation>軸:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="48"/>
+      <location filename="../../TaskHelixParameters.cpp" line="232"/>
+      <source>Base X axis</source>
+      <translation>ベースX軸</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="53"/>
+      <location filename="../../TaskHelixParameters.cpp" line="233"/>
+      <source>Base Y axis</source>
+      <translation>ベースY軸</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="58"/>
+      <location filename="../../TaskHelixParameters.cpp" line="234"/>
+      <source>Base Z axis</source>
+      <translation>ベースZ軸</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="63"/>
+      <location filename="../../TaskHelixParameters.cpp" line="215"/>
+      <source>Horizontal sketch axis</source>
+      <translation>水平スケッチ軸</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="68"/>
+      <location filename="../../TaskHelixParameters.cpp" line="214"/>
+      <source>Vertical sketch axis</source>
+      <translation>垂直スケッチ軸</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="73"/>
+      <location filename="../../TaskHelixParameters.cpp" line="213"/>
+      <source>Normal sketch axis</source>
+      <translation>通常のスケッチ軸</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="78"/>
+      <location filename="../../TaskHelixParameters.cpp" line="197"/>
+      <source>Select reference...</source>
+      <translation>参照を選択...</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="90"/>
+      <source>Mode:</source>
+      <translation>モード:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="98"/>
+      <source>Pitch-Height-Angle</source>
+      <translation>ピッチ-高さ-角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="103"/>
+      <source>Pitch-Turns-Angle</source>
+      <translation>ピッチ-ターン-角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="108"/>
+      <source>Height-Turns-Angle</source>
+      <translation>高さ-ターン-角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="113"/>
+      <source>Height-Turns-Growth</source>
+      <translation>高さ-ターン-伸び</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="125"/>
+      <source>Pitch:</source>
+      <translation>ピッチ:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="152"/>
+      <source>Height:</source>
+      <translation>高さ:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="179"/>
+      <source>Turns:</source>
+      <translation>ターン数：</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="203"/>
+      <source>Cone angle:</source>
+      <translation>コーンの角度:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="233"/>
+      <source>Radial growth:</source>
+      <translation>半径方向の増加率:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="255"/>
+      <source>Left handed</source>
+      <translation>左利き</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="265"/>
+      <source>Reversed</source>
+      <translation>逆方向</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="272"/>
+      <source>Remove outside of profile</source>
+      <translation>プロファイルの外側を削除</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.ui" line="289"/>
+      <source>Update view</source>
+      <translation>ビューを更新</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.cpp" line="51"/>
+      <source>Helix parameters</source>
+      <translation>らせんパラメーター</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.cpp" line="217"/>
+      <source>Construction line %1</source>
+      <translation>補助線 %1</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.cpp" line="281"/>
+      <source>Warning: helix might be self intersecting</source>
+      <translation>警告: らせんが自己交差している可能性があります。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.cpp" line="286"/>
+      <source>Error: helix touches itself</source>
+      <translation>エラー: らせんが自身に接触しています。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHelixParameters.cpp" line="334"/>
+      <source>Error: unsupported mode</source>
+      <translation>エラー: サポートされていないモードです。</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskHoleParameters</name>
     <message>
+      <location filename="../../TaskHoleParameters.cpp" line="47"/>
+      <source>Counterbore</source>
+      <translation>カウンターボア</translation>
+    </message>
+    <message>
       <location filename="../../TaskHoleParameters.cpp" line="48"/>
+      <source>Countersink</source>
+      <translation>皿穴</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.cpp" line="49"/>
+      <source>Counterdrill</source>
+      <translation>座ぐり</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.cpp" line="53"/>
       <source>Hole parameters</source>
       <translation>ホールパラメーター</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.cpp" line="69"/>
+      <location filename="../../TaskHoleParameters.cpp" line="63"/>
       <source>None</source>
       <translation>なし</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.cpp" line="70"/>
-      <source>ISO metric coarse profile</source>
-      <translation>ISOメートル粗面プロファイル</translation>
+      <location filename="../../TaskHoleParameters.cpp" line="64"/>
+      <source>ISO metric regular profile</source>
+      <translation>ISOメートル規則プロファイル</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.cpp" line="71"/>
+      <location filename="../../TaskHoleParameters.cpp" line="65"/>
       <source>ISO metric fine profile</source>
       <translation>ISOメートル微細プロファイル</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.cpp" line="72"/>
+      <location filename="../../TaskHoleParameters.cpp" line="66"/>
       <source>UTS coarse profile</source>
       <translation>UTS粗面プロファイル</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.cpp" line="73"/>
+      <location filename="../../TaskHoleParameters.cpp" line="67"/>
       <source>UTS fine profile</source>
       <translation>UTS微細プロファイル</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.cpp" line="74"/>
+      <location filename="../../TaskHoleParameters.cpp" line="68"/>
       <source>UTS extra fine profile</source>
       <translation>UTS追加微細プロファイル</translation>
     </message>
@@ -1430,68 +2096,49 @@
   <context>
     <name>PartDesignGui::TaskLinearPatternParameters</name>
     <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
-    <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="22"/>
-      <source>Add feature</source>
-      <translation>フィーチャーを追加</translation>
-    </message>
-    <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="32"/>
-      <source>Remove feature</source>
-      <translation>フィーチャーを削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="49"/>
+      <location filename="../../TaskLinearPatternParameters.ui" line="34"/>
       <source>Direction</source>
       <translation>方向</translation>
     </message>
     <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="61"/>
+      <location filename="../../TaskLinearPatternParameters.ui" line="46"/>
       <source>Reverse direction</source>
       <translation>逆方向</translation>
     </message>
     <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="70"/>
+      <location filename="../../TaskLinearPatternParameters.ui" line="55"/>
+      <source>Mode</source>
+      <translation>モード</translation>
+    </message>
+    <message>
+      <location filename="../../TaskLinearPatternParameters.ui" line="63"/>
+      <source>Overall Length</source>
+      <translation>全体長さ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskLinearPatternParameters.ui" line="68"/>
+      <location filename="../../TaskLinearPatternParameters.ui" line="131"/>
+      <source>Offset</source>
+      <translation>オフセット</translation>
+    </message>
+    <message>
+      <location filename="../../TaskLinearPatternParameters.ui" line="93"/>
       <source>Length</source>
       <translation>長さ</translation>
     </message>
     <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="91"/>
+      <location filename="../../TaskLinearPatternParameters.ui" line="156"/>
       <source>Occurrences</source>
       <translation>回数</translation>
     </message>
     <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="105"/>
-      <source>OK</source>
-      <translation>OK</translation>
-    </message>
-    <message>
-      <location filename="../../TaskLinearPatternParameters.ui" line="114"/>
-      <source>Update view</source>
-      <translation>ビューを更新</translation>
-    </message>
-    <message>
-      <location filename="../../TaskLinearPatternParameters.cpp" line="114"/>
-      <source>Remove</source>
-      <translation>削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskLinearPatternParameters.cpp" line="328"/>
+      <location filename="../../TaskLinearPatternParameters.cpp" line="330"/>
       <source>Error</source>
       <translation>エラー</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskLoftParameters</name>
-    <message>
-      <location filename="../../TaskLoftParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
     <message>
       <location filename="../../TaskLoftParameters.ui" line="20"/>
       <source>Ruled surface</source>
@@ -1523,17 +2170,22 @@
       <translation>セクションを削除</translation>
     </message>
     <message>
-      <location filename="../../TaskLoftParameters.ui" line="113"/>
+      <location filename="../../TaskLoftParameters.ui" line="103"/>
+      <source>List can be reordered by dragging</source>
+      <translation>リストをドラッグして並べ替えることができます</translation>
+    </message>
+    <message>
+      <location filename="../../TaskLoftParameters.ui" line="120"/>
       <source>Update view</source>
       <translation>ビューを更新</translation>
     </message>
     <message>
-      <location filename="../../TaskLoftParameters.cpp" line="59"/>
+      <location filename="../../TaskLoftParameters.cpp" line="50"/>
       <source>Loft parameters</source>
       <translation>ロフトパラメーター</translation>
     </message>
     <message>
-      <location filename="../../TaskLoftParameters.cpp" line="80"/>
+      <location filename="../../TaskLoftParameters.cpp" line="72"/>
       <source>Remove</source>
       <translation>削除</translation>
     </message>
@@ -1541,42 +2193,12 @@
   <context>
     <name>PartDesignGui::TaskMirroredParameters</name>
     <message>
-      <location filename="../../TaskMirroredParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMirroredParameters.ui" line="22"/>
-      <source>Add feature</source>
-      <translation>フィーチャーを追加</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMirroredParameters.ui" line="32"/>
-      <source>Remove feature</source>
-      <translation>フィーチャーを削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMirroredParameters.ui" line="49"/>
+      <location filename="../../TaskMirroredParameters.ui" line="34"/>
       <source>Plane</source>
       <translation>平面</translation>
     </message>
     <message>
-      <location filename="../../TaskMirroredParameters.ui" line="63"/>
-      <source>OK</source>
-      <translation>OK</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMirroredParameters.ui" line="72"/>
-      <source>Update view</source>
-      <translation>ビューを更新</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMirroredParameters.cpp" line="111"/>
-      <source>Remove</source>
-      <translation>削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMirroredParameters.cpp" line="245"/>
+      <location filename="../../TaskMirroredParameters.cpp" line="180"/>
       <source>Error</source>
       <translation>エラー</translation>
     </message>
@@ -1584,67 +2206,47 @@
   <context>
     <name>PartDesignGui::TaskMultiTransformParameters</name>
     <message>
-      <location filename="../../TaskMultiTransformParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMultiTransformParameters.ui" line="22"/>
-      <source>Add feature</source>
-      <translation>フィーチャーを追加</translation>
-    </message>
-    <message>
       <location filename="../../TaskMultiTransformParameters.ui" line="32"/>
-      <source>Remove feature</source>
-      <translation>フィーチャーを削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMultiTransformParameters.ui" line="47"/>
       <source>Transformations</source>
       <translation>配置変換</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.ui" line="64"/>
-      <source>Update view</source>
-      <translation>ビューを更新</translation>
+      <location filename="../../TaskMultiTransformParameters.ui" line="52"/>
+      <source>OK</source>
+      <translation>OK</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="76"/>
-      <source>Remove</source>
-      <translation>削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="82"/>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="71"/>
       <source>Edit</source>
       <translation>編集</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="86"/>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="77"/>
       <source>Delete</source>
       <translation>削除</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="90"/>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="83"/>
       <source>Add mirrored transformation</source>
       <translation>鏡像変換を追加</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="94"/>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="89"/>
       <source>Add linear pattern</source>
       <translation>直線状パターンを追加</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="98"/>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="95"/>
       <source>Add polar pattern</source>
       <translation>円状パターンを追加</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="102"/>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="101"/>
       <source>Add scaled transformation</source>
       <translation>拡大縮小変換を追加</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="106"/>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="107"/>
       <source>Move up</source>
       <translation>上へ移動</translation>
     </message>
@@ -1654,7 +2256,7 @@
       <translation>下へ移動</translation>
     </message>
     <message>
-      <location filename="../../TaskMultiTransformParameters.cpp" line="137"/>
+      <location filename="../../TaskMultiTransformParameters.cpp" line="144"/>
       <source>Right-click to add</source>
       <translation>右クリックして追加</translation>
     </message>
@@ -1662,102 +2264,230 @@
   <context>
     <name>PartDesignGui::TaskPadParameters</name>
     <message>
-      <location filename="../../TaskPadParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="22"/>
-      <source>Type</source>
-      <translation>タイプ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="30"/>
-      <location filename="../../TaskPadParameters.cpp" line="124"/>
-      <location filename="../../TaskPadParameters.cpp" line="412"/>
-      <source>Dimension</source>
-      <translation>寸法</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="42"/>
-      <source>Length</source>
-      <translation>長さ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="60"/>
-      <source>Offset</source>
-      <translation>オフセット</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="75"/>
-      <source>Symmetric to plane</source>
-      <translation>面に対して対称</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="82"/>
-      <source>Reversed</source>
-      <translation>逆方向</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="91"/>
-      <source>2nd length</source>
-      <translation>2番目の長さ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="109"/>
-      <location filename="../../TaskPadParameters.cpp" line="112"/>
-      <location filename="../../TaskPadParameters.cpp" line="435"/>
-      <source>Face</source>
-      <translation>面</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.ui" line="128"/>
-      <source>Update view</source>
-      <translation>ビューを更新</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPadParameters.cpp" line="56"/>
+      <location filename="../../TaskPadParameters.cpp" line="40"/>
       <source>Pad parameters</source>
       <translation>パッドパラメーター</translation>
     </message>
     <message>
-      <location filename="../../TaskPadParameters.cpp" line="63"/>
-      <location filename="../../TaskPadParameters.cpp" line="420"/>
-      <source>No face selected</source>
-      <translation>面が選択されていません</translation>
+      <location filename="../../TaskPadParameters.cpp" line="42"/>
+      <source>Offset from face at which pad will end</source>
+      <translation>パッドを終了する面からのオフセット</translation>
     </message>
     <message>
-      <location filename="../../TaskPadParameters.cpp" line="125"/>
-      <location filename="../../TaskPadParameters.cpp" line="413"/>
+      <location filename="../../TaskPadParameters.cpp" line="43"/>
+      <source>Reverses pad direction</source>
+      <translation>パッドの方向を反転</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadParameters.cpp" line="70"/>
+      <source>Dimension</source>
+      <translation>寸法</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadParameters.cpp" line="71"/>
       <source>To last</source>
       <translation>最後まで</translation>
     </message>
     <message>
-      <location filename="../../TaskPadParameters.cpp" line="126"/>
-      <location filename="../../TaskPadParameters.cpp" line="414"/>
+      <location filename="../../TaskPadParameters.cpp" line="72"/>
       <source>To first</source>
       <translation>最初まで</translation>
     </message>
     <message>
-      <location filename="../../TaskPadParameters.cpp" line="127"/>
-      <location filename="../../TaskPadParameters.cpp" line="415"/>
+      <location filename="../../TaskPadParameters.cpp" line="73"/>
       <source>Up to face</source>
       <translation>面まで</translation>
     </message>
     <message>
-      <location filename="../../TaskPadParameters.cpp" line="128"/>
-      <location filename="../../TaskPadParameters.cpp" line="416"/>
+      <location filename="../../TaskPadParameters.cpp" line="74"/>
       <source>Two dimensions</source>
       <translation>2方向の寸法</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadParameters.cpp" line="75"/>
+      <source>Up to shape</source>
+      <translation>シェイプまで</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::TaskPadPocketParameters</name>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="22"/>
+      <source>Type</source>
+      <translation>タイプ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="30"/>
+      <source>Dimension</source>
+      <translation>寸法</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="38"/>
+      <source>Length</source>
+      <translation>長さ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="75"/>
+      <source>Offset to face</source>
+      <translation>面にオフセット</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="130"/>
+      <source>Select shape</source>
+      <translation>シェイプを選択</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="148"/>
+      <source>Select all faces</source>
+      <translation>すべての面を選択</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="170"/>
+      <source>Click button to enter selection mode,
+         click again to end selection</source>
+      <translation>ボタンをクリックして選択モードに入ります。
+もう一度クリックして選択モードを終了します。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="174"/>
+      <source>Select</source>
+      <translation>選択</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="244"/>
+      <source>Direction</source>
+      <translation>方向</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="252"/>
+      <source>Direction/edge:</source>
+      <translation>方向/エッジ:</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="259"/>
+      <source>Set a direction or select an edge
+from the model as reference</source>
+      <translation>方向を設定するか、参照としてモデルからエッジを選択</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="264"/>
+      <source>Sketch normal</source>
+      <translation>スケッチ法線</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="269"/>
+      <source>Select reference...</source>
+      <translation>参照を選択...</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="274"/>
+      <source>Custom direction</source>
+      <translation>カスタム方向</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="284"/>
+      <source>Show direction</source>
+      <translation>方向を表示</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="294"/>
+      <source>Use custom vector for pad direction, otherwise
+the sketch plane's normal vector will be used</source>
+      <translation>パッド方向にカスタムベクトルを使用します。そうでなければ
+スケッチ平面の法線ベクトルが使用されます。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="307"/>
+      <source>x</source>
+      <translation>x</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="314"/>
+      <source>x-component of direction vector</source>
+      <translation>方向ベクトルの x 成分</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="336"/>
+      <source>y</source>
+      <translation>y</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="343"/>
+      <source>y-component of direction vector</source>
+      <translation>方向ベクトルの Y 成分</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="365"/>
+      <source>z</source>
+      <translation>z</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="372"/>
+      <source>z-component of direction vector</source>
+      <translation>方向ベクトルのz成分</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="403"/>
+      <source>If unchecked, the length will be
+measured along the specified direction</source>
+      <translation>チェックされていない場合、長さは指定された方向に沿って
+測定されます</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="407"/>
+      <source>Length along sketch normal</source>
+      <translation>スケッチ法線に沿った長さ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="145"/>
+      <location filename="../../TaskPadPocketParameters.ui" line="227"/>
+      <source>Applies length symmetrically to sketch plane</source>
+      <translation>スケッチ平面に長さを対称に適用します。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="230"/>
+      <source>Symmetric to plane</source>
+      <translation>面に対して対称</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="237"/>
+      <source>Reversed</source>
+      <translation>逆方向</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="419"/>
+      <location filename="../../TaskPadPocketParameters.ui" line="443"/>
+      <source>Angle to taper the extrusion</source>
+      <translation>押し出しテーパー角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="422"/>
+      <source>Taper angle</source>
+      <translation>テーパー角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="58"/>
+      <source>2nd length</source>
+      <translation>2番目の長さ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="446"/>
+      <source>2nd taper angle</source>
+      <translation>2番目のテーパー角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="212"/>
+      <source>Select face</source>
+      <translation>面を選択</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPadPocketParameters.ui" line="472"/>
+      <source>Update view</source>
+      <translation>ビューを更新</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskPipeOrientation</name>
-    <message>
-      <location filename="../../TaskPipeOrientation.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
     <message>
       <location filename="../../TaskPipeOrientation.ui" line="22"/>
       <source>Orientation mode</source>
@@ -1804,48 +2534,48 @@
       <translation>オブジェクト</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeOrientation.ui" line="117"/>
+      <location filename="../../TaskPipeOrientation.ui" line="125"/>
       <source>Add Edge</source>
       <translation>エッジを追加</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeOrientation.ui" line="136"/>
+      <location filename="../../TaskPipeOrientation.ui" line="144"/>
       <source>Remove Edge</source>
       <translation>エッジを削除</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeOrientation.ui" line="158"/>
+      <location filename="../../TaskPipeOrientation.ui" line="166"/>
       <source>Set the constant binormal vector used to calculate the profiles orientation</source>
       <translation>プロファイルの方向を計算するのに使用される定従法線ベクトルを設定</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeOrientation.ui" line="182"/>
+      <location filename="../../TaskPipeOrientation.ui" line="190"/>
       <source>X</source>
       <translation>X</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeOrientation.ui" line="189"/>
+      <location filename="../../TaskPipeOrientation.ui" line="197"/>
       <source>Y</source>
       <translation>Y</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeOrientation.ui" line="196"/>
+      <location filename="../../TaskPipeOrientation.ui" line="204"/>
       <source>Z</source>
       <translation>Z</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeParameters.cpp" line="365"/>
+      <location filename="../../TaskPipeParameters.cpp" line="534"/>
       <source>Section orientation</source>
       <translation>選択方向</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPipeParameters.cpp" line="560"/>
+      <source>Remove</source>
+      <translation>削除</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskPipeParameters</name>
-    <message>
-      <location filename="../../TaskPipeParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
     <message>
       <location filename="../../TaskPipeParameters.ui" line="20"/>
       <source>Profile</source>
@@ -1893,18 +2623,29 @@
       <translation>エッジを削除</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeParameters.cpp" line="74"/>
+      <location filename="../../TaskPipeParameters.cpp" line="68"/>
       <source>Pipe parameters</source>
       <translation>パイプパラメーター</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPipeParameters.cpp" line="84"/>
+      <source>Remove</source>
+      <translation>削除</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPipeParameters.cpp" line="422"/>
+      <location filename="../../TaskPipeParameters.cpp" line="520"/>
+      <source>Input error</source>
+      <translation>入力エラー</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPipeParameters.cpp" line="422"/>
+      <source>No active body</source>
+      <translation>アクティブなボディーがありません。</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskPipeScaling</name>
-    <message>
-      <location filename="../../TaskPipeScaling.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
     <message>
       <location filename="../../TaskPipeScaling.ui" line="22"/>
       <source>Transform mode</source>
@@ -1931,283 +2672,260 @@
       <translation>セクションを削除</translation>
     </message>
     <message>
-      <location filename="../../TaskPipeParameters.cpp" line="617"/>
+      <location filename="../../TaskPipeScaling.ui" line="102"/>
+      <source>List can be reordered by dragging</source>
+      <translation>リストをドラッグして並べ替えることができます</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPipeParameters.cpp" line="802"/>
       <source>Section transformation</source>
       <translation>断面変換</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPipeParameters.cpp" line="818"/>
+      <source>Remove</source>
+      <translation>削除</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskPocketParameters</name>
     <message>
-      <location filename="../../TaskPocketParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="22"/>
-      <source>Type</source>
-      <translation>タイプ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="30"/>
-      <location filename="../../TaskPocketParameters.cpp" line="119"/>
-      <location filename="../../TaskPocketParameters.cpp" line="439"/>
-      <source>Dimension</source>
-      <translation>寸法</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="42"/>
-      <source>Length</source>
-      <translation>長さ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="60"/>
-      <source>Offset</source>
-      <translation>オフセット</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="75"/>
-      <source>Symmetric to plane</source>
-      <translation>面に対して対称</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="82"/>
-      <source>Reversed</source>
-      <translation>逆方向</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="91"/>
-      <source>2nd length</source>
-      <translation>2番目の長さ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="109"/>
-      <location filename="../../TaskPocketParameters.cpp" line="107"/>
-      <location filename="../../TaskPocketParameters.cpp" line="462"/>
-      <source>Face</source>
-      <translation>面</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.ui" line="128"/>
-      <source>Update view</source>
-      <translation>ビューを更新</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPocketParameters.cpp" line="56"/>
+      <location filename="../../TaskPocketParameters.cpp" line="40"/>
       <source>Pocket parameters</source>
       <translation>ポケットパラメーター</translation>
     </message>
     <message>
-      <location filename="../../TaskPocketParameters.cpp" line="64"/>
-      <location filename="../../TaskPocketParameters.cpp" line="447"/>
-      <source>No face selected</source>
-      <translation>面が選択されていません</translation>
+      <location filename="../../TaskPocketParameters.cpp" line="43"/>
+      <source>Offset from face at which pocket will end</source>
+      <translation>ポケットを終了する面からのオフセット</translation>
     </message>
     <message>
-      <location filename="../../TaskPocketParameters.cpp" line="120"/>
-      <location filename="../../TaskPocketParameters.cpp" line="440"/>
+      <location filename="../../TaskPocketParameters.cpp" line="44"/>
+      <source>Reverses pocket direction</source>
+      <translation>ポケットの方向を反転</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPocketParameters.cpp" line="71"/>
+      <source>Dimension</source>
+      <translation>寸法</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPocketParameters.cpp" line="72"/>
       <source>Through all</source>
       <translation>貫通</translation>
     </message>
     <message>
-      <location filename="../../TaskPocketParameters.cpp" line="121"/>
-      <location filename="../../TaskPocketParameters.cpp" line="441"/>
+      <location filename="../../TaskPocketParameters.cpp" line="73"/>
       <source>To first</source>
       <translation>最初まで</translation>
     </message>
     <message>
-      <location filename="../../TaskPocketParameters.cpp" line="122"/>
-      <location filename="../../TaskPocketParameters.cpp" line="442"/>
+      <location filename="../../TaskPocketParameters.cpp" line="74"/>
       <source>Up to face</source>
       <translation>面まで</translation>
     </message>
     <message>
-      <location filename="../../TaskPocketParameters.cpp" line="123"/>
-      <location filename="../../TaskPocketParameters.cpp" line="443"/>
+      <location filename="../../TaskPocketParameters.cpp" line="75"/>
       <source>Two dimensions</source>
       <translation>2方向の寸法</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPocketParameters.cpp" line="76"/>
+      <source>Up to shape</source>
+      <translation>シェイプまで</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskPolarPatternParameters</name>
     <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="22"/>
-      <source>Add feature</source>
-      <translation>フィーチャーを追加</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="32"/>
-      <source>Remove feature</source>
-      <translation>フィーチャーを削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="49"/>
+      <location filename="../../TaskPolarPatternParameters.ui" line="34"/>
       <source>Axis</source>
       <translation>軸</translation>
     </message>
     <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="61"/>
+      <location filename="../../TaskPolarPatternParameters.ui" line="46"/>
       <source>Reverse direction</source>
       <translation>逆方向</translation>
     </message>
     <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="70"/>
+      <location filename="../../TaskPolarPatternParameters.ui" line="55"/>
+      <source>Mode</source>
+      <translation>モード</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPolarPatternParameters.ui" line="63"/>
+      <source>Overall Angle</source>
+      <translation>全体角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPolarPatternParameters.ui" line="68"/>
+      <source>Offset Angle</source>
+      <translation>オフセット角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPolarPatternParameters.ui" line="93"/>
       <source>Angle</source>
       <translation>角度</translation>
     </message>
     <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="97"/>
+      <location filename="../../TaskPolarPatternParameters.ui" line="137"/>
+      <source>Offset</source>
+      <translation>オフセット</translation>
+    </message>
+    <message>
+      <location filename="../../TaskPolarPatternParameters.ui" line="168"/>
       <source>Occurrences</source>
       <translation>回数</translation>
     </message>
     <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="111"/>
-      <source>OK</source>
-      <translation>OK</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPolarPatternParameters.ui" line="120"/>
-      <source>Update view</source>
-      <translation>ビューを更新</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPolarPatternParameters.cpp" line="112"/>
-      <source>Remove</source>
-      <translation>削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskPolarPatternParameters.cpp" line="318"/>
+      <location filename="../../TaskPolarPatternParameters.cpp" line="329"/>
       <source>Error</source>
       <translation>エラー</translation>
     </message>
   </context>
   <context>
+    <name>PartDesignGui::TaskPrimitiveParameters</name>
+    <message>
+      <location filename="../../TaskPrimitiveParameters.cpp" line="929"/>
+      <source>Attachment</source>
+      <translation>アタッチメント</translation>
+    </message>
+  </context>
+  <context>
     <name>PartDesignGui::TaskRevolutionParameters</name>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
+      <location filename="../../TaskRevolutionParameters.ui" line="22"/>
+      <source>Type</source>
+      <translation>タイプ</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="22"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="30"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="173"/>
+      <source>Dimension</source>
+      <translation>寸法</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.ui" line="42"/>
       <source>Axis:</source>
       <translation>軸:</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="30"/>
-      <location filename="../../TaskRevolutionParameters.cpp" line="181"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="50"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="217"/>
       <source>Base X axis</source>
       <translation>ベースX軸</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="35"/>
-      <location filename="../../TaskRevolutionParameters.cpp" line="182"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="55"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="218"/>
       <source>Base Y axis</source>
       <translation>ベースY軸</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="40"/>
-      <location filename="../../TaskRevolutionParameters.cpp" line="183"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="60"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="219"/>
       <source>Base Z axis</source>
       <translation>ベースZ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="45"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="65"/>
       <source>Horizontal sketch axis</source>
       <translation>水平スケッチ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="50"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="70"/>
       <source>Vertical sketch axis</source>
       <translation>垂直スケッチ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="55"/>
-      <location filename="../../TaskRevolutionParameters.cpp" line="190"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="75"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="226"/>
       <source>Select reference...</source>
       <translation>参照を選択...</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="67"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="87"/>
       <source>Angle:</source>
       <translation>角度:</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="98"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="121"/>
       <source>Symmetric to plane</source>
       <translation>面に対して対称</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="105"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="128"/>
       <source>Reversed</source>
       <translation>逆方向</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.ui" line="119"/>
+      <location filename="../../TaskRevolutionParameters.ui" line="137"/>
+      <source>2nd angle</source>
+      <translation>2番目の角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.ui" line="170"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="137"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="443"/>
+      <source>Face</source>
+      <translation>面</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.ui" line="192"/>
       <source>Update view</source>
       <translation>ビューを更新</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.cpp" line="61"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="50"/>
       <source>Revolution parameters</source>
-      <translation>回転パラメーター</translation>
+      <translation>回転押し出しパラメーター</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.cpp" line="175"/>
+      <source>To last</source>
+      <translation>最後まで</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.cpp" line="178"/>
+      <source>Through all</source>
+      <translation>貫通</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.cpp" line="180"/>
+      <source>To first</source>
+      <translation>最初まで</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.cpp" line="181"/>
+      <source>Up to face</source>
+      <translation>面まで</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.cpp" line="182"/>
+      <source>Two dimensions</source>
+      <translation>2方向の寸法</translation>
+    </message>
+    <message>
+      <location filename="../../TaskRevolutionParameters.cpp" line="429"/>
+      <source>No face selected</source>
+      <translation>面が選択されていません</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskScaledParameters</name>
     <message>
-      <location filename="../../TaskScaledParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
-    <message>
-      <location filename="../../TaskScaledParameters.ui" line="22"/>
-      <source>Add feature</source>
-      <translation>フィーチャーを追加</translation>
-    </message>
-    <message>
-      <location filename="../../TaskScaledParameters.ui" line="32"/>
-      <source>Remove feature</source>
-      <translation>フィーチャーを削除</translation>
-    </message>
-    <message>
-      <location filename="../../TaskScaledParameters.ui" line="49"/>
+      <location filename="../../TaskScaledParameters.ui" line="34"/>
       <source>Factor</source>
       <translation>係数</translation>
     </message>
     <message>
-      <location filename="../../TaskScaledParameters.ui" line="63"/>
+      <location filename="../../TaskScaledParameters.ui" line="48"/>
       <source>Occurrences</source>
       <translation>回数</translation>
-    </message>
-    <message>
-      <location filename="../../TaskScaledParameters.ui" line="77"/>
-      <source>OK</source>
-      <translation>OK</translation>
-    </message>
-    <message>
-      <location filename="../../TaskScaledParameters.ui" line="86"/>
-      <source>Update view</source>
-      <translation>ビューを更新</translation>
-    </message>
-    <message>
-      <location filename="../../TaskScaledParameters.cpp" line="98"/>
-      <source>Remove</source>
-      <translation>削除</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskShapeBinder</name>
-    <message>
-      <location filename="../../TaskShapeBinder.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
     <message>
       <location filename="../../TaskShapeBinder.ui" line="22"/>
       <source>Object</source>
@@ -2224,15 +2942,20 @@
       <translation>ジオメトリーを削除</translation>
     </message>
     <message>
-      <location filename="../../TaskShapeBinder.cpp" line="61"/>
+      <location filename="../../TaskShapeBinder.cpp" line="60"/>
       <source>Datum shape parameters</source>
       <translation>データム形状パラメーター</translation>
+    </message>
+    <message>
+      <location filename="../../TaskShapeBinder.cpp" line="130"/>
+      <source>Remove</source>
+      <translation>削除</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskSketchBasedParameters</name>
     <message>
-      <location filename="../../TaskSketchBasedParameters.cpp" line="155"/>
+      <location filename="../../TaskSketchBasedParameters.cpp" line="160"/>
       <source>Face</source>
       <translation>面</translation>
     </message>
@@ -2240,186 +2963,315 @@
   <context>
     <name>PartDesignGui::TaskThicknessParameters</name>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
+      <location filename="../../TaskThicknessParameters.ui" line="20"/>
+      <source>Click button to enter selection mode,
+click again to end selection</source>
+      <translation>ボタンをクリックして選択モードに入ります。
+もう一度クリックして選択モードを終了します。</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="22"/>
-      <source>Add face</source>
-      <translation>面を追加</translation>
+      <location filename="../../TaskThicknessParameters.ui" line="24"/>
+      <source>Select</source>
+      <translation>選択</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="32"/>
-      <source>Remove face</source>
-      <translation>面を削除</translation>
+      <location filename="../../TaskThicknessParameters.ui" line="34"/>
+      <source>- select an item to highlight it
+- double-click on an item to see the features</source>
+      <translation>- 強調表示する項目を選択します
+- 項目をダブルクリックしてフィーチャを表示します</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="49"/>
+      <location filename="../../TaskThicknessParameters.ui" line="47"/>
       <source>Thickness</source>
       <translation>厚み</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="75"/>
+      <location filename="../../TaskThicknessParameters.ui" line="76"/>
       <source>Mode</source>
       <translation>モード</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="82"/>
-      <source>Join Type</source>
-      <translation>接合タイプ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskThicknessParameters.ui" line="90"/>
+      <location filename="../../TaskThicknessParameters.ui" line="84"/>
       <source>Skin</source>
       <translation>スキン</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="95"/>
+      <location filename="../../TaskThicknessParameters.ui" line="89"/>
       <source>Pipe</source>
       <translation>パイプ</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="100"/>
+      <location filename="../../TaskThicknessParameters.ui" line="94"/>
       <source>Recto Verso</source>
       <translation>右から左へ</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="109"/>
+      <location filename="../../TaskThicknessParameters.ui" line="102"/>
+      <source>Join Type</source>
+      <translation>接合タイプ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskThicknessParameters.ui" line="110"/>
       <source>Arc</source>
       <translation>円弧</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="114"/>
+      <location filename="../../TaskThicknessParameters.ui" line="115"/>
+      <location filename="../../TaskThicknessParameters.ui" line="125"/>
       <source>Intersection</source>
       <translation>共通集合</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.ui" line="124"/>
+      <location filename="../../TaskThicknessParameters.ui" line="132"/>
       <source>Make thickness inwards</source>
       <translation>内側に向かって厚みを作成</translation>
     </message>
     <message>
-      <location filename="../../TaskThicknessParameters.cpp" line="98"/>
-      <source>Remove</source>
-      <translation>削除</translation>
+      <location filename="../../TaskThicknessParameters.cpp" line="262"/>
+      <source>Empty thickness created !
+</source>
+      <translation>空の厚みが作成されました!
+</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskTransformedMessages</name>
     <message>
-      <location filename="../../TaskTransformedMessages.cpp" line="43"/>
+      <location filename="../../TaskTransformedMessages.cpp" line="37"/>
       <source>Transformed feature messages</source>
-      <translation>変換機能メッセージ</translation>
+      <translation>変換フィーチャメッセージ</translation>
     </message>
   </context>
   <context>
     <name>PartDesignGui::TaskTransformedParameters</name>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="194"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="104"/>
+      <source>Remove</source>
+      <translation>削除</translation>
+    </message>
+    <message>
+      <location filename="../../TaskTransformedParameters.cpp" line="404"/>
       <source>Normal sketch axis</source>
       <translation>通常のスケッチ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="195"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="405"/>
       <source>Vertical sketch axis</source>
       <translation>垂直スケッチ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="196"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="406"/>
       <source>Horizontal sketch axis</source>
       <translation>水平スケッチ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="198"/>
-      <location filename="../../TaskTransformedParameters.cpp" line="234"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="408"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="444"/>
       <source>Construction line %1</source>
       <translation>補助線 %1</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="212"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="422"/>
       <source>Base X axis</source>
       <translation>ベースX軸</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="213"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="423"/>
       <source>Base Y axis</source>
       <translation>ベースY軸</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="214"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="424"/>
       <source>Base Z axis</source>
       <translation>ベースZ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="221"/>
-      <location filename="../../TaskTransformedParameters.cpp" line="257"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="432"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="468"/>
       <source>Select reference...</source>
       <translation>参照を選択...</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="248"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="458"/>
       <source>Base XY plane</source>
       <translation>ベースXY平面</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="249"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="459"/>
       <source>Base YZ plane</source>
       <translation>ベースYZ平面</translation>
     </message>
     <message>
-      <location filename="../../TaskTransformedParameters.cpp" line="250"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="460"/>
       <source>Base XZ plane</source>
       <translation>ベースXZ平面</translation>
     </message>
+    <message>
+      <location filename="../../TaskTransformedParameters.ui" line="35"/>
+      <source>Transform body</source>
+      <translation>ボディーを変換</translation>
+    </message>
+    <message>
+      <location filename="../../TaskTransformedParameters.ui" line="48"/>
+      <source>Transform tool shapes</source>
+      <translation>ツールシェイプを変換</translation>
+    </message>
+    <message>
+      <location filename="../../TaskTransformedParameters.ui" line="78"/>
+      <source>Add feature</source>
+      <translation>フィーチャーを追加</translation>
+    </message>
+    <message>
+      <location filename="../../TaskTransformedParameters.ui" line="88"/>
+      <source>Remove feature</source>
+      <translation>フィーチャーを削除</translation>
+    </message>
+    <message>
+      <location filename="../../TaskTransformedParameters.ui" line="106"/>
+      <source>List can be reordered by dragging</source>
+      <translation>リストをドラッグして並べ替えることができます</translation>
+    </message>
+    <message>
+      <location filename="../../TaskTransformedParameters.ui" line="122"/>
+      <source>Update view</source>
+      <translation>ビューを更新</translation>
+    </message>
   </context>
   <context>
-    <name>PartDesignGui::ViewProviderBody</name>
+    <name>PartDesignGui::ViewProviderChamfer</name>
     <message>
-      <location filename="../../ViewProviderBody.cpp" line="137"/>
-      <source>Toggle active body</source>
-      <translation>アクティブなボディーを切り替え</translation>
+      <location filename="../../ViewProviderChamfer.h" line="41"/>
+      <source>Chamfer parameters</source>
+      <translation>面取りパラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderDatum</name>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="115"/>
+      <source>Datum Plane parameters</source>
+      <translation>データム平面パラメーター</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="120"/>
+      <source>Datum Line parameters</source>
+      <translation>データム線パラメーター</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="125"/>
+      <source>Datum Point parameters</source>
+      <translation>データム点パラメーター</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="130"/>
+      <source>Local Coordinate System parameters</source>
+      <translation>ローカル座標系パラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderDraft</name>
+    <message>
+      <location filename="../../ViewProviderDraft.h" line="42"/>
+      <source>Draft parameters</source>
+      <translation>抜き勾配パラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderFillet</name>
+    <message>
+      <location filename="../../ViewProviderFillet.h" line="41"/>
+      <source>Fillet parameters</source>
+      <translation>フィレットパラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderLinearPattern</name>
+    <message>
+      <location filename="../../ViewProviderLinearPattern.h" line="37"/>
+      <source>LinearPattern parameters</source>
+      <translation>直線状パターンパラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderMultiTransform</name>
+    <message>
+      <location filename="../../ViewProviderMultiTransform.h" line="37"/>
+      <source>MultiTransform parameters</source>
+      <translation>マルチ変換パラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderPolarPattern</name>
+    <message>
+      <location filename="../../ViewProviderPolarPattern.h" line="37"/>
+      <source>PolarPattern parameters</source>
+      <translation>円状パターンパラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderScaled</name>
+    <message>
+      <location filename="../../ViewProviderScaled.h" line="37"/>
+      <source>Scaled parameters</source>
+      <translation>拡大縮小パラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderThickness</name>
+    <message>
+      <location filename="../../ViewProviderThickness.h" line="41"/>
+      <source>Thickness parameters</source>
+      <translation>厚みパラメーター</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGuii::ViewProviderMirrored</name>
+    <message>
+      <location filename="../../ViewProviderMirrored.h" line="37"/>
+      <source>Mirrored parameters</source>
+      <translation>鏡像パラメーター</translation>
     </message>
   </context>
   <context>
     <name>PartDesign_CompPrimitiveAdditive</name>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="192"/>
-      <source>Create an additive box by its width, height and length</source>
+      <location filename="../../CommandPrimitive.cpp" line="200"/>
+      <source>Create an additive box by its width, height, and length</source>
       <translation>幅、高さ、厚みから加算直方体を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="196"/>
-      <source>Create an additive cylinder by its radius, height and angle</source>
-      <translation>半径、高さ、角度から加算円柱を作成</translation>
+      <location filename="../../CommandPrimitive.cpp" line="204"/>
+      <source>Create an additive cylinder by its radius, height, and angle</source>
+      <translation>半径、高さ、角度から加算円筒を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="200"/>
+      <location filename="../../CommandPrimitive.cpp" line="208"/>
       <source>Create an additive sphere by its radius and various angles</source>
       <translation>半径と複数の角度から加算球を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="204"/>
+      <location filename="../../CommandPrimitive.cpp" line="212"/>
       <source>Create an additive cone</source>
       <translation>加算円錐を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="208"/>
+      <location filename="../../CommandPrimitive.cpp" line="216"/>
       <source>Create an additive ellipsoid</source>
       <translation>加算楕円体を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="212"/>
+      <location filename="../../CommandPrimitive.cpp" line="220"/>
       <source>Create an additive torus</source>
       <translation>加算トーラスを作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="216"/>
+      <location filename="../../CommandPrimitive.cpp" line="224"/>
       <source>Create an additive prism</source>
       <translation>加算角柱を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="220"/>
+      <location filename="../../CommandPrimitive.cpp" line="228"/>
       <source>Create an additive wedge</source>
       <translation>加算ウェッジを作成</translation>
     </message>
@@ -2427,42 +3279,42 @@
   <context>
     <name>PartDesign_CompPrimitiveSubtractive</name>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="357"/>
+      <location filename="../../CommandPrimitive.cpp" line="356"/>
       <source>Create a subtractive box by its width, height and length</source>
       <translation>幅、高さ、厚みから減算直方体を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="361"/>
+      <location filename="../../CommandPrimitive.cpp" line="360"/>
       <source>Create a subtractive cylinder by its radius, height and angle</source>
       <translation>半径、高さ、角度から減算円柱を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="365"/>
+      <location filename="../../CommandPrimitive.cpp" line="364"/>
       <source>Create a subtractive sphere by its radius and various angles</source>
       <translation>半径と複数の角度から減算球を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="369"/>
+      <location filename="../../CommandPrimitive.cpp" line="368"/>
       <source>Create a subtractive cone</source>
       <translation>減算円錐を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="373"/>
+      <location filename="../../CommandPrimitive.cpp" line="372"/>
       <source>Create a subtractive ellipsoid</source>
       <translation>減算楕円体を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="377"/>
+      <location filename="../../CommandPrimitive.cpp" line="376"/>
       <source>Create a subtractive torus</source>
       <translation>減算トーラスを作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="381"/>
+      <location filename="../../CommandPrimitive.cpp" line="380"/>
       <source>Create a subtractive prism</source>
       <translation>減算角柱を作成</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="385"/>
+      <location filename="../../CommandPrimitive.cpp" line="384"/>
       <source>Create a subtractive wedge</source>
       <translation>減算ウェッジを作成</translation>
     </message>
@@ -2470,12 +3322,12 @@
   <context>
     <name>PartDesign_MoveFeature</name>
     <message>
-      <location filename="../../CommandBody.cpp" line="755"/>
+      <location filename="../../CommandBody.cpp" line="736"/>
       <source>Select body</source>
       <translation>ボディーを選択</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="756"/>
+      <location filename="../../CommandBody.cpp" line="737"/>
       <source>Select a body from the list</source>
       <translation>リストからボディーを選択</translation>
     </message>
@@ -2483,393 +3335,397 @@
   <context>
     <name>PartDesign_MoveFeatureInTree</name>
     <message>
-      <location filename="../../CommandBody.cpp" line="906"/>
+      <location filename="../../CommandBody.cpp" line="889"/>
       <source>Select feature</source>
       <translation>フィーチャーを選択</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="907"/>
+      <location filename="../../CommandBody.cpp" line="890"/>
       <source>Select a feature from the list</source>
       <translation>リストからフィーチャーを選択</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="960"/>
+      <source>Move tip</source>
+      <translation>tipを移動</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="961"/>
+      <source>The moved feature appears after the currently set tip.</source>
+      <translation>移動したフィーチャは、現在設定されているチップの後に表示されます。</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="962"/>
+      <source>Do you want the last feature to be the new tip?</source>
+      <translation>最後のフィーチャを新しいチップにしたいですか？</translation>
     </message>
   </context>
   <context>
     <name>QObject</name>
     <message>
-      <location filename="../../Command.cpp" line="135"/>
+      <location filename="../../Command.cpp" line="140"/>
       <source>Invalid selection</source>
       <translation>無効な選択です。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="135"/>
+      <location filename="../../Command.cpp" line="140"/>
       <source>There are no attachment modes that fit selected objects. Select something else.</source>
       <translation>選択したオブジェクトに合うアタッチメントモードがありません。他のものを選択してください。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="141"/>
-      <location filename="../../Command.cpp" line="144"/>
       <location filename="../../Command.cpp" line="146"/>
+      <location filename="../../Command.cpp" line="149"/>
+      <location filename="../../Command.cpp" line="151"/>
       <source>Error</source>
       <translation>エラー</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="141"/>
+      <location filename="../../Command.cpp" line="146"/>
       <source>There is no active body. Please make a body active before inserting a datum entity.</source>
       <translation>アクティブなボディーがありません。データムエンティティを挿入する前にアクティブなボディーを作成してください。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="475"/>
+      <location filename="../../Command.cpp" line="410"/>
+      <source>Sub-Shape Binder</source>
+      <translation>サブシェイプバインダー</translation>
+    </message>
+    <message>
+      <location filename="../../SketchWorkflow.cpp" line="650"/>
       <source>Several sub-elements selected</source>
       <translation>いくつかのサブ要素が選択されています</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="476"/>
+      <location filename="../../SketchWorkflow.cpp" line="651"/>
       <source>You have to select a single face as support for a sketch!</source>
       <translation>スケッチサポートとして単一の面を選択する必要があります！</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="486"/>
+      <location filename="../../SketchWorkflow.cpp" line="654"/>
       <source>No support face selected</source>
       <translation>サポート面が選択されていません</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="487"/>
+      <location filename="../../SketchWorkflow.cpp" line="655"/>
       <source>You have to select a face as support for a sketch!</source>
       <translation>スケッチサポートとして面を選択する必要があります！</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="496"/>
+      <location filename="../../SketchWorkflow.cpp" line="658"/>
       <source>No planar support</source>
       <translation>平面のサポートがありません</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="497"/>
+      <location filename="../../SketchWorkflow.cpp" line="659"/>
       <source>You need a planar face as support for a sketch!</source>
       <translation>スケッチサポートとして平面が必要です！</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="679"/>
+      <location filename="../../SketchWorkflow.cpp" line="662"/>
       <source>No valid planes in this document</source>
       <translation>このドキュメントには有効な平面がありません。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="680"/>
+      <location filename="../../SketchWorkflow.cpp" line="663"/>
       <source>Please create a plane first or select a face to sketch on</source>
       <translation>まず平面を作成するか、またはスケッチを描く面を選択してください。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="693"/>
-      <location filename="../../Command.cpp" line="983"/>
-      <location filename="../../Command.cpp" line="1825"/>
-      <location filename="../../ViewProvider.cpp" line="114"/>
-      <location filename="../../ViewProviderBoolean.cpp" line="85"/>
-      <location filename="../../ViewProviderDatum.cpp" line="251"/>
-      <location filename="../../ViewProviderHole.cpp" line="81"/>
-      <location filename="../../ViewProviderPrimitive.cpp" line="93"/>
-      <location filename="../../ViewProviderShapeBinder.cpp" line="92"/>
+      <location filename="../../ViewProviderHole.cpp" line="77"/>
+      <location filename="../../ViewProviderDatum.cpp" line="250"/>
+      <location filename="../../ViewProviderPrimitive.cpp" line="68"/>
+      <location filename="../../SketchWorkflow.cpp" line="591"/>
+      <location filename="../../ViewProvider.cpp" line="96"/>
+      <location filename="../../ViewProviderBoolean.cpp" line="78"/>
+      <location filename="../../ViewProviderShapeBinder.cpp" line="95"/>
+      <location filename="../../Command.cpp" line="1016"/>
       <source>A dialog is already open in the task panel</source>
       <translation>タスクパネルで既にダイアログが開かれています</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="694"/>
-      <location filename="../../Command.cpp" line="984"/>
-      <location filename="../../Command.cpp" line="1826"/>
-      <location filename="../../ViewProvider.cpp" line="115"/>
-      <location filename="../../ViewProviderBoolean.cpp" line="86"/>
-      <location filename="../../ViewProviderDatum.cpp" line="252"/>
-      <location filename="../../ViewProviderHole.cpp" line="82"/>
-      <location filename="../../ViewProviderPrimitive.cpp" line="94"/>
-      <location filename="../../ViewProviderShapeBinder.cpp" line="93"/>
+      <location filename="../../ViewProviderHole.cpp" line="78"/>
+      <location filename="../../ViewProviderDatum.cpp" line="251"/>
+      <location filename="../../ViewProviderPrimitive.cpp" line="69"/>
+      <location filename="../../SketchWorkflow.cpp" line="592"/>
+      <location filename="../../ViewProvider.cpp" line="97"/>
+      <location filename="../../ViewProviderBoolean.cpp" line="79"/>
+      <location filename="../../ViewProviderShapeBinder.cpp" line="96"/>
+      <location filename="../../Command.cpp" line="1017"/>
       <source>Do you want to close this dialog?</source>
       <translation>このダイアログを閉じますか？</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="907"/>
+      <location filename="../../Command.cpp" line="896"/>
+      <source>Cannot use this command as there is no solid to subtract from.</source>
+      <translation>このコマンドを使うことはできません。このコマンドから引くソリッドがないためです。</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="897"/>
+      <source>Ensure that the body contains a feature before attempting a subtractive command.</source>
+      <translation>減算コマンドを実行する前に、ボディにフィーチャーが含まれていることを確認します。</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="918"/>
+      <source>Cannot use selected object. Selected object must belong to the active body</source>
+      <translation>選択したオブジェクトを使用できません。選択したオブジェクトはアクティブなボディーに属している必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="919"/>
+      <source>Consider using a ShapeBinder or a BaseFeature to reference external geometry in a body.</source>
+      <translation>ボディ内の外部ジオメトリを参照するためにShapeBinderまたはBaseFeatureを使用することを検討してください。</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="941"/>
       <source>No sketch to work on</source>
       <translation>作業のためのスケッチがありません。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="908"/>
+      <location filename="../../Command.cpp" line="942"/>
       <source>No sketch is available in the document</source>
       <translation>ドキュメント内に使用可能なスケッチがありません。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1513"/>
-      <location filename="../../Command.cpp" line="1517"/>
-      <location filename="../../Command.cpp" line="1543"/>
-      <location filename="../../Command.cpp" line="1555"/>
+      <location filename="../../Command.cpp" line="1684"/>
+      <location filename="../../Command.cpp" line="1710"/>
       <source>Wrong selection</source>
       <translation>誤った選択</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1514"/>
-      <source>Select an edge, face or body.</source>
-      <translation>エッジ、面またはボディを選択</translation>
+      <location filename="../../Command.cpp" line="1685"/>
+      <source>Select an edge, face, or body from a single body.</source>
+      <translation>単一のボディからエッジ、面、またはボディを選択してください。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1518"/>
-      <source>Select an edge, face or body from a single body.</source>
-      <translation>ボディーの1つからエッジ、面やボディーを選択</translation>
-    </message>
-    <message>
-      <location filename="../../Command.cpp" line="1522"/>
-      <location filename="../../Command.cpp" line="1855"/>
+      <location filename="../../Command.cpp" line="1689"/>
+      <location filename="../../Command.cpp" line="2021"/>
       <source>Selection is not in Active Body</source>
       <translation>選択されているのはアクティブなボディーではありません。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1523"/>
-      <source>Select an edge, face or body from an active body.</source>
-      <translation>アクティブなボディーからエッジ、面、またはボディーを選択</translation>
+      <location filename="../../Command.cpp" line="1690"/>
+      <source>Select an edge, face, or body from an active body.</source>
+      <translation>アクティブなボディーからエッジ、面、またはボディを選択してください。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1533"/>
+      <location filename="../../Command.cpp" line="1700"/>
       <source>Wrong object type</source>
       <translation>間違ったオブジェクトの種類</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1534"/>
+      <location filename="../../Command.cpp" line="1701"/>
       <source>%1 works only on parts.</source>
       <translation>%1は部品にのみ適用できます。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1544"/>
+      <location filename="../../Command.cpp" line="1711"/>
       <source>Shape of the selected Part is empty</source>
       <translation>選択したパーツの形状が空です。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1556"/>
-      <source> not possible on selected faces/edges.</source>
-      <translation> 選択された面/エッジに対しては処理できません。</translation>
+      <location filename="../../Command.cpp" line="2022"/>
+      <source>Please select only one feature in an active body.</source>
+      <translation>アクティブなボディーで一つの機能のみ選択してください。</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="1842"/>
-      <source>No valid features in this document</source>
-      <translation>このドキュメントには有効な形状がありません</translation>
-    </message>
-    <message>
-      <location filename="../../Command.cpp" line="1843"/>
-      <source>Please create a subtractive or additive feature first.</source>
-      <translation>まず最初に減算または加算するフィーチャーを作成してください。</translation>
-    </message>
-    <message>
-      <location filename="../../Command.cpp" line="1848"/>
-      <source>Multiple Features Selected</source>
-      <translation>複数のフィーチャーが選択されています。</translation>
-    </message>
-    <message>
-      <location filename="../../Command.cpp" line="1849"/>
-      <source>Please select only one subtractive or additive feature first.</source>
-      <translation>まず最初に減算または加算フィーチャーをひとつだけ選択してください。</translation>
-    </message>
-    <message>
-      <location filename="../../Command.cpp" line="1856"/>
-      <source>Please select only one subtractive or additive feature in an active body.</source>
-      <translation>アクティブなボディーの中の減算または加算フィーチャーをひとつだけ選択してください。</translation>
-    </message>
-    <message>
-      <location filename="../../CommandBody.cpp" line="73"/>
+      <location filename="../../CommandBody.cpp" line="68"/>
       <source>Part creation failed</source>
       <translation>パーツ作成失敗</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="74"/>
+      <location filename="../../CommandBody.cpp" line="69"/>
       <source>Failed to create a part object.</source>
       <translation>パーツオブジェクトの作成に失敗しました。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="122"/>
-      <location filename="../../CommandBody.cpp" line="127"/>
+      <location filename="../../CommandBody.cpp" line="116"/>
+      <location filename="../../CommandBody.cpp" line="121"/>
       <location filename="../../CommandBody.cpp" line="134"/>
-      <location filename="../../CommandBody.cpp" line="142"/>
-      <location filename="../../CommandBody.cpp" line="191"/>
+      <location filename="../../CommandBody.cpp" line="183"/>
       <source>Bad base feature</source>
       <translation>不正なベースフィーチャー</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="123"/>
+      <location filename="../../CommandBody.cpp" line="117"/>
       <source>Body can't be based on a PartDesign feature.</source>
       <translation>PartDesign フィーチャーはボディーのベースにできません。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="128"/>
+      <location filename="../../CommandBody.cpp" line="122"/>
       <source>%1 already belongs to a body, can't use it as base feature for another body.</source>
       <translation>%1は既にボディーに属していて、別のボディーのベースフィーチャーとして使用できません。</translation>
     </message>
     <message>
       <location filename="../../CommandBody.cpp" line="135"/>
-      <source>Body can't be based on another body.</source>
-      <translation>他のボディーをボディーのベースにすることはできません。</translation>
-    </message>
-    <message>
-      <location filename="../../CommandBody.cpp" line="143"/>
       <source>Base feature (%1) belongs to other part.</source>
       <translation>ベースフィーチャー (%1) は他のパーツに属しています。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="167"/>
+      <location filename="../../CommandBody.cpp" line="159"/>
       <source>The selected shape consists of multiple solids.
 This may lead to unexpected results.</source>
       <translation>選択されているシェイプは複数のソリッドで構成されています。これは予期しない結果につながる可能性があります。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="171"/>
+      <location filename="../../CommandBody.cpp" line="163"/>
       <source>The selected shape consists of multiple shells.
 This may lead to unexpected results.</source>
       <translation>選択されているシェイプは複数のシェルで構成されています。これは予期しない結果につながる可能性があります。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="175"/>
+      <location filename="../../CommandBody.cpp" line="167"/>
       <source>The selected shape consists of only a shell.
 This may lead to unexpected results.</source>
       <translation>選択されているシェイプはシェルひとつだけで構成されています。これは予期しない結果につながる可能性があります。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="179"/>
+      <location filename="../../CommandBody.cpp" line="171"/>
       <source>The selected shape consists of multiple solids or shells.
 This may lead to unexpected results.</source>
       <translation>選択されているシェイプは複数のソリッドまたはシェルで構成されています。これは予期しない結果につながる可能性があります。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="184"/>
+      <location filename="../../CommandBody.cpp" line="176"/>
       <source>Base feature</source>
       <translation>ベースフィーチャー</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="192"/>
+      <location filename="../../CommandBody.cpp" line="184"/>
       <source>Body may be based on no more than one feature.</source>
       <translation>ボディーはベースとなるフィーチャーを1つだけ持ちます。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="368"/>
+      <location filename="../../CommandBody.cpp" line="198"/>
+      <source>Body</source>
+      <translation>Body</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="347"/>
       <source>Nothing to migrate</source>
       <translation>移行対象がありません。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="369"/>
-      <source>No PartDesign features found that don't belong to a body.Nothing to migrate.</source>
-      <translation>ボディーに属していない PartDesign フィーチャーが見つかりません。移行は行われません。</translation>
+      <location filename="../../CommandBody.cpp" line="348"/>
+      <source>No PartDesign features found that don't belong to a body. Nothing to migrate.</source>
+      <translation>ボディーに属していないPartDesignの機能が見つかりませんでした。移行するものはありません。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="517"/>
+      <location filename="../../CommandBody.cpp" line="496"/>
       <source>Sketch plane cannot be migrated</source>
       <translation>スケッチ平面を移行できません。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="518"/>
+      <location filename="../../CommandBody.cpp" line="497"/>
       <source>Please edit '%1' and redefine it to use a Base or Datum plane as the sketch plane.</source>
       <translation>'%1'を編集してベースまたはデータム平面をスケッチ平面として使用するよう再定義してください。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="580"/>
-      <location filename="../../CommandBody.cpp" line="584"/>
-      <location filename="../../CommandBody.cpp" line="589"/>
-      <location filename="../../CommandBody.cpp" line="878"/>
-      <location filename="../../CommandBody.cpp" line="885"/>
+      <location filename="../../CommandBody.cpp" line="559"/>
+      <location filename="../../CommandBody.cpp" line="563"/>
+      <location filename="../../CommandBody.cpp" line="568"/>
+      <location filename="../../CommandBody.cpp" line="861"/>
+      <location filename="../../CommandBody.cpp" line="868"/>
       <source>Selection error</source>
       <translation>選択エラー</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="581"/>
+      <location filename="../../CommandBody.cpp" line="560"/>
       <source>Select exactly one PartDesign feature or a body.</source>
       <translation>PartDesign フィーチャーまたはボディーを1つだけ選択してください。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="585"/>
+      <location filename="../../CommandBody.cpp" line="564"/>
       <source>Couldn't determine a body for the selected feature '%s'.</source>
       <translation>選択したフィーチャー「%s」のボディーを特定できませんでした。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="590"/>
+      <location filename="../../CommandBody.cpp" line="569"/>
       <source>Only a solid feature can be the tip of a body.</source>
       <translation>ボディーのチップにできるのはソリッドフィーチャーだけです。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="706"/>
-      <location filename="../../CommandBody.cpp" line="728"/>
-      <location filename="../../CommandBody.cpp" line="743"/>
+      <location filename="../../CommandBody.cpp" line="687"/>
+      <location filename="../../CommandBody.cpp" line="709"/>
+      <location filename="../../CommandBody.cpp" line="724"/>
       <source>Features cannot be moved</source>
       <translation>フィーチャーを移動できません。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="707"/>
+      <location filename="../../CommandBody.cpp" line="688"/>
       <source>Some of the selected features have dependencies in the source body</source>
       <translation>選択したフィーチャーの一部がソースボディーに依存しています。　</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="729"/>
+      <location filename="../../CommandBody.cpp" line="710"/>
       <source>Only features of a single source Body can be moved</source>
       <translation>動かせるのは単一ボディーに含まれるフィーチャーだけです。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="744"/>
+      <location filename="../../CommandBody.cpp" line="725"/>
       <source>There are no other bodies to move to</source>
       <translation>移動先となる他のボディーがありません。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="879"/>
+      <location filename="../../CommandBody.cpp" line="862"/>
       <source>Impossible to move the base feature of a body.</source>
       <translation>ボディーのベースフィーチャーを動かすことはできません。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="886"/>
+      <location filename="../../CommandBody.cpp" line="869"/>
       <source>Select one or more features from the same body.</source>
       <translation>同一のボディーから1つ以上のフィーチャーを選択してください。</translation>
     </message>
     <message>
-      <location filename="../../CommandBody.cpp" line="899"/>
+      <location filename="../../CommandBody.cpp" line="882"/>
       <source>Beginning of the body</source>
       <translation>ボディーの先頭</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="261"/>
+      <location filename="../../CommandBody.cpp" line="946"/>
+      <source>Dependency violation</source>
+      <translation>依存関係の違反</translation>
+    </message>
+    <message>
+      <location filename="../../CommandBody.cpp" line="947"/>
+      <source>Early feature must not depend on later feature.
+
+</source>
+      <translation>初期機能は後の機能に依存してはいけません。
+
+</translation>
+    </message>
+    <message>
+      <location filename="../../CommandPrimitive.cpp" line="269"/>
       <source>No previous feature found</source>
       <translation>前のフィーチャーが見つかりませんでした。</translation>
     </message>
     <message>
-      <location filename="../../CommandPrimitive.cpp" line="262"/>
+      <location filename="../../CommandPrimitive.cpp" line="270"/>
       <source>It is not possible to create a subtractive feature without a base feature available</source>
       <translation>利用可能なベースフィーチャーがない場合、減算フィーチャーは作成できません。</translation>
     </message>
     <message>
-      <location filename="../../TaskDraftParameters.cpp" line="303"/>
-      <source>Missing neutral plane</source>
-      <translation>中立面が見つかりません</translation>
-    </message>
-    <message>
-      <location filename="../../TaskDraftParameters.cpp" line="304"/>
-      <source>Please select a plane or an edge plus a pull direction</source>
-      <translation>面、またはエッジと引き抜き方向を選択してください</translation>
-    </message>
-    <message>
-      <location filename="../../TaskRevolutionParameters.cpp" line="164"/>
-      <location filename="../../TaskTransformedParameters.cpp" line="231"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="441"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="203"/>
       <source>Vertical sketch axis</source>
       <translation>垂直スケッチ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.cpp" line="165"/>
-      <location filename="../../TaskTransformedParameters.cpp" line="232"/>
+      <location filename="../../TaskTransformedParameters.cpp" line="442"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="204"/>
       <source>Horizontal sketch axis</source>
       <translation>水平スケッチ軸</translation>
     </message>
     <message>
-      <location filename="../../TaskRevolutionParameters.cpp" line="167"/>
+      <location filename="../../TaskRevolutionParameters.cpp" line="206"/>
       <source>Construction line %1</source>
       <translation>補助線 %1</translation>
     </message>
     <message>
-      <location filename="../../TaskSketchBasedParameters.cpp" line="84"/>
+      <location filename="../../TaskSketchBasedParameters.cpp" line="77"/>
       <source>Face</source>
       <translation>面</translation>
     </message>
     <message>
-      <location filename="../../Utils.cpp" line="88"/>
-      <source>No active Body</source>
-      <translation>アクティブなボディーがありません。</translation>
-    </message>
-    <message>
-      <location filename="../../Utils.cpp" line="89"/>
+      <location filename="../../Utils.cpp" line="138"/>
       <source>In order to use PartDesign you need an active Body object in the document. Please make one active (double click) or create one.
 
 If you have a legacy document with PartDesign objects without Body, use the migrate function in PartDesign to put them into a Body.</source>
@@ -2878,473 +3734,691 @@ If you have a legacy document with PartDesign objects without Body, use the migr
 ボディーの無い PartDesign オブジェクトを含む古い形式のドキュメントの場合は PartDesign の移行機能を使用してそれらをボディーに配置してください。</translation>
     </message>
     <message>
-      <location filename="../../Utils.cpp" line="104"/>
+      <location filename="../../Utils.cpp" line="186"/>
       <source>Active Body Required</source>
       <translation>アクティブなボディーが必要です。</translation>
     </message>
     <message>
-      <location filename="../../Utils.cpp" line="105"/>
+      <location filename="../../Utils.cpp" line="187"/>
       <source>To create a new PartDesign object, there must be an active Body object in the document. Please make one active (double click) or create a new Body.</source>
       <translation>新しいPartDesignオブジェクトを作成するためにはドキュメント内にアクティブなボディーがなければなりません。どれかをアクティブにするか（ダブルクリック）、新しいボディーを作成してください。</translation>
     </message>
     <message>
-      <location filename="../../Utils.cpp" line="142"/>
+      <location filename="../../Utils.cpp" line="222"/>
       <source>Feature is not in a body</source>
       <translation>フィーチャーがボディー内にありません。</translation>
     </message>
     <message>
-      <location filename="../../Utils.cpp" line="143"/>
+      <location filename="../../Utils.cpp" line="223"/>
       <source>In order to use this feature it needs to belong to a body object in the document.</source>
       <translation>このフィーチャーを使用するためにはそれがドキュメント内のボディーオブジェクトに属している必要があります。</translation>
     </message>
     <message>
-      <location filename="../../Utils.cpp" line="175"/>
+      <location filename="../../Utils.cpp" line="255"/>
       <source>Feature is not in a part</source>
       <translation>フィーチャーがパーツ内にありません。</translation>
     </message>
     <message>
-      <location filename="../../Utils.cpp" line="176"/>
+      <location filename="../../Utils.cpp" line="256"/>
       <source>In order to use this feature it needs to belong to a part object in the document.</source>
       <translation>このフィーチャーを使用するためにはそれがドキュメント内のパーツオブジェクトに属している必要があります。</translation>
     </message>
     <message>
-      <location filename="../../ViewProvider.cpp" line="96"/>
-      <source>Set colors...</source>
-      <translation>色を設定...</translation>
-    </message>
-    <message>
-      <location filename="../../ViewProviderBoolean.cpp" line="68"/>
-      <source>Edit boolean</source>
-      <translation>ブーリアンを編集</translation>
-    </message>
-    <message>
-      <location filename="../../ViewProviderDatum.cpp" line="121"/>
-      <location filename="../../ViewProviderDatum.cpp" line="211"/>
-      <source>Plane</source>
-      <translation>平面</translation>
-    </message>
-    <message>
-      <location filename="../../ViewProviderDatum.cpp" line="125"/>
-      <location filename="../../ViewProviderDatum.cpp" line="207"/>
-      <source>Line</source>
-      <translation>直線</translation>
-    </message>
-    <message>
-      <location filename="../../ViewProviderDatum.cpp" line="129"/>
-      <location filename="../../ViewProviderDatum.cpp" line="215"/>
-      <source>Point</source>
-      <translation>点</translation>
-    </message>
-    <message>
-      <location filename="../../ViewProviderDatum.cpp" line="133"/>
-      <source>Coordinate System</source>
-      <translation>座標系</translation>
-    </message>
-    <message>
-      <location filename="../../ViewProviderDatum.cpp" line="232"/>
-      <source>Edit datum</source>
-      <translation>データムを編集</translation>
-    </message>
-    <message>
-      <location filename="../../ViewProviderDressUp.cpp" line="49"/>
-      <location filename="../../ViewProviderTransformed.cpp" line="68"/>
+      <location filename="../../ViewProviderDressUp.cpp" line="50"/>
+      <location filename="../../ViewProviderTransformed.cpp" line="76"/>
+      <location filename="../../ViewProvider.cpp" line="63"/>
+      <location filename="../../ViewProviderShapeBinder.cpp" line="209"/>
       <source>Edit %1</source>
       <translation>%1を編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderDressUp.cpp" line="70"/>
+      <location filename="../../ViewProvider.cpp" line="76"/>
+      <source>Set colors...</source>
+      <translation>色を設定...</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderBoolean.cpp" line="62"/>
+      <source>Edit boolean</source>
+      <translation>ブーリアンを編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="114"/>
+      <location filename="../../ViewProviderDatum.cpp" line="208"/>
+      <source>Plane</source>
+      <translation>平面</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="119"/>
+      <location filename="../../ViewProviderDatum.cpp" line="204"/>
+      <source>Line</source>
+      <translation>直線</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="124"/>
+      <location filename="../../ViewProviderDatum.cpp" line="212"/>
+      <source>Point</source>
+      <translation>点</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="129"/>
+      <source>Coordinate System</source>
+      <translation>座標系</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDatum.cpp" line="229"/>
+      <source>Edit datum</source>
+      <translation>データムを編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDressUp.cpp" line="74"/>
       <source>Feature error</source>
       <translation>フィーチャーのエラー</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderDressUp.cpp" line="71"/>
+      <location filename="../../ViewProviderDressUp.cpp" line="75"/>
       <source>%1 misses a base feature.
 This feature is broken and can't be edited.</source>
       <translation>%1のベースフィーチャーが見つかりません。
 このフィーチャーは壊れていて編集できません。</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderGroove.cpp" line="51"/>
+      <location filename="../../ViewProviderGroove.cpp" line="46"/>
       <source>Edit groove</source>
       <translation>グルーブを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderHole.cpp" line="64"/>
+      <location filename="../../ViewProviderHole.cpp" line="61"/>
       <source>Edit hole</source>
       <translation>ホールを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderLoft.cpp" line="77"/>
+      <location filename="../../ViewProviderLoft.cpp" line="66"/>
       <source>Edit loft</source>
       <translation>ロフトを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderPad.cpp" line="54"/>
+      <location filename="../../ViewProviderPad.cpp" line="46"/>
       <source>Edit pad</source>
       <translation>パッドを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderPipe.cpp" line="80"/>
+      <location filename="../../ViewProviderPipe.cpp" line="74"/>
       <source>Edit pipe</source>
       <translation>パイプを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderPocket.cpp" line="53"/>
+      <location filename="../../ViewProviderPocket.cpp" line="48"/>
       <source>Edit pocket</source>
       <translation>ポケットを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderPrimitive.cpp" line="76"/>
+      <location filename="../../ViewProviderPrimitive.cpp" line="54"/>
       <source>Edit primitive</source>
       <translation>プリミティブを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderRevolution.cpp" line="51"/>
+      <location filename="../../ViewProviderRevolution.cpp" line="46"/>
       <source>Edit revolution</source>
-      <translation>回転を編集</translation>
+      <translation>回転押し出しを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderShapeBinder.cpp" line="184"/>
+      <location filename="../../ViewProviderShapeBinder.cpp" line="204"/>
       <source>Edit shape binder</source>
       <translation>シェイプバインダーを編集</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderTransformed.cpp" line="152"/>
-      <source>One transformed shape does not intersect support</source>
-      <translation>変換形状の1つが支持体積と交差していません</translation>
+      <location filename="../../ViewProviderShapeBinder.cpp" line="316"/>
+      <source>Synchronize</source>
+      <translation>同期する</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderTransformed.cpp" line="154"/>
-      <source>%1 transformed shapes do not intersect support</source>
-      <translation>%1 つの変換形状が支持体積と交差していません</translation>
+      <location filename="../../ViewProviderShapeBinder.cpp" line="318"/>
+      <source>Select bound object</source>
+      <translation>バインドされたオブジェクトを選択</translation>
     </message>
     <message>
-      <location filename="../../ViewProviderTransformed.cpp" line="163"/>
+      <location filename="../../ViewProviderTransformed.cpp" line="179"/>
+      <source>One transformed shape does not intersect the support</source>
+      <translation type="unfinished">One transformed shape does not intersect the support</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderTransformed.cpp" line="181"/>
+      <source>%1 transformed shapes do not intersect the support</source>
+      <translation type="unfinished">%1 transformed shapes do not intersect the support</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderTransformed.cpp" line="191"/>
       <source>Transformation succeeded</source>
       <translation>変換成功</translation>
     </message>
     <message>
-      <location filename="../../WorkflowManager.cpp" line="144"/>
+      <location filename="../../WorkflowManager.cpp" line="140"/>
       <source>The document "%1" you are editing was designed with an old version of PartDesign workbench.</source>
       <translation>編集中のドキュメント「%1」は過去のバージョンの PartDesign ワークベンチでデザインされています。</translation>
     </message>
     <message>
-      <location filename="../../WorkflowManager.cpp" line="147"/>
+      <location filename="../../WorkflowManager.cpp" line="143"/>
       <source>Do you want to migrate in order to use modern PartDesign features?</source>
       <translation>新しい PartDesign 機能を使用するために移行を行いますか？</translation>
     </message>
     <message>
-      <location filename="../../WorkflowManager.cpp" line="150"/>
+      <location filename="../../WorkflowManager.cpp" line="146"/>
       <source>The document "%1" seems to be either in the middle of the migration process from legacy PartDesign or have a slightly broken structure.</source>
       <translation>ドキュメント「%1」は過去の PartDesign からの移行処理途中か、またはわずかに壊れた構造を含んでいます。</translation>
     </message>
     <message>
-      <location filename="../../WorkflowManager.cpp" line="154"/>
+      <location filename="../../WorkflowManager.cpp" line="150"/>
       <source>Do you want to make the migration automatically?</source>
       <translation>移行を自動的に行いますか？</translation>
     </message>
     <message>
-      <location filename="../../WorkflowManager.cpp" line="156"/>
+      <location filename="../../WorkflowManager.cpp" line="152"/>
       <source>Note: If you choose to migrate you won't be able to edit the file with an older FreeCAD version.
 If you refuse to migrate you won't be able to use new PartDesign features like Bodies and Parts. As a result you also won't be able to use your parts in the assembly workbench.
-Although you will be able to migrate any moment later with 'Part Design-&gt;Migrate...'.</source>
+Although you will be able to migrate any moment later with 'Part Design -&gt; Migrate'.</source>
       <translation>移行を選択した場合、このファイルは過去のバージョンのFreeCADで編集できなくなることに注意してください。移行しない場合、ボディーやパーツといった新しい PartDesign 機能は使用できず、作成した部品をアセンブリワークベンチで使用することもできません。「パートデザイン-移行...」を選択することで移行はいつでも行えます。</translation>
     </message>
     <message>
-      <location filename="../../WorkflowManager.cpp" line="165"/>
+      <location filename="../../WorkflowManager.cpp" line="161"/>
       <source>Migrate manually</source>
       <translation>手動で移行</translation>
     </message>
+    <message>
+      <location filename="../../ViewProviderHelix.cpp" line="51"/>
+      <source>Edit helix</source>
+      <translation>らせんを編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderChamfer.cpp" line="41"/>
+      <source>Edit chamfer</source>
+      <translation>面取りを編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderDraft.cpp" line="42"/>
+      <source>Edit draft</source>
+      <translation>抜き勾配を編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderFillet.cpp" line="41"/>
+      <source>Edit fillet</source>
+      <translation>フィレットを編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderLinearPattern.cpp" line="39"/>
+      <source>Edit linear pattern</source>
+      <translation>直線状パターンを編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderMirrored.cpp" line="39"/>
+      <source>Edit mirrored</source>
+      <translation>鏡像を編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderMultiTransform.cpp" line="48"/>
+      <source>Edit multi-transform</source>
+      <translation>マルチ変換を編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderPolarPattern.cpp" line="38"/>
+      <source>Edit polar pattern</source>
+      <translation>円状パターンを編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderScaled.cpp" line="39"/>
+      <source>Edit scaled</source>
+      <translation>拡大縮小を編集</translation>
+    </message>
+    <message>
+      <location filename="../../ViewProviderThickness.cpp" line="41"/>
+      <source>Edit thickness</source>
+      <translation>厚さを編集</translation>
+    </message>
   </context>
   <context>
-    <name>TaskHole</name>
+    <name>SprocketParameter</name>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
+      <location filename="../../../SprocketFeature.ui" line="14"/>
+      <source>Sprocket parameters</source>
+      <translation type="unfinished">Sprocket parameters</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="24"/>
-      <source>Position</source>
-      <translation type="unfinished">Position</translation>
+      <location filename="../../../SprocketFeature.ui" line="26"/>
+      <source>Number of teeth:</source>
+      <translation>歯数:</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="35"/>
-      <source>Face</source>
-      <translation>面</translation>
+      <location filename="../../../SprocketFeature.ui" line="52"/>
+      <source>Sprocket Reference</source>
+      <translation>スプロケットリファレンス</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="49"/>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="87"/>
-      <source>Edge</source>
-      <translation>エッジ</translation>
+      <location filename="../../../SprocketFeature.ui" line="66"/>
+      <source>ANSI 25</source>
+      <translation>ANSI 25</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="63"/>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="101"/>
-      <source>Distance</source>
-      <translation>距離</translation>
+      <location filename="../../../SprocketFeature.ui" line="71"/>
+      <source>ANSI 35</source>
+      <translation>ANSI 35</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="137"/>
-      <source>Type</source>
-      <translation>タイプ</translation>
+      <location filename="../../../SprocketFeature.ui" line="76"/>
+      <source>ANSI 41</source>
+      <translation>ANSI 41</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="145"/>
-      <source>Through</source>
-      <translation>貫通</translation>
+      <location filename="../../../SprocketFeature.ui" line="81"/>
+      <source>ANSI 40</source>
+      <translation>ANSI 40</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="152"/>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="492"/>
-      <source>Depth</source>
-      <translation>深さ</translation>
+      <location filename="../../../SprocketFeature.ui" line="86"/>
+      <source>ANSI 50</source>
+      <translation>ANSI 50</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="161"/>
-      <source>Threaded</source>
-      <translation>ねじ</translation>
+      <location filename="../../../SprocketFeature.ui" line="91"/>
+      <source>ANSI 60</source>
+      <translation>ANSI 60</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="168"/>
-      <source>Countersink</source>
-      <translation>皿穴</translation>
+      <location filename="../../../SprocketFeature.ui" line="96"/>
+      <source>ANSI 80</source>
+      <translation>ANSI 80</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="175"/>
-      <source>Counterbore</source>
-      <translation>カウンターボア</translation>
+      <location filename="../../../SprocketFeature.ui" line="101"/>
+      <source>ANSI 100</source>
+      <translation>ANSI 100</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="196"/>
-      <source>Hole norm</source>
-      <translation>穴の法線</translation>
+      <location filename="../../../SprocketFeature.ui" line="106"/>
+      <source>ANSI 120</source>
+      <translation>ANSI 120</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="202"/>
-      <source>Custom dimensions</source>
-      <translation>カスタムサイズ</translation>
+      <location filename="../../../SprocketFeature.ui" line="111"/>
+      <source>ANSI 140</source>
+      <translation>ANSI 140</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="218"/>
-      <source>Tolerance</source>
-      <translation>公差</translation>
+      <location filename="../../../SprocketFeature.ui" line="116"/>
+      <source>ANSI 160</source>
+      <translation>ANSI 160</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="249"/>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="368"/>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="474"/>
-      <source>Diameter</source>
-      <translation>直径</translation>
+      <location filename="../../../SprocketFeature.ui" line="121"/>
+      <source>ANSI 180</source>
+      <translation>ANSI 180</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="280"/>
-      <source>Bolt/Washer</source>
-      <translation>ボルト/ワッシャー</translation>
+      <location filename="../../../SprocketFeature.ui" line="126"/>
+      <source>ANSI 200</source>
+      <translation>ANSI 200</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="329"/>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="337"/>
-      <source>Thread norm</source>
-      <translation>ねじの法線</translation>
+      <location filename="../../../SprocketFeature.ui" line="131"/>
+      <source>ANSI 240</source>
+      <translation>ANSI 240</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="399"/>
-      <source> Custom thread length</source>
-      <translation> カスタムねじ長さ</translation>
+      <location filename="../../../SprocketFeature.ui" line="136"/>
+      <source>Bicycle with Derailleur</source>
+      <translation>変速機付き自転車</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="423"/>
-      <source>Finish depth</source>
-      <translation>終了深さ</translation>
+      <location filename="../../../SprocketFeature.ui" line="141"/>
+      <source>Bicycle without Derailleur</source>
+      <translation>変速機なし自転車</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="466"/>
-      <source>Data</source>
-      <translation>データ</translation>
+      <location filename="../../../SprocketFeature.ui" line="146"/>
+      <source>ISO 606 06B</source>
+      <translation>ISO 606 06B</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="510"/>
-      <source>Counterbore/sink dia</source>
-      <translation>カウンターボア/シンクの直系</translation>
+      <location filename="../../../SprocketFeature.ui" line="151"/>
+      <source>ISO 606 08B</source>
+      <translation>ISO 606 08B</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="528"/>
-      <source>Counterbore depth</source>
-      <translation>カウンターボアの深さ</translation>
+      <location filename="../../../SprocketFeature.ui" line="156"/>
+      <source>ISO 606 10B</source>
+      <translation>ISO 606 10B</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="546"/>
-      <source>Countersink angle</source>
-      <translation>皿穴の角度</translation>
+      <location filename="../../../SprocketFeature.ui" line="161"/>
+      <source>ISO 606 12B</source>
+      <translation>ISO 606 12B</translation>
     </message>
     <message>
-      <location filename="../../../FeatureHole/TaskHole.ui" line="564"/>
-      <source>Thread length</source>
-      <translation>ねじ長さ</translation>
+      <location filename="../../../SprocketFeature.ui" line="166"/>
+      <source>ISO 606 16B</source>
+      <translation>ISO 606 16B</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="171"/>
+      <source>ISO 606 20B</source>
+      <translation>ISO 606 20B</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="176"/>
+      <source>ISO 606 24B</source>
+      <translation>ISO 606 24B</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="181"/>
+      <source>Motorcycle 420</source>
+      <translation>オートバイ 420</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="186"/>
+      <source>Motorcycle 425</source>
+      <translation>オートバイ 425</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="191"/>
+      <source>Motorcycle 428</source>
+      <translation>オートバイ 428</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="196"/>
+      <source>Motorcycle 520</source>
+      <translation>オートバイ 520</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="201"/>
+      <source>Motorcycle 525</source>
+      <translation>オートバイ 525</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="206"/>
+      <source>Motorcycle 530</source>
+      <translation>オートバイ 530</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="211"/>
+      <source>Motorcycle 630</source>
+      <translation>オートバイ 630</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="219"/>
+      <source>Chain Pitch:</source>
+      <translation>チェーンピッチ:</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="238"/>
+      <source>0 in</source>
+      <translation>0 in</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="266"/>
+      <source>Chain Roller Diameter:</source>
+      <translation>チェーンローラーの直径:</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.ui" line="310"/>
+      <source>Tooth Width:</source>
+      <translation type="unfinished">Tooth Width:</translation>
     </message>
   </context>
   <context>
     <name>TaskHoleParameters</name>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="14"/>
+      <location filename="../../TaskHoleParameters.ui" line="20"/>
       <source>Task Hole Parameters</source>
       <translation>タスクホールパラメーター</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="33"/>
-      <location filename="../../TaskHoleParameters.ui" line="300"/>
-      <source>Type</source>
-      <translation>タイプ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="40"/>
-      <location filename="../../TaskHoleParameters.ui" line="316"/>
-      <source>Diameter</source>
-      <translation>直径</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="47"/>
-      <location filename="../../TaskHoleParameters.ui" line="332"/>
-      <source>Depth</source>
-      <translation>深さ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="57"/>
-      <source>Cutoff inner</source>
-      <translation>内部カットオフ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="70"/>
-      <source>Class</source>
-      <translation>クラス</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="77"/>
-      <source>Tapered</source>
-      <translation>テーパー</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="97"/>
-      <source>Direction</source>
-      <translation>方向</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="110"/>
-      <source>Fit</source>
-      <translation>はめあい</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="158"/>
-      <source>Flat</source>
-      <translation>フラット</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="173"/>
-      <source>Angled</source>
-      <translation>角度</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="195"/>
-      <source>Pitch</source>
-      <translation>ピッチ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="220"/>
-      <source>Right hand</source>
-      <translation>右手</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="227"/>
-      <source>Left hand</source>
-      <translation>左手</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="240"/>
-      <source>Model actual thread</source>
-      <translation>モデルの実ねじ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="247"/>
-      <source>Threaded</source>
-      <translation>ねじ</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="257"/>
-      <source>Angle</source>
-      <translation>角度</translation>
-    </message>
-    <message>
-      <location filename="../../TaskHoleParameters.ui" line="283"/>
+      <location filename="../../TaskHoleParameters.ui" line="34"/>
       <source>Profile</source>
       <translation>プロファイル</translation>
     </message>
     <message>
+      <location filename="../../TaskHoleParameters.ui" line="290"/>
+      <source>Whether the hole gets a thread</source>
+      <translation>ねじ穴にするかどうか</translation>
+    </message>
+    <message>
       <location filename="../../TaskHoleParameters.ui" line="293"/>
-      <source>Countersink angle</source>
-      <translation>皿穴の角度</translation>
+      <source>Threaded</source>
+      <translation>ねじ</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="353"/>
-      <source>Dimension</source>
-      <translation>寸法</translation>
+      <location filename="../../TaskHoleParameters.ui" line="447"/>
+      <source>Whether the hole gets a modelled thread</source>
+      <translation>モデル化されたねじ穴にするかどうか</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="358"/>
-      <source>Through all</source>
-      <translation>貫通</translation>
+      <location filename="../../TaskHoleParameters.ui" line="450"/>
+      <source>Model Thread</source>
+      <translation>モデル ねじ山</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="372"/>
+      <location filename="../../TaskHoleParameters.ui" line="466"/>
+      <source>Live update of changes to the thread
+Note that the calculation can take some time</source>
+      <translation>ねじ山の変更を即時更新
+計算に時間がかかる場合があるので注意</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="483"/>
+      <source>Customize thread clearance</source>
+      <translation>ねじ山の間隔をカスタマイズ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="90"/>
+      <source>Clearance</source>
+      <translation>クリアランス</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="470"/>
+      <source>Update thread view</source>
+      <translation>ネジ山の表示を更新</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="486"/>
+      <source>Custom Clearance</source>
+      <translation>カスタムクリアランス</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="499"/>
+      <source>Custom Thread clearance value</source>
+      <translation>カスタム ねじ山間隔値</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="394"/>
+      <source>Direction</source>
+      <translation>方向</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="431"/>
+      <source>Right hand</source>
+      <translation>右手</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="410"/>
+      <source>Left hand</source>
+      <translation>左手</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="63"/>
       <source>Size</source>
       <translation>サイズ</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="380"/>
-      <source>Standard fit</source>
-      <translation>標準はめあい</translation>
+      <location filename="../../TaskHoleParameters.ui" line="103"/>
+      <source>Hole clearance
+Only available for holes without thread</source>
+      <translation>ホールクリアランス
+ねじ山のない穴のみ利用可能</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="385"/>
-      <source>Close fit</source>
-      <translation>しまりばめ</translation>
+      <location filename="../../TaskHoleParameters.ui" line="108"/>
+      <location filename="../../TaskHoleParameters.cpp" line="621"/>
+      <source>Standard</source>
+      <translation>標準</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="396"/>
-      <source>Cutoff outer</source>
-      <translation>外部カットオフ</translation>
+      <location filename="../../TaskHoleParameters.ui" line="113"/>
+      <location filename="../../TaskHoleParameters.cpp" line="622"/>
+      <location filename="../../TaskHoleParameters.cpp" line="633"/>
+      <source>Close</source>
+      <translation>閉じる</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="449"/>
-      <source>&lt;b&gt;Drill point&lt;/b&gt;</source>
-      <translation>&lt;b&gt;ドリルポイント&lt;/b&gt;</translation>
+      <location filename="../../TaskHoleParameters.ui" line="118"/>
+      <location filename="../../TaskHoleParameters.cpp" line="623"/>
+      <source>Wide</source>
+      <translation>幅</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="459"/>
-      <source>&lt;b&gt;Misc&lt;/b&gt;</source>
-      <translation>&lt;b&gt;その他&lt;/b&gt;</translation>
+      <location filename="../../TaskHoleParameters.ui" line="306"/>
+      <source>Class</source>
+      <translation>クラス</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="466"/>
-      <source>&lt;b&gt;Hole cut&lt;/b&gt;</source>
-      <translation>&lt;b&gt;ホールカット&lt;/b&gt;</translation>
+      <location filename="../../TaskHoleParameters.ui" line="321"/>
+      <source>Tolerance class for threaded holes according to hole profile</source>
+      <translation>穴用プロファイルに従ったねじ穴の公差等級</translation>
     </message>
     <message>
-      <location filename="../../TaskHoleParameters.ui" line="473"/>
-      <source>&lt;b&gt;Threading and size&lt;/b&gt;</source>
-      <translation>&lt;b&gt;ねじ切りとサイズ&lt;/b&gt;</translation>
+      <location filename="../../TaskHoleParameters.ui" line="692"/>
+      <source>Drill Point</source>
+      <translation>ドリルポイント</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="134"/>
+      <location filename="../../TaskHoleParameters.ui" line="556"/>
+      <source>Diameter</source>
+      <translation>直径</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="147"/>
+      <source>Hole diameter</source>
+      <translation>穴の直径</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="171"/>
+      <location filename="../../TaskHoleParameters.ui" line="336"/>
+      <location filename="../../TaskHoleParameters.ui" line="594"/>
+      <source>Depth</source>
+      <translation>深さ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="185"/>
+      <location filename="../../TaskHoleParameters.ui" line="355"/>
+      <source>Dimension</source>
+      <translation>寸法</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="190"/>
+      <source>Through all</source>
+      <translation>貫通</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="350"/>
+      <source>Hole depth</source>
+      <translation>穴の深さ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="360"/>
+      <source>Tapped (DIN76)</source>
+      <translation>タップ (DIN76)</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="543"/>
+      <source>Cut type for screw heads</source>
+      <translation>ネジ頭のカットタイプ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="665"/>
+      <source>Check to override the values predefined by the 'Type'</source>
+      <translation>「タイプ」で定義された値を上書きする場合はチェック</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="668"/>
+      <source>Custom values</source>
+      <translation>カスタム値</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="607"/>
+      <source>For countersinks this is the depth of
+the screw's top below the surface</source>
+      <translation>皿穴の場合、面の下のねじ上部の深さです。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="530"/>
+      <source>Hole Cut Type</source>
+      <translation>ホールカットのタイプ</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="633"/>
+      <source>Countersink angle</source>
+      <translation>皿穴の角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="705"/>
+      <source>Flat</source>
+      <translation>フラット</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="721"/>
+      <source>Angled</source>
+      <translation>角度</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="758"/>
+      <source>The size of the drill point will be taken into
+account for the depth of blind holes</source>
+      <translation>止まり穴の深さでは錐先の大きさが考慮されます。</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="762"/>
+      <source>Take into account for depth</source>
+      <translation>深さを考慮</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="240"/>
+      <source>Tapered</source>
+      <translation>テーパー</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="255"/>
+      <source>Taper angle for the hole
+90 degree: straight hole
+under 90: smaller hole radius at the bottom
+over 90: larger hole radius at the bottom</source>
+      <translation>穴のテーパー角度
+90 度: 垂直穴
+90度未満: 底部の穴半径が小
+90度超: 底部の穴半径が大</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="224"/>
+      <source>Reverses the hole direction</source>
+      <translation>穴の方向を反転</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.ui" line="227"/>
+      <source>Reversed</source>
+      <translation>逆方向</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.cpp" line="632"/>
+      <source>Normal</source>
+      <translation>標準</translation>
+    </message>
+    <message>
+      <location filename="../../TaskHoleParameters.cpp" line="634"/>
+      <source>Loose</source>
+      <translation>あそび</translation>
     </message>
   </context>
   <context>
     <name>TaskTransformedMessages</name>
     <message>
-      <location filename="../../TaskTransformedMessages.ui" line="14"/>
-      <source>Form</source>
-      <translation>フォーム</translation>
-    </message>
-    <message>
-      <location filename="../../TaskTransformedMessages.ui" line="26"/>
+      <location filename="../../TaskTransformedMessages.ui" line="25"/>
       <source>No message</source>
       <translation>メッセージなし</translation>
     </message>
@@ -3352,9 +4426,1202 @@ Although you will be able to migrate any moment later with 'Part Design-&gt;Migr
   <context>
     <name>Workbench</name>
     <message>
+      <location filename="../../Workbench.cpp" line="43"/>
+      <source>&amp;Sketch</source>
+      <translation>&amp;Sketch</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="45"/>
+      <source>&amp;Part Design</source>
+      <translation>&amp;Part Design</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="46"/>
+      <source>Create a datum</source>
+      <translation>データムを作成</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="47"/>
+      <source>Create an additive feature</source>
+      <translation>加算フィーチャーを作成</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="48"/>
+      <source>Create a subtractive feature</source>
+      <translation>減算フィーチャーを作成</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="49"/>
+      <source>Apply a pattern</source>
+      <translation>パターンを適用</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="50"/>
+      <source>Apply a dress-up feature</source>
+      <translation>ドレスアップフィーチャーを適用</translation>
+    </message>
+    <message>
       <location filename="../../Workbench.cpp" line="51"/>
-      <source>Part Design</source>
-      <translation>パートデザイン</translation>
+      <source>Sprocket...</source>
+      <translation>スプロケット...</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="52"/>
+      <source>Involute gear...</source>
+      <translation>インボリュート歯車...</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="53"/>
+      <source>Shaft design wizard</source>
+      <translation>シャフト設計ウィザード</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="61"/>
+      <source>Measure</source>
+      <translation>測定</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="62"/>
+      <source>Refresh</source>
+      <translation>更新</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="63"/>
+      <source>Toggle 3D</source>
+      <translation>3D の切り替え</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="64"/>
+      <source>Part Design Helper</source>
+      <translation>Part Design ヘルパー</translation>
+    </message>
+    <message>
+      <location filename="../../Workbench.cpp" line="65"/>
+      <source>Part Design Modeling</source>
+      <translation>部品設計</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesign_InvoluteGear</name>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="58"/>
+      <source>Involute gear...</source>
+      <translation>インボリュート歯車...</translation>
+    </message>
+    <message>
+      <location filename="../../../InvoluteGearFeature.py" line="62"/>
+      <source>Creates or edit the involute gear definition.</source>
+      <translation>インボリュート歯車定義の作成、または編集</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesign_Sprocket</name>
+    <message>
+      <location filename="../../../SprocketFeature.py" line="62"/>
+      <source>Sprocket...</source>
+      <translation>スプロケット...</translation>
+    </message>
+    <message>
+      <location filename="../../../SprocketFeature.py" line="66"/>
+      <source>Creates or edit the sprocket definition.</source>
+      <translation>スプロケット定義の作成、または編集</translation>
+    </message>
+  </context>
+  <context>
+    <name>WizardShaftTable</name>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="45"/>
+      <source>Length [mm]</source>
+      <translation>長さ [mm]</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="46"/>
+      <source>Diameter [mm]</source>
+      <translation>直径 [mm]</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="47"/>
+      <source>Inner diameter [mm]</source>
+      <translation>内径 [mm]</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="48"/>
+      <source>Constraint type</source>
+      <translation>拘束タイプ</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="49"/>
+      <source>Start edge type</source>
+      <translation>エッジ始端タイプ</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="50"/>
+      <source>Start edge size</source>
+      <translation>エッジ始端サイズ</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="51"/>
+      <source>End edge type</source>
+      <translation>エッジ終端タイプ</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="55"/>
+      <source>End edge size</source>
+      <translation>エッジ終端サイズ</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="64"/>
+      <source>Shaft wizard</source>
+      <translation>シャフトウィザード</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="72"/>
+      <source>Section 1</source>
+      <translation>セクション 1</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="72"/>
+      <source>Section 2</source>
+      <translation>セクション 2</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="76"/>
+      <source>Add column</source>
+      <translation>列を追加</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="122"/>
+      <source>Section %s</source>
+      <translation>セクション %s</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="150"/>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="165"/>
+      <source>None</source>
+      <translation>なし</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="151"/>
+      <source>Fixed</source>
+      <translation>固定</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="152"/>
+      <source>Force</source>
+      <translation>加力</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="153"/>
+      <source>Bearing</source>
+      <translation>ベアリング</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="154"/>
+      <source>Gear</source>
+      <translation>ギア</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="155"/>
+      <source>Pulley</source>
+      <translation>プーリー</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="166"/>
+      <source>Chamfer</source>
+      <translation>面取り</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaftTable.py" line="167"/>
+      <source>Fillet</source>
+      <translation>フィレット</translation>
+    </message>
+  </context>
+  <context>
+    <name>TaskWizardShaft</name>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaft.py" line="57"/>
+      <source>All</source>
+      <translation>すべて</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaft.py" line="104"/>
+      <source>Missing module</source>
+      <translation>モジュールが見つかりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaft.py" line="105"/>
+      <source>You may have to install the Plot add-on</source>
+      <translation>Plotアドオンをインストールする必要があるかもしれません。</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesign_WizardShaft</name>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaft.py" line="189"/>
+      <source>Shaft design wizard...</source>
+      <translation>シャフト設計ウィザード...</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaft.py" line="190"/>
+      <source>Start the shaft design wizard</source>
+      <translation>シャフト設計ウィザードを開始</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesign_WizardShaftCallBack</name>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaft.py" line="214"/>
+      <source>Shaft design wizard...</source>
+      <translation>シャフト設計ウィザード...</translation>
+    </message>
+    <message>
+      <location filename="../../../WizardShaft/WizardShaft.py" line="215"/>
+      <source>Start the shaft design wizard</source>
+      <translation>シャフト設計ウィザードを開始</translation>
+    </message>
+  </context>
+  <context>
+    <name>Exception</name>
+    <message>
+      <location filename="../../../App/Body.cpp" line="401"/>
+      <source>Linked object is not a PartDesign feature</source>
+      <translation>リンクされたオブジェクトはパートデザインのフィーチャーではありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/Body.cpp" line="408"/>
+      <source>Tip shape is empty</source>
+      <translation>最終結果のシェイプが空です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBase.cpp" line="64"/>
+      <source>BaseFeature link is not set</source>
+      <translation>BaseFeatureリンクが設定されていません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBase.cpp" line="69"/>
+      <source>BaseFeature must be a Part::Feature</source>
+      <translation>BaseFeatureはPart::Featureでなければなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBase.cpp" line="78"/>
+      <source>BaseFeature has an empty shape</source>
+      <translation>BaseFeatureに空のシェイプがあります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="80"/>
+      <source>Cannot do boolean cut without BaseFeature</source>
+      <translation>BaseFeatureなしでブーリアン演算のカットを行うことはできません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="94"/>
+      <location filename="../../../App/FeatureBoolean.cpp" line="115"/>
+      <source>Cannot do boolean with anything but Part::Feature and its derivatives</source>
+      <translation>Part::Featureとその派生物以外ではブーリアン演算を行うことはできません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="101"/>
+      <source>Cannot do boolean operation with invalid base shape</source>
+      <translation>無効なベースシェイプではブーリアン演算を行うことはできません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="107"/>
+      <source>Cannot do boolean on feature which is not in a body</source>
+      <translation>ボディー内にないフィーチャーではブーリアン演算を行うことはできません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="125"/>
+      <source>Base shape is null</source>
+      <translation>ベースシェイプが null です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="128"/>
+      <source>Tool shape is null</source>
+      <translation>ツールシェイプが null です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="133"/>
+      <source>Fusion of tools failed</source>
+      <translation>結合ツールが失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="736"/>
+      <location filename="../../../App/FeaturePad.cpp" line="237"/>
+      <location filename="../../../App/FeaturePocket.cpp" line="230"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="399"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="418"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="733"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="753"/>
+      <location filename="../../../App/FeatureBoolean.cpp" line="138"/>
+      <location filename="../../../App/FeatureLoft.cpp" line="297"/>
+      <location filename="../../../App/FeatureLoft.cpp" line="317"/>
+      <location filename="../../../App/FeatureLoft.cpp" line="532"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="137"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="151"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="166"/>
+      <location filename="../../../App/FeatureHole.cpp" line="1900"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="218"/>
+      <source>Resulting shape is not a solid</source>
+      <translation>結果シェイプはソリッドではありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="142"/>
+      <source>Cut out failed</source>
+      <translation>切り抜きに失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureBoolean.cpp" line="147"/>
+      <source>Common operation failed</source>
+      <translation>共通部分演算が失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="740"/>
+      <location filename="../../../App/FeatureExtrude.cpp" line="751"/>
+      <location filename="../../../App/FeatureExtrude.cpp" line="758"/>
+      <location filename="../../../App/FeatureChamfer.cpp" line="202"/>
+      <location filename="../../../App/FeatureChamfer.cpp" line="278"/>
+      <location filename="../../../App/FeaturePad.cpp" line="240"/>
+      <location filename="../../../App/FeaturePad.cpp" line="248"/>
+      <location filename="../../../App/FeaturePocket.cpp" line="199"/>
+      <location filename="../../../App/FeaturePocket.cpp" line="233"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="402"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="421"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="737"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="757"/>
+      <location filename="../../../App/FeatureDraft.cpp" line="322"/>
+      <location filename="../../../App/FeatureBoolean.cpp" line="157"/>
+      <location filename="../../../App/FeatureFillet.cpp" line="118"/>
+      <location filename="../../../App/FeatureFillet.cpp" line="200"/>
+      <location filename="../../../App/FeatureLoft.cpp" line="300"/>
+      <location filename="../../../App/FeatureLoft.cpp" line="320"/>
+      <location filename="../../../App/FeatureLoft.cpp" line="537"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="154"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="169"/>
+      <location filename="../../../App/FeatureHole.cpp" line="1905"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="224"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="357"/>
+      <source>Result has multiple solids: that is not currently supported.</source>
+      <translation>結果に複数のソリッドが含まれています。これは現在サポートされていません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureChamfer.cpp" line="184"/>
+      <location filename="../../../App/FeatureChamfer.cpp" line="258"/>
+      <source>Failed to create chamfer</source>
+      <translation>面取りを作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureChamfer.cpp" line="262"/>
+      <location filename="../../../App/FeatureDraft.cpp" line="319"/>
+      <location filename="../../../App/FeatureFillet.cpp" line="99"/>
+      <location filename="../../../App/FeatureFillet.cpp" line="184"/>
+      <source>Resulting shape is null</source>
+      <translation>結果シェイプが null です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureChamfer.cpp" line="207"/>
+      <location filename="../../../App/FeatureChamfer.cpp" line="273"/>
+      <location filename="../../../App/FeatureFillet.cpp" line="195"/>
+      <source>Resulting shape is invalid</source>
+      <translation>結果シェイプが無効です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureChamfer.cpp" line="125"/>
+      <source>No edges specified</source>
+      <translation>エッジが指定されていません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureChamfer.cpp" line="346"/>
+      <source>Size must be greater than zero</source>
+      <translation>サイズはゼロより大きくなければなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureChamfer.cpp" line="355"/>
+      <source>Size2 must be greater than zero</source>
+      <translation>サイズ2はゼロより大きくなければなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureChamfer.cpp" line="360"/>
+      <source>Angle must be greater than 0 and less than 180</source>
+      <translation>角度は0から180の間でなければなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureDraft.cpp" line="315"/>
+      <source>Failed to create draft</source>
+      <translation>抜き勾配を作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureFillet.cpp" line="82"/>
+      <source>Fillet not possible on selected shapes</source>
+      <translation>選択したシェイプではフィレットを作成できません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureFillet.cpp" line="89"/>
+      <location filename="../../../App/FeatureFillet.cpp" line="157"/>
+      <source>Fillet radius must be greater than zero</source>
+      <translation>フィレット半径は0より大きくなければなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureFillet.cpp" line="180"/>
+      <source>Failed to create fillet</source>
+      <translation>フィレットを作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureGroove.cpp" line="89"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="251"/>
+      <source>Angle of groove too large</source>
+      <translation>グルーブの角度が大きすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureGroove.cpp" line="93"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="255"/>
+      <source>Angle of groove too small</source>
+      <translation>グルーブの角度が小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1669"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="110"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="274"/>
+      <source>The requested feature cannot be created. The reason may be that:
+  - the active Body does not contain a base shape, so there is no
+  material to be removed;
+  - the selected sketch does not belong to the active Body.</source>
+      <translation>要求されたフィーチャーを作成できません。原因は以下である可能性があります。
+・ アクティブなボディーにベースシェイプが無く、削除されるマテリアルが存在しない。
+・ 選択されたスケッチがアクティブなボディーに属していない。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="446"/>
+      <source>Length too small</source>
+      <translation>長さが小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="453"/>
+      <source>Second length too small</source>
+      <translation>2番目の長さが小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="487"/>
+      <source>Failed to obtain profile shape</source>
+      <translation>プロファイルのシェイプを取得できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="539"/>
+      <source>Creation failed because direction is orthogonal to sketch's normal vector</source>
+      <translation>方向とスケッチの法線ベクトルが直交しているため作成に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="598"/>
+      <source>Extrude: Can only offset one face</source>
+      <translation>押し出し: 1つの面のみオフセット可能</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureRevolution.cpp" line="140"/>
+      <location filename="../../../App/FeatureExtrude.cpp" line="558"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="132"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="291"/>
+      <source>Creating a face from sketch failed</source>
+      <translation>スケッチから面を作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="635"/>
+      <source>Up to face: Could not get SubShape!</source>
+      <translation>面まで: サブシェイプが得られませんでした!</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="677"/>
+      <source>Magnitude of taper angle matches or exceeds 90 degrees</source>
+      <translation>テーパー角度の大きさが一致しているか、または90度を超えています。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="688"/>
+      <source>Padding with draft angle failed</source>
+      <translation>抜き勾配角度でのパディングが失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureRevolution.cpp" line="158"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="148"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="313"/>
+      <source>Revolve axis intersects the sketch</source>
+      <translation>回転押し出しの軸がスケッチと交差しています。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureGroove.cpp" line="213"/>
+      <source>Cut out of base feature failed</source>
+      <translation>ベースフィーチャーの切り抜きに失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureRevolution.cpp" line="265"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="203"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="321"/>
+      <source>Could not revolve the sketch!</source>
+      <translation>スケッチを回転押し出しできませんでした!</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureRevolution.cpp" line="277"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="236"/>
+      <location filename="../../../App/FeatureGroove.cpp" line="365"/>
+      <source>Could not create face from sketch.
+Intersecting sketch entities in a sketch are not allowed.</source>
+      <translation>スケッチから面を作成できませんでした。
+スケッチ内のスケッチ図形を交差させることはできません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="128"/>
+      <source>Error: Pitch too small!</source>
+      <translation type="unfinished">Error: Pitch too small!</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="130"/>
+      <location filename="../../../App/FeatureHelix.cpp" line="144"/>
+      <source>Error: height too small!</source>
+      <translation>エラー：高さが小さすぎます！</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="136"/>
+      <source>Error: pitch too small!</source>
+      <translation>エラー：ピッチが小さすぎます！</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="138"/>
+      <location filename="../../../App/FeatureHelix.cpp" line="146"/>
+      <location filename="../../../App/FeatureHelix.cpp" line="152"/>
+      <source>Error: turns too small!</source>
+      <translation>エラー: 巻数が小さすぎます！</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="156"/>
+      <source>Error: either height or growth must not be zero!</source>
+      <translation>エラー: 高さと増加率のいずれかをゼロにすることはできません！</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="170"/>
+      <source>Error: unsupported mode</source>
+      <translation>エラー: サポートされていないモードです。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="182"/>
+      <source>Error: No valid sketch or face</source>
+      <translation>エラー: 有効なスケッチ、面がありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="191"/>
+      <source>Error: Face must be planar</source>
+      <translation>エラー: 面は平面でなければなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="2157"/>
+      <location filename="../../../App/FeatureHelix.cpp" line="272"/>
+      <location filename="../../../App/FeatureHelix.cpp" line="302"/>
+      <source>Error: Result is not a solid</source>
+      <translation>エラー: 結果はソリッドではありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="252"/>
+      <source>Error: There is nothing to subtract</source>
+      <translation>エラー: 減算の対象がありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="255"/>
+      <location filename="../../../App/FeatureHelix.cpp" line="276"/>
+      <location filename="../../../App/FeatureHelix.cpp" line="305"/>
+      <source>Error: Result has multiple solids</source>
+      <translation>エラー: 結果に複数のソリッドが存在します。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="266"/>
+      <source>Error: Adding the helix failed</source>
+      <translation>エラー: らせんの加算に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="289"/>
+      <source>Error: Intersecting the helix failed</source>
+      <translation>エラー: らせんの交差に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="296"/>
+      <source>Error: Subtracting the helix failed</source>
+      <translation>エラー: らせんの減算に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHelix.cpp" line="317"/>
+      <source>Error: Could not create face from sketch</source>
+      <translation>エラー: スケッチから面を作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1687"/>
+      <source>Hole error: Creating a face from sketch failed</source>
+      <translation>ホールエラー: スケッチから面を作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1712"/>
+      <source>Hole error: Unsupported length specification</source>
+      <translation>ホールエラー: サポートされていない長さ指定です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1715"/>
+      <source>Hole error: Invalid hole depth</source>
+      <translation>ホールエラー: 穴の深さが正しくありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1738"/>
+      <source>Hole error: Invalid taper angle</source>
+      <translation>ホールエラー: テーパー角度が正しくありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1759"/>
+      <source>Hole error: Hole cut diameter too small</source>
+      <translation>ホールエラー: ホールカット直径が小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1763"/>
+      <source>Hole error: Hole cut depth must be less than hole depth</source>
+      <translation>ホールエラー: ホールカット深さは穴の深さより小さくなければなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1767"/>
+      <source>Hole error: Hole cut depth must be greater or equal to zero</source>
+      <translation>ホールエラー: ホールカットの深さはゼロ以上でなければなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1789"/>
+      <source>Hole error: Invalid countersink</source>
+      <translation>ホールエラー: 皿穴が正しくありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1822"/>
+      <source>Hole error: Invalid drill point angle</source>
+      <translation>ホールエラー: 錐先角度が正しくありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1832"/>
+      <source>Hole error: Invalid drill point</source>
+      <translation>ホールエラー: 錐先が正しくありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1866"/>
+      <source>Hole error: Could not revolve sketch</source>
+      <translation>ホールエラー: スケッチを回転できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1870"/>
+      <source>Hole error: Resulting shape is empty</source>
+      <translation>ホールエラー: 結果シェイプが空です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="1880"/>
+      <source>Error: Adding the thread failed</source>
+      <translation>エラー: ねじ山の追加に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureTransformed.cpp" line="375"/>
+      <location filename="../../../App/FeatureTransformed.cpp" line="391"/>
+      <location filename="../../../App/FeatureTransformed.cpp" line="411"/>
+      <location filename="../../../App/FeatureHole.cpp" line="1892"/>
+      <source>Boolean operation failed</source>
+      <translation>ブーリアン演算が失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePocket.cpp" line="249"/>
+      <location filename="../../../App/FeatureHole.cpp" line="1916"/>
+      <source>Could not create face from sketch.
+Intersecting sketch entities or multiple faces in a sketch are not allowed for making a pocket up to a face.</source>
+      <translation>スケッチから面を作成できませんでした。
+スケッチ内の交差するスケッチ図形や複数面では、面までのポケットは作れません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="2037"/>
+      <source>Thread type out of range</source>
+      <translation>ねじ山の種類が範囲外</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="2040"/>
+      <source>Thread size out of range</source>
+      <translation>ねじ山のサイズが範囲外</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureHole.cpp" line="2132"/>
+      <source>Error: Thread could not be built</source>
+      <translation>エラー: ねじ山を作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="137"/>
+      <location filename="../../../App/FeatureLoft.cpp" line="409"/>
+      <source>Loft: At least one section is needed</source>
+      <translation>ロフト: 少なくとも1つのセクションが必要です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="142"/>
+      <source>Loft: Could not obtain profile shape</source>
+      <translation>ロフト: プロファイル形状を取得できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="155"/>
+      <source>Loft: When using points for profile/sections, the sketch should have a single point</source>
+      <translation>ロフト: プロファイル/セクションに点を使用する場合、スケッチは1つの点を持つ必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="163"/>
+      <source>Loft: All sections need to be part features</source>
+      <translation>ロフト: すべてのセクションがパートフィーチャーである必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="168"/>
+      <source>Loft: Could not obtain section shape</source>
+      <translation>ロフト: セクション形状を取得できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="184"/>
+      <source>Loft: A section doesn't contain any wires nor is a single vertex</source>
+      <translation>ロフト: セクションにワイヤーも1つの頂点も含まれていません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="186"/>
+      <source>Loft: Only the profile and the last section can be vertices</source>
+      <translation>ロフト: プロファイルと最後のセクションにだけ頂点を配置できます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="188"/>
+      <source>Loft: For closed lofts only the profile can be a vertex</source>
+      <translation>ロフト: 閉じたロフトの場合、プロファイルにだけ頂点を配置できます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="195"/>
+      <source>Loft: all loft sections need to have the same amount of inner wires</source>
+      <translation>ロフト: ロフトのすべてのセクションに同じだけの内部ワイヤーが必要です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="234"/>
+      <source>Loft could not be built</source>
+      <translation>ロフトを作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="267"/>
+      <source>Loft: Result is not a solid</source>
+      <translation>ロフト: 結果はソリッドではありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="280"/>
+      <source>Loft: There is nothing to subtract from</source>
+      <translation>ロフト: 次のものから減算する対象がありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="290"/>
+      <source>Loft: Adding the loft failed</source>
+      <translation>ロフト: ロフトの加算に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="310"/>
+      <source>Loft: Subtracting the loft failed</source>
+      <translation>ロフト: ロフトの減算に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="336"/>
+      <location filename="../../../App/FeatureLoft.cpp" line="549"/>
+      <source>Loft: A fatal error occurred when making the loft</source>
+      <translation>ロフト: ロフト作成中に重大なエラーが発生しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="448"/>
+      <source>Loft: Creating a face from sketch failed</source>
+      <translation>ロフト: スケッチから面を作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="481"/>
+      <source>Loft: Failed to create shell</source>
+      <translation>ロフト: シェルの作成に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePad.cpp" line="106"/>
+      <source>Pad: Can't pad up to shape without base shape.</source>
+      <translation>パッド: ベース形状なしでの押し出しはできません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePad.cpp" line="138"/>
+      <source>Pad: Creation failed because direction is orthogonal to sketch's normal vector</source>
+      <translation>パッド: 方向とスケッチの法線ベクトルが直交しているため作成に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePad.cpp" line="149"/>
+      <source>Pad: Creating a face from sketch failed</source>
+      <translation>パッド: スケッチから面を作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePad.cpp" line="220"/>
+      <source>Pad: Resulting shape is empty</source>
+      <translation>パッド: 結果シェイプが空です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePad.cpp" line="231"/>
+      <source>Pad: Fusion with base feature failed</source>
+      <translation>パッド: ベースフィーチャーとの結合に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureExtrude.cpp" line="770"/>
+      <location filename="../../../App/FeaturePad.cpp" line="261"/>
+      <source>Could not create face from sketch.
+Intersecting sketch entities or multiple faces in a sketch are not allowed.</source>
+      <translation>スケッチから面を作成できませんでした。
+スケッチ内のスケッチ図形や複数面を交差させることはできません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="177"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="511"/>
+      <source>Pipe: Could not obtain profile shape</source>
+      <translation>パイプ: プロファイル形状を取得できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="182"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="516"/>
+      <source>No spine linked</source>
+      <translation>スパインがリンクされていません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="195"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="529"/>
+      <source>No auxiliary spine linked.</source>
+      <translation>補助スパインがリンクされていません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="216"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="550"/>
+      <source>Pipe: Only one isolated point is needed if using a sketch with isolated points for section</source>
+      <translation>パイプ: セクションに孤立点を持つスケッチを使用する場合、孤立点が1つだけである必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="222"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="556"/>
+      <source>Pipe: At least one section is needed when using a single point for profile</source>
+      <translation>パイプ: プロファイルに1点を使用する場合、少なくとも1つのセクションが必要です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="236"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="570"/>
+      <source>Pipe: All sections need to be part features</source>
+      <translation>パイプ: すべてのセクションがパートフィーチャーである必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="242"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="576"/>
+      <source>Pipe: Could not obtain section shape</source>
+      <translation>パイプ: セクション形状を取得できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="251"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="585"/>
+      <source>Pipe: Only the profile and last section can be vertices</source>
+      <translation>パイプ: プロファイルと最後のセクションにだけ頂点を配置できます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="260"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="594"/>
+      <source>Multisections need to have the same amount of inner wires as the base section</source>
+      <translation>複数セクションは、基本セクションと同じ量の内部ワイヤーを持つ必要があります。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="287"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="621"/>
+      <source>Path must not be a null shape</source>
+      <translation>パスは null シェイプであってはなりません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="322"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="656"/>
+      <source>Pipe could not be built</source>
+      <translation>パイプを作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="368"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="702"/>
+      <source>Result is not a solid</source>
+      <translation>結果はソリッドではありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="383"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="717"/>
+      <source>Pipe: There is nothing to subtract from</source>
+      <translation>パイプ: 次のものから減算する対象がありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="394"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="728"/>
+      <source>Adding the pipe failed</source>
+      <translation>パイプの加算に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="413"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="748"/>
+      <source>Subtracting the pipe failed</source>
+      <translation>パイプの減算に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="436"/>
+      <location filename="../../../App/FeaturePipe.cpp" line="772"/>
+      <source>A fatal error occurred when making the pipe</source>
+      <translation>パイプ作成中に重大なエラーが発生しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="896"/>
+      <source>Invalid element in spine.</source>
+      <translation>スパインの要素が正しくありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="899"/>
+      <source>Element in spine is neither an edge nor a wire.</source>
+      <translation>スパインの要素がエッジでもワイヤーでもありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="912"/>
+      <source>Spine is not connected.</source>
+      <translation>スパインが接続されていません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="916"/>
+      <source>Spine is neither an edge nor a wire.</source>
+      <translation>スパインがエッジでもワイヤーでもありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePipe.cpp" line="920"/>
+      <source>Invalid spine.</source>
+      <translation>スパインが正しくありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePocket.cpp" line="141"/>
+      <source>Pocket: Creation failed because direction is orthogonal to sketch's normal vector</source>
+      <translation>ポケット: 方向とスケッチの法線ベクトルが直交しているため作成に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePocket.cpp" line="152"/>
+      <source>Pocket: Creating a face from sketch failed</source>
+      <translation>ポケット: スケッチから面を作成できませんでした。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePocket.cpp" line="158"/>
+      <source>Pocket: Extruding up to a face is only possible if the sketch is located on a face</source>
+      <translation>ポケット: スケッチが面上に配置されている場合にのみ、面まで押し出すことができます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePocket.cpp" line="193"/>
+      <source>Pocket: Up to face: Could not get SubShape!</source>
+      <translation>ポケット: 面まで: サブシェイプが得られませんでした!</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePocket.cpp" line="216"/>
+      <source>Pocket: Resulting shape is empty</source>
+      <translation>ポケット: 結果シェイプが空です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePocket.cpp" line="225"/>
+      <source>Pocket: Cut out of base feature failed</source>
+      <translation>ポケット: ベースフィーチャーの切り抜きに失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="105"/>
+      <source>Cannot subtract primitive feature without base feature</source>
+      <translation>ベースフィーチャー無しでプリミティブフィーチャーを減算することはできません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="521"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="124"/>
+      <source>Unknown operation type</source>
+      <translation>未知のオペレーション・タイプです。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureLoft.cpp" line="527"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="131"/>
+      <source>Failed to perform boolean operation</source>
+      <translation>ブール演算の実行に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="145"/>
+      <source>Adding the primitive failed</source>
+      <translation>プリミティブの加算に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="161"/>
+      <source>Subtracting the primitive failed</source>
+      <translation>プリミティブの減算に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="233"/>
+      <source>Length of box too small</source>
+      <translation>直方体の厚みが小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="235"/>
+      <source>Width of box too small</source>
+      <translation>直方体の幅が小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="237"/>
+      <source>Height of box too small</source>
+      <translation>直方体の高さが小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="283"/>
+      <source>Radius of cylinder too small</source>
+      <translation>円筒の半径が小さすぎます</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="285"/>
+      <source>Height of cylinder too small</source>
+      <translation>円筒の高さが小さすぎます</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="287"/>
+      <source>Rotation angle of cylinder too small</source>
+      <translation>円筒の回転角が小さすぎます</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="340"/>
+      <source>Radius of sphere too small</source>
+      <translation>球の半径が小さすぎます</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="389"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="391"/>
+      <source>Radius of cone cannot be negative</source>
+      <translation>円錐の半径を負の値にすることはできません</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="393"/>
+      <source>Height of cone too small</source>
+      <translation>円錐の高さが小さすぎます</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="456"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="458"/>
+      <source>Radius of ellipsoid too small</source>
+      <translation>楕円体の半径が小さすぎます</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="540"/>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="542"/>
+      <source>Radius of torus too small</source>
+      <translation>トーラスの半径が小さすぎます</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="605"/>
+      <source>Polygon of prism is invalid, must have 3 or more sides</source>
+      <translation>角柱を作る多角形は3つ以上の辺を持たなければならず、正しくありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="607"/>
+      <source>Circumradius of the polygon, of the prism, is too small</source>
+      <translation>角柱を作る多角形の外接円が小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="609"/>
+      <source>Height of prism is too small</source>
+      <translation>角柱の高さが小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="690"/>
+      <source>delta x of wedge too small</source>
+      <translation>ウェッジのΔxが小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="693"/>
+      <source>delta y of wedge too small</source>
+      <translation>ウェッジのΔyが小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="696"/>
+      <source>delta z of wedge too small</source>
+      <translation>ウェッジのΔzが小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="699"/>
+      <source>delta z2 of wedge is negative</source>
+      <translation>ウェッジのΔz2が小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeaturePrimitive.cpp" line="702"/>
+      <source>delta x2 of wedge is negative</source>
+      <translation>ウェッジのΔx2が小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureRevolution.cpp" line="89"/>
+      <source>Angle of revolution too large</source>
+      <translation>回転押し出しの角度が大きすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureRevolution.cpp" line="95"/>
+      <source>Angle of revolution too small</source>
+      <translation>回転押し出しの角度が小さすぎます。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureRevolution.cpp" line="133"/>
+      <source>Reference axis is invalid</source>
+      <translation>参照軸が無効です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureRevolution.cpp" line="254"/>
+      <location filename="../../../App/FeatureExtrude.cpp" line="729"/>
+      <source>Fusion with base feature failed</source>
+      <translation>ベースフィーチャーとの結合に失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureTransformed.cpp" line="111"/>
+      <source>Transformation feature Linked object is not a Part object</source>
+      <translation>変換フィーチャーのリンク・オブジェクトはパートオブジェクトではありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureTransformed.cpp" line="116"/>
+      <source>No originals linked to the transformed feature.</source>
+      <translation>変換されたフィーチャーにリンク元がありません。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureTransformed.cpp" line="276"/>
+      <source>Cannot transform invalid support shape</source>
+      <translation>無効な支持体積を変換できません</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureTransformed.cpp" line="305"/>
+      <source>Transformation failed</source>
+      <translation>変換が失敗しました。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureTransformed.cpp" line="342"/>
+      <source>Shape of additive/subtractive feature is empty</source>
+      <translation>加算/減算フィーチャーのシェイプが空です。</translation>
+    </message>
+    <message>
+      <location filename="../../../App/FeatureTransformed.cpp" line="334"/>
+      <source>Only additive and subtractive features can be transformed</source>
+      <translation>加算および減算フィーチャーのみ変換できます。</translation>
+    </message>
+  </context>
+  <context>
+    <name>PartDesignGui::ViewProviderBody</name>
+    <message>
+      <location filename="../../ViewProviderBody.cpp" line="137"/>
+      <source>Active body</source>
+      <translation>アクティブなボディー</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdPartDesignCompDatums</name>
+    <message>
+      <location filename="../../Command.cpp" line="2442"/>
+      <source>Create datum</source>
+      <translation>データムを作成</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="2443"/>
+      <source>Create a datum object or local coordinate system</source>
+      <translation>データムオブジェクトまたはローカル座標系を作成</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdPartDesignCompSketches</name>
+    <message>
+      <location filename="../../Command.cpp" line="2477"/>
+      <source>Create datum</source>
+      <translation>データムを作成</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="2478"/>
+      <source>Create a datum object or local coordinate system</source>
+      <translation>データムオブジェクトまたはローカル座標系を作成</translation>
     </message>
   </context>
 </TS>

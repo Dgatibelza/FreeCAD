@@ -22,7 +22,7 @@
 
 __title__ = "BasicShapes.ViewProviderShapes"
 __author__ = "Werner Mayer"
-__url__ = "http://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 __doc__ = "Basic shapes"
 
 
@@ -36,7 +36,7 @@ class ViewProviderTube:
     def __init__(self, obj):
         ''' Set this object to the proxy object of the actual view provider '''
         obj.Proxy = self
-        obj.addExtension("PartGui::ViewProviderAttachExtensionPython", self)
+        obj.addExtension("PartGui::ViewProviderAttachExtensionPython")
         obj.setIgnoreOverlayIcon(True, "PartGui::ViewProviderAttachExtensionPython")
 
     def attach(self, obj):
@@ -68,10 +68,10 @@ class ViewProviderTube:
     def getIcon(self):
         return ":/icons/parametric/Part_Tube_Parametric.svg"
 
-    def __getstate__(self):
+    def dumps(self):
         return None
 
-    def __setstate__(self,state):
+    def loads(self,state):
         return None
 
 
@@ -92,6 +92,10 @@ class TaskTubeUI:
         self.form.tubeOuterRadius.valueChanged.connect(lambda x: self.onChangeOuterRadius(x))
         self.form.tubeInnerRadius.valueChanged.connect(lambda x: self.onChangeInnerRadius(x))
         self.form.tubeHeight.valueChanged.connect(lambda x: self.onChangeHeight(x))
+
+        FreeCADGui.ExpressionBinding(self.form.tubeOuterRadius).bind(object,"OuterRadius")
+        FreeCADGui.ExpressionBinding(self.form.tubeInnerRadius).bind(object,"InnerRadius")
+        FreeCADGui.ExpressionBinding(self.form.tubeHeight).bind(object,"Height")
 
     def onChangeOuterRadius(self, radius):
         object = self.viewObject.Object

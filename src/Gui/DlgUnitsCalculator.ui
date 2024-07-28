@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Units calculator</string>
+   <string>Units converter</string>
   </property>
   <layout class="QGridLayout" name="gridLayout_2">
    <item row="0" column="0">
@@ -80,7 +80,7 @@
    <item row="1" column="0">
     <widget class="QTextEdit" name="textEdit">
      <property name="toolTip">
-      <string>List of last used calculations 
+      <string>List of last used calculations.
 To add a calculation press Return in the value input field</string>
      </property>
      <property name="readOnly">

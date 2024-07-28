@@ -21,9 +21,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__  = "FreeCAD FEM element rotation 1D task panel for the document object"
+__title__ = "FreeCAD FEM element rotation 1D task panel for the document object"
 __author__ = "Bernd Hahnebach"
-__url__    = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## @package task_element_rotation1D
 #  \ingroup FEM
@@ -53,15 +53,14 @@ class _TaskPanel:
         QtCore.QObject.connect(
             self.parameterWidget.if_rotation,
             QtCore.SIGNAL("valueChanged(Base::Quantity)"),
-            self.rotation_changed
+            self.rotation_changed,
         )
         self.rotation = self.obj.Rotation
         self.parameterWidget.if_rotation.setText(self.rotation.UserString)
 
         # geometry selection widget
         self.selectionWidget = selection_widgets.GeometryElementsSelection(
-            obj.References,
-            ["Edge"]
+            obj.References, ["Edge"], False, True
         )
 
         # form made from param and selection widget
@@ -79,9 +78,7 @@ class _TaskPanel:
     def recompute_and_set_back_all(self):
         doc = FreeCADGui.getDocument(self.obj.Document)
         doc.Document.recompute()
-        self.selectionWidget.setback_listobj_visibility()
-        if self.selectionWidget.sel_server:
-            FreeCADGui.Selection.removeObserver(self.selectionWidget.sel_server)
+        self.selectionWidget.finish_selection()
         doc.resetEdit()
 
     def rotation_changed(self, base_quantity_value):

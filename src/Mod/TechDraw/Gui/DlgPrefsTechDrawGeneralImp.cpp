@@ -22,17 +22,13 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
-
-#include <Mod/TechDraw/App/DrawHatch.h>
-#include <Mod/TechDraw/App/DrawGeomHatch.h>
 
 #include "DlgPrefsTechDrawGeneralImp.h"
 #include "ui_DlgPrefsTechDrawGeneral.h"
-#include <Gui/PrefWidgets.h>
-
 #include "PreferencesGui.h"
+#include "DrawGuiUtil.h"
+
 
 using namespace TechDrawGui;
 using namespace TechDraw;
@@ -44,6 +40,9 @@ DlgPrefsTechDrawGeneralImp::DlgPrefsTechDrawGeneralImp( QWidget* parent )
     ui->setupUi(this);
     ui->plsb_LabelSize->setUnit(Base::Unit::Length);
     ui->plsb_LabelSize->setMinimum(0);
+
+    ui->psb_GridSpacing->setUnit(Base::Unit::Length);
+    ui->psb_GridSpacing->setMinimum(0);
 }
 
 DlgPrefsTechDrawGeneralImp::~DlgPrefsTechDrawGeneralImp()
@@ -53,54 +52,78 @@ DlgPrefsTechDrawGeneralImp::~DlgPrefsTechDrawGeneralImp()
 
 void DlgPrefsTechDrawGeneralImp::saveSettings()
 {
-    ui->pfc_DefTemp->onSave();
-    ui->pfc_DefDir->onSave();
-    ui->pfc_HatchFile->onSave();
-    ui->pfc_FilePattern->onSave();
-    ui->pfc_LineGroup->onSave();
-    ui->pfc_Welding->onSave();
-    ui->le_NamePattern->onSave();
-
-    ui->pfb_LabelFont->onSave();
-    ui->plsb_LabelSize->onSave();
-
     ui->cb_Global->onSave();
     ui->cb_Override->onSave();
     ui->cb_PageUpdate->onSave();
     ui->cb_AutoDist->onSave();
+
+    ui->pfb_LabelFont->onSave();
+    ui->plsb_LabelSize->onSave();
+
+    ui->cbProjAngle->onSave();
+    ui->cbSectionLineStd->onSave();
+
+    ui->pfc_DefTemp->onSave();
+    ui->pfc_DefDir->onSave();
+    ui->pfc_HatchFile->onSave();
+    ui->pfc_LineGroup->onSave();
+    ui->pfc_Welding->onSave();
+    ui->pfc_FilePattern->onSave();
+    ui->le_NamePattern->onSave();
+    ui->fcSymbolDir->onSave();
+
+    ui->cb_ShowGrid->onSave();
+    ui->psb_GridSpacing->onSave();
+
+    ui->cbMultiSelection->onSave();
+
+    ui->cb_useCameraDirection->onSave();
+    ui->cb_alwaysShowLabel->onSave();
 }
 
 void DlgPrefsTechDrawGeneralImp::loadSettings()
 {
-//    double labelDefault = 8.0;
-    double labelDefault = Preferences::labelFontSizeMM();
-    ui->plsb_LabelSize->setValue(labelDefault);
-    QFont prefFont(Preferences::labelFontQString());
-    ui->pfb_LabelFont->setCurrentFont(prefFont);
-//    ui->pfb_LabelFont->setCurrentText(Preferences::labelFontQString());   //only works in Qt5
-
-    ui->pfc_DefTemp->setFileName(Preferences::defaultTemplate());
-    ui->pfc_DefDir->setFileName(Preferences::defaultTemplateDir());
-    ui->pfc_HatchFile->setFileName(QString::fromStdString(DrawHatch::prefSvgHatch()));
-    ui->pfc_FilePattern->setFileName(QString::fromStdString(DrawGeomHatch::prefGeomHatchFile()));
-    ui->pfc_Welding->setFileName(PreferencesGui::weldingDirectory());
-    ui->pfc_LineGroup->setFileName(QString::fromUtf8(Preferences::lineGroupFile().c_str()));
-
-    ui->pfc_DefTemp->onRestore();
-    ui->pfc_DefDir->onRestore();
-    ui->pfc_HatchFile->onRestore();
-    ui->pfc_FilePattern->onRestore();
-    ui->pfc_LineGroup->onRestore();
-    ui->pfc_Welding->onRestore();
-    ui->le_NamePattern->onRestore();
-
-    ui->pfb_LabelFont->onRestore();
-    ui->plsb_LabelSize->onRestore();
-
     ui->cb_Global->onRestore();
     ui->cb_Override->onRestore();
     ui->cb_PageUpdate->onRestore();
     ui->cb_AutoDist->onRestore();
+
+    double labelDefault = Preferences::labelFontSizeMM();
+    ui->plsb_LabelSize->setValue(labelDefault);
+    QFont prefFont(Preferences::labelFontQString());
+    ui->pfb_LabelFont->setCurrentFont(prefFont);
+    //    ui->pfb_LabelFont->setCurrentText(Preferences::labelFontQString());   //only works in Qt5
+
+    ui->pfb_LabelFont->onRestore();
+    ui->plsb_LabelSize->onRestore();
+
+    ui->cbProjAngle->onRestore();
+    ui->cbSectionLineStd->onRestore();
+
+    ui->pfc_DefTemp->onRestore();
+    ui->pfc_DefDir->onRestore();
+    ui->pfc_HatchFile->onRestore();
+    ui->pfc_LineGroup->onRestore();
+    ui->pfc_Welding->onRestore();
+    ui->pfc_FilePattern->onRestore();
+    ui->le_NamePattern->onRestore();
+    ui->fcSymbolDir->onRestore();
+
+
+    bool gridDefault = PreferencesGui::showGrid();
+    ui->cb_ShowGrid->setChecked(gridDefault);
+    ui->cb_ShowGrid->onRestore();
+
+    double spacingDefault = PreferencesGui::gridSpacing();
+    ui->psb_GridSpacing->setValue(spacingDefault);
+    ui->psb_GridSpacing->onRestore();
+
+    bool multiSelectionDefault = PreferencesGui::multiSelection();
+    ui->cbMultiSelection->setChecked(multiSelectionDefault);
+    ui->cbMultiSelection->onRestore();
+
+    ui->cb_useCameraDirection->onRestore();
+    ui->cb_alwaysShowLabel->onRestore();
 }
 
 /**
@@ -109,9 +132,7 @@ void DlgPrefsTechDrawGeneralImp::loadSettings()
 void DlgPrefsTechDrawGeneralImp::changeEvent(QEvent *e)
 {
     if (e->type() == QEvent::LanguageChange) {
-        saveSettings();
         ui->retranslateUi(this);
-        loadSettings();
     }
     else {
         QWidget::changeEvent(e);

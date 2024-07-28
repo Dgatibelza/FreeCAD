@@ -34,7 +34,7 @@
 \**************************************************************************/
 
 #include <Quarter/Basic.h>
-#include <QtCore/QObject>
+#include <QObject>
 
 class QEvent;
 class QPoint;
@@ -48,15 +48,15 @@ class QUARTER_DLL_API EventFilter : public QObject {
 
 public:
   EventFilter(QObject * parent);
-  ~EventFilter();
+  ~EventFilter() override;
 
   void registerInputDevice(InputDevice * device);
   void unregisterInputDevice(InputDevice * device);
 
-  const QPoint & globalMousePosition(void) const;
+  const QPoint & globalMousePosition() const;
 
 protected:
-  bool eventFilter(QObject * obj, QEvent * event);
+  bool eventFilter(QObject * obj, QEvent * event) override;
 
 private:
   class EventFilterP * pimpl;

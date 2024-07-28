@@ -164,6 +164,8 @@ CGRP     '\,'[0-9][0-9][0-9]
 "kV"       yylval = Quantity::KiloVolt;            return UNIT; // kilo Volt
 "mV"       yylval = Quantity::MilliVolt;           return UNIT; // milli Volt
 
+"MS"       yylval = Quantity::MegaSiemens;         return UNIT; // mega Siemens
+"kS"       yylval = Quantity::KiloSiemens;         return UNIT; // kilo Siemens
 "S"        yylval = Quantity::Siemens;             return UNIT; // Siemens (A^2*s^3/kg/m^2)
 "mS"       yylval = Quantity::MilliSiemens;        return UNIT; // milli Siemens
 "\xC2\xB5S"     yylval = Quantity::MicroSiemens;   return UNIT; // micro Siemens
@@ -179,8 +181,6 @@ CGRP     '\,'[0-9][0-9][0-9]
 "G"        yylval = Quantity::Gauss;               return UNIT; // Gauss (1 G = 1e-4 T)
 
 "Wb"       yylval = Quantity::Weber;               return UNIT; // Weber (kg*m^2/s^2/A)
-
-"Oe"       yylval = Quantity::Oersted;             return UNIT; // Oersted (A/m)
 
 "F"        yylval = Quantity::Farad;               return UNIT; // Farad (s^4*A^2/m^2/kg)
 "mF"       yylval = Quantity::MilliFarad;          return UNIT; // milli Farad

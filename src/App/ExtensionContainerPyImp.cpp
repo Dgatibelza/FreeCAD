@@ -28,23 +28,22 @@
 #endif
 
 #include "Application.h"
-#include "DocumentObject.h"
 
-// inclution of the generated files (generated out of PropertyContainerPy.xml)
 #include <App/ExtensionContainerPy.h>
 #include <App/ExtensionContainerPy.cpp>
+#include <App/Extension.h>
 
 using namespace App;
 
 // returns a string which represent the object e.g. when printed in python
-std::string ExtensionContainerPy::representation(void) const
+std::string ExtensionContainerPy::representation() const
 {
-    return std::string("<extension>");
+    return {"<extension>"};
 }
 
 int  ExtensionContainerPy::initialization() {
 
-    if (this->ob_type->tp_dict == NULL) {
+    if (!this->ob_type->tp_dict) {
         if (PyType_Ready(this->ob_type) < 0)
             return 0;
     }
@@ -55,14 +54,14 @@ int  ExtensionContainerPy::initialization() {
         // The PyTypeObject is shared by all instances of this type and therefore
         // we have to add new methods only once.
         PyObject* obj = (*it).second->getExtensionPyObject();
-        PyMethodDef* meth = reinterpret_cast<PyMethodDef*>(obj->ob_type->tp_methods);
+        PyMethodDef* meth = obj->ob_type->tp_methods;
         PyTypeObject *type = this->ob_type;
         PyObject *dict = type->tp_dict;
 
         // make sure to do the initialization only once
         if (meth->ml_name) {
             PyObject* item = PyDict_GetItemString(dict, meth->ml_name);
-            if (item == NULL) {
+            if (!item) {
                 // Note: this adds the methods to the type object to make sure
                 // it appears in the call tips. The function will not be bound
                 // to an instance
@@ -70,7 +69,7 @@ int  ExtensionContainerPy::initialization() {
                 while (meth->ml_name) {
                     PyObject *func;
                     func = PyCFunction_New(meth, 0);
-                    if (func == NULL)
+                    if (!func)
                         break;
                     if (PyDict_SetItemString(dict, meth->ml_name, func) < 0)
                         break;
@@ -101,7 +100,7 @@ int  ExtensionContainerPy::finalization() {
 PyObject* ExtensionContainerPy::PyMake(struct _typeobject *, PyObject *, PyObject *)  // Python wrapper
 {
     // create a new instance of @self.export.Name@ and the Twin object 
-    return 0;
+    return nullptr;
 }
 
 // constructor method
@@ -140,7 +139,7 @@ PyObject *ExtensionContainerPy::getCustomAttributes(const char* attr) const
     // Py_FindMethod is successful then a PyCFunction_New instance is returned
     // with the PyObject pointer of the extension to make sure the method will
     // be called for the correct instance.
-    PyObject *func = 0;
+    PyObject *func = nullptr;
     ExtensionContainer::ExtensionIterator it = this->getExtensionContainerPtr()->extensionBegin();
     for (; it != this->getExtensionContainerPtr()->extensionEnd(); ++it) {
         // The PyTypeObject is shared by all instances of this type and therefore
@@ -158,7 +157,7 @@ PyObject *ExtensionContainerPy::getCustomAttributes(const char* attr) const
                 break;
             // otherwise cleanup the result again
             Py_DECREF(func);
-            func = 0;
+            func = nullptr;
         }
         PyErr_Clear(); // clear the error set inside Py_FindMethod
     }
@@ -175,16 +174,16 @@ PyObject* ExtensionContainerPy::hasExtension(PyObject *args) {
 
     char *type;
     PyObject *deriv = Py_True;
-    if (!PyArg_ParseTuple(args, "s|O", &type, &deriv))
-        return NULL;                                         // NULL triggers exception 
+    if (!PyArg_ParseTuple(args, "s|O!", &type, &PyBool_Type, &deriv))
+        return nullptr;
 
     //get the extension type asked for
-    bool derived = PyObject_IsTrue(deriv);
+    bool derived = Base::asBoolean(deriv);
     Base::Type extension =  Base::Type::fromName(type);
     if (extension.isBad() || !extension.isDerivedFrom(App::Extension::getExtensionClassTypeId())) {
         std::stringstream str;
         str << "No extension found of type '" << type << "'" << std::ends;
-        throw Py::Exception(Base::BaseExceptionFreeCADError,str.str());
+        throw Py::TypeError(str.str());
     }
 
     bool val = false;
@@ -198,18 +197,24 @@ PyObject* ExtensionContainerPy::hasExtension(PyObject *args) {
 PyObject* ExtensionContainerPy::addExtension(PyObject *args) {
 
     char *typeId;
-    PyObject* proxy;
-    if (!PyArg_ParseTuple(args, "sO", &typeId, &proxy))
-        return NULL;
+    PyObject* proxy = nullptr;
+    if (!PyArg_ParseTuple(args, "s|O", &typeId, &proxy))
+        return nullptr;
+
+    if (proxy) {
+        PyErr_SetString(PyExc_DeprecationWarning, "Second argument is deprecated. It is ignored and will be removed in future versions. "
+                                                  "The default Python feature proxy is used for extension method overrides.");
+        PyErr_Print();
+    }
 
     //get the extension type asked for
     Base::Type extension =  Base::Type::fromName(typeId);
     if (extension.isBad() || !extension.isDerivedFrom(App::Extension::getExtensionClassTypeId())) {
         std::stringstream str;
         str << "No extension found of type '" << typeId << "'" << std::ends;
-        throw Py::Exception(Base::BaseExceptionFreeCADError,str.str());
+        throw Py::TypeError(str.str());
     }
-    
+
     //register the extension
     App::Extension* ext = static_cast<App::Extension*>(extension.createInstance());
     //check if this really is a python extension!
@@ -217,32 +222,23 @@ PyObject* ExtensionContainerPy::addExtension(PyObject *args) {
         delete ext;
         std::stringstream str;
         str << "Extension is not a python addable version: '" << typeId << "'" << std::ends;
-        throw Py::Exception(Base::BaseExceptionFreeCADError,str.str());
+        throw Py::TypeError(str.str());
     }
-    
+
     GetApplication().signalBeforeAddingDynamicExtension(*getExtensionContainerPtr(), typeId);
     ext->initExtension(getExtensionContainerPtr());
-
-    //set the proxy to allow python overrides
-    App::Property* pp = ext->extensionGetPropertyByName("ExtensionProxy");
-    if (!pp) {
-        std::stringstream str;
-        str << "Accessing the proxy property failed!" << std::ends;
-        throw Py::Exception(Base::BaseExceptionFreeCADError,str.str());
-    }
-    static_cast<PropertyPythonObject*>(pp)->setPyObject(proxy);
 
     // The PyTypeObject is shared by all instances of this type and therefore
     // we have to add new methods only once.
     PyObject* obj = ext->getExtensionPyObject();
-    PyMethodDef* meth = reinterpret_cast<PyMethodDef*>(obj->ob_type->tp_methods);
+    PyMethodDef* meth = obj->ob_type->tp_methods;
     PyTypeObject *type = this->ob_type;
     PyObject *dict = type->tp_dict;
 
     // make sure to do the initialization only once
     if (meth->ml_name) {
         PyObject* item = PyDict_GetItemString(dict, meth->ml_name);
-        if (item == NULL) {
+        if (!item) {
             // Note: this adds the methods to the type object to make sure
             // it appears in the call tips. The function will not be bound
             // to an instance
@@ -250,7 +246,7 @@ PyObject* ExtensionContainerPy::addExtension(PyObject *args) {
             while (meth->ml_name) {
                 PyObject *func;
                 func = PyCFunction_New(meth, 0);
-                if (func == NULL)
+                if (!func)
                     break;
                 if (PyDict_SetItemString(dict, meth->ml_name, func) < 0)
                     break;

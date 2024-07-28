@@ -1,9 +1,3 @@
-if(MSVC)
-    add_definitions(-DFCAppPartDesign -DHAVE_ACOSH -DHAVE_ASINH -DHAVE_ATANH)
-else(MSVC)
-    add_definitions(-DHAVE_LIMITS_H -DHAVE_CONFIG_H)
-endif(MSVC)
-
 include_directories(
     ${CMAKE_BINARY_DIR}
     ${CMAKE_SOURCE_DIR}/src
@@ -16,6 +10,7 @@ include_directories(
     ${PYTHON_INCLUDE_DIRS}
     ${XercesC_INCLUDE_DIRS}
     ${QT_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/src/3rdParty/json/single_include/nlohmann/
 )
 link_directories(${OCC_LIBRARY_DIR})
 
@@ -87,6 +82,8 @@ SET(FeaturesDressUp_SRCS
 SOURCE_GROUP("DressUpFeatures" FILES ${FeaturesDressUp_SRCS})
 
 SET(FeaturesSketchBased_SRCS
+    FeatureExtrude.cpp
+    FeatureExtrude.h
     FeatureSketchBased.cpp
     FeatureSketchBased.h
     FeaturePad.cpp
@@ -109,6 +106,8 @@ SET(FeaturesSketchBased_SRCS
     FeaturePipe.cpp
     FeatureLoft.h
     FeatureLoft.cpp
+    FeatureHelix.h
+    FeatureHelix.cpp
 )
 
 SOURCE_GROUP("SketchBasedFeatures" FILES ${FeaturesSketchBased_SRCS})
@@ -118,6 +117,8 @@ SET(Module_SRCS
     AppPartDesignPy.cpp
     PreCompiled.cpp
     PreCompiled.h
+    Measure.cpp
+    Measure.h
 )
 SOURCE_GROUP("Module" FILES ${Module_SRCS})
 
@@ -142,6 +143,9 @@ SET(PartDesign_SRCS
 
 add_library(PartDesign SHARED ${PartDesign_SRCS})
 target_link_libraries(PartDesign ${PartDesign_LIBS})
+if (FREECAD_WARN_ERROR)
+    target_compile_warn_error(PartDesign)
+endif()
 
 if(FREECAD_USE_PCH)
     add_definitions(-D_PreComp_)

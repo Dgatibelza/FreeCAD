@@ -24,26 +24,46 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-# include <sstream>
-# include <stdlib.h>
+#include <sstream>
 #endif
 
 #include "PyObjectBase.h"
 #include "Console.h"
 #include "Interpreter.h"
 
+
 #define ATTR_TRACKING
 
 using namespace Base;
 
-PyObject* Base::BaseExceptionFreeCADError = 0;
-PyObject* Base::BaseExceptionFreeCADAbort = 0;
+// clang-format off
+PyObject* Base::PyExc_FC_GeneralError = nullptr;
+PyObject* Base::PyExc_FC_FreeCADAbort = nullptr;
+PyObject* Base::PyExc_FC_XMLBaseException = nullptr;
+PyObject* Base::PyExc_FC_XMLParseException = nullptr;
+PyObject* Base::PyExc_FC_XMLAttributeError = nullptr;
+PyObject* Base::PyExc_FC_UnknownProgramOption = nullptr;
+PyObject* Base::PyExc_FC_BadFormatError = nullptr;
+PyObject* Base::PyExc_FC_BadGraphError = nullptr;
+PyObject* Base::PyExc_FC_ExpressionError = nullptr;
+PyObject* Base::PyExc_FC_ParserError = nullptr;
+PyObject* Base::PyExc_FC_CADKernelError = nullptr;
 
-// Constructor
-PyObjectBase::PyObjectBase(void* p,PyTypeObject *T)
-  : _pcTwinPointer(p), attrDict(0)
+typedef struct {            //NOLINT
+    PyObject_HEAD
+    PyObject* baseobject;
+    PyObject* weakreflist;  /* List of weak references */
+} PyBaseProxy;
+
+// NOLINTNEXTLINE
+PyObjectBase::PyObjectBase(void* voidp, PyTypeObject *T)
+  : _pcTwinPointer(voidp)
 {
+#if PY_VERSION_HEX < 0x030b0000
     Py_TYPE(this) = T;
+#else
+    this->ob_type = T;
+#endif
     _Py_NewReference(this);
 #ifdef FC_LOGPYOBJECTS
     Base::Console().Log("PyO+: %s (%p)\n",T->tp_name, this);
@@ -59,6 +79,10 @@ PyObjectBase::~PyObjectBase()
 #ifdef FC_LOGPYOBJECTS
     Base::Console().Log("PyO-: %s (%p)\n",Py_TYPE(this)->tp_name, this);
 #endif
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    if (baseProxy && reinterpret_cast<PyBaseProxy*>(baseProxy)->baseobject == this) {
+        Py_DECREF(baseProxy);
+    }
     Py_XDECREF(attrDict);
 }
 
@@ -80,6 +104,82 @@ PyObjectBase::~PyObjectBase()
 # pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+static void
+PyBaseProxy_dealloc(PyObject* self)
+{
+    /* Clear weakrefs first before calling any destructors */
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+    if (reinterpret_cast<PyBaseProxy*>(self)->weakreflist) {
+        PyObject_ClearWeakRefs(self);
+    }
+    Py_TYPE(self)->tp_free(self);
+}
+
+static PyTypeObject PyBaseProxyType = {
+    PyVarObject_HEAD_INIT(nullptr, 0)
+    "PyBaseProxy",                                          /*tp_name*/
+    sizeof(PyBaseProxy),                                    /*tp_basicsize*/
+    0,                                                      /*tp_itemsize*/
+    PyBaseProxy_dealloc,                                    /*tp_dealloc*/
+#if PY_VERSION_HEX >= 0x03080000
+    0,                                                      /*tp_vectorcall_offset*/
+#else
+    nullptr,                                                /*tp_print*/
+#endif
+    nullptr,                                                /*tp_getattr*/
+    nullptr,                                                /*tp_setattr*/
+    nullptr,                                                /*tp_compare*/
+    nullptr,                                                /*tp_repr*/
+    nullptr,                                                /*tp_as_number*/
+    nullptr,                                                /*tp_as_sequence*/
+    nullptr,                                                /*tp_as_mapping*/
+    nullptr,                                                /*tp_hash*/
+    nullptr,                                                /*tp_call */
+    nullptr,                                                /*tp_str  */
+    nullptr,                                                /*tp_getattro*/
+    nullptr,                                                /*tp_setattro*/
+    nullptr,                                                /*tp_as_buffer*/
+    Py_TPFLAGS_BASETYPE | Py_TPFLAGS_DEFAULT,               /*tp_flags */
+    "Proxy class",                                          /*tp_doc */
+    nullptr,                                                /*tp_traverse */
+    nullptr,                                                /*tp_clear */
+    nullptr,                                                /*tp_richcompare */
+    offsetof(PyBaseProxy, weakreflist),                     /*tp_weaklistoffset */
+    nullptr,                                                /*tp_iter */
+    nullptr,                                                /*tp_iternext */
+    nullptr,                                                /*tp_methods */
+    nullptr,                                                /*tp_members */
+    nullptr,                                                /*tp_getset */
+    nullptr,                                                /*tp_base */
+    nullptr,                                                /*tp_dict */
+    nullptr,                                                /*tp_descr_get */
+    nullptr,                                                /*tp_descr_set */
+    0,                                                      /*tp_dictoffset */
+    nullptr,                                                /*tp_init */
+    nullptr,                                                /*tp_alloc */
+    nullptr,                                                /*tp_new */
+    nullptr,                                                /*tp_free   Low-level free-memory routine */
+    nullptr,                                                /*tp_is_gc  For PyObject_IS_GC */
+    nullptr,                                                /*tp_bases */
+    nullptr,                                                /*tp_mro    method resolution order */
+    nullptr,                                                /*tp_cache */
+    nullptr,                                                /*tp_subclasses */
+    nullptr,                                                /*tp_weaklist */
+    nullptr,                                                /*tp_del */
+    0,                                                      /*tp_version_tag */
+    nullptr                                                 /*tp_finalize */
+#if PY_VERSION_HEX >= 0x03090000
+    ,0                                            //NOLINT  /*tp_vectorcall */
+#if PY_VERSION_HEX >= 0x030c0000
+    ,0                                                      /*tp_watched */
+#endif
+#elif PY_VERSION_HEX >= 0x03080000
+    ,0                                                      /*tp_vectorcall */
+    /* bpo-37250: kept for backwards compatibility in CPython 3.8 only */
+    ,0                                                      /*tp_print */
+#endif
+};
+
 PyTypeObject PyObjectBase::Type = {
     PyVarObject_HEAD_INIT(&PyType_Type,0)
     "PyObjectBase",                                         /*tp_name*/
@@ -87,59 +187,60 @@ PyTypeObject PyObjectBase::Type = {
     0,                                                      /*tp_itemsize*/
     /* --- methods ---------------------------------------------- */
     PyDestructor,                                           /*tp_dealloc*/
-    0,                                                      /*tp_print*/
-    0,                                                      /*tp_getattr*/
-    0,                                                      /*tp_setattr*/
-    0,                                                      /*tp_compare*/
+#if PY_VERSION_HEX >= 0x03080000
+    0,                                                      /*tp_vectorcall_offset*/
+#else
+    nullptr,                                                /*tp_print*/
+#endif
+    nullptr,                                                /*tp_getattr*/
+    nullptr,                                                /*tp_setattr*/
+    nullptr,                                                /*tp_compare*/
     __repr,                                                 /*tp_repr*/
-    0,                                                      /*tp_as_number*/
-    0,                                                      /*tp_as_sequence*/
-    0,                                                      /*tp_as_mapping*/
-    0,                                                      /*tp_hash*/
-    0,                                                      /*tp_call */
-    0,                                                      /*tp_str  */
+    nullptr,                                                /*tp_as_number*/
+    nullptr,                                                /*tp_as_sequence*/
+    nullptr,                                                /*tp_as_mapping*/
+    nullptr,                                                /*tp_hash*/
+    nullptr,                                                /*tp_call */
+    nullptr,                                                /*tp_str  */
     __getattro,                                             /*tp_getattro*/
     __setattro,                                             /*tp_setattro*/
     /* --- Functions to access object as input/output buffer ---------*/
-    0,                                                      /* tp_as_buffer */
+    nullptr,                                                /* tp_as_buffer */
     /* --- Flags to define presence of optional/expanded features */
-#if PY_MAJOR_VERSION >= 3
     Py_TPFLAGS_BASETYPE|Py_TPFLAGS_DEFAULT,                 /*tp_flags */
-#else
-    Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_CLASS,              /*tp_flags */
-#endif
     "The most base class for Python binding",               /*tp_doc */
-    0,                                                      /*tp_traverse */
-    0,                                                      /*tp_clear */
-    0,                                                      /*tp_richcompare */
+    nullptr,                                                /*tp_traverse */
+    nullptr,                                                /*tp_clear */
+    nullptr,                                                /*tp_richcompare */
     0,                                                      /*tp_weaklistoffset */
-    0,                                                      /*tp_iter */
-    0,                                                      /*tp_iternext */
-    0,                                                      /*tp_methods */
-    0,                                                      /*tp_members */
-    0,                                                      /*tp_getset */
-    0,                                                      /*tp_base */
-    0,                                                      /*tp_dict */
-    0,                                                      /*tp_descr_get */
-    0,                                                      /*tp_descr_set */
+    nullptr,                                                /*tp_iter */
+    nullptr,                                                /*tp_iternext */
+    nullptr,                                                /*tp_methods */
+    nullptr,                                                /*tp_members */
+    nullptr,                                                /*tp_getset */
+    nullptr,                                                /*tp_base */
+    nullptr,                                                /*tp_dict */
+    nullptr,                                                /*tp_descr_get */
+    nullptr,                                                /*tp_descr_set */
     0,                                                      /*tp_dictoffset */
-    0,                                                      /*tp_init */
-    0,                                                      /*tp_alloc */
-    0,                                                      /*tp_new */
-    0,                                                      /*tp_free   Low-level free-memory routine */
-    0,                                                      /*tp_is_gc  For PyObject_IS_GC */
-    0,                                                      /*tp_bases */
-    0,                                                      /*tp_mro    method resolution order */
-    0,                                                      /*tp_cache */
-    0,                                                      /*tp_subclasses */
-    0,                                                      /*tp_weaklist */
-    0,                                                      /*tp_del */
-    0                                                       /*tp_version_tag */
-#if PY_MAJOR_VERSION >= 3
-    ,0                                                      /*tp_finalize */
-#endif
+    nullptr,                                                /*tp_init */
+    nullptr,                                                /*tp_alloc */
+    nullptr,                                                /*tp_new */
+    nullptr,                                                /*tp_free   Low-level free-memory routine */
+    nullptr,                                                /*tp_is_gc  For PyObject_IS_GC */
+    nullptr,                                                /*tp_bases */
+    nullptr,                                                /*tp_mro    method resolution order */
+    nullptr,                                                /*tp_cache */
+    nullptr,                                                /*tp_subclasses */
+    nullptr,                                                /*tp_weaklist */
+    nullptr,                                                /*tp_del */
+    0,                                                      /*tp_version_tag */
+    nullptr                                                 /*tp_finalize */
 #if PY_VERSION_HEX >= 0x03090000
-    ,0                                                      /*tp_vectorcall */
+    ,0                                            //NOLINT  /*tp_vectorcall */
+#if PY_VERSION_HEX >= 0x030c0000
+    ,0                                                      /*tp_watched */
+#endif
 #elif PY_VERSION_HEX >= 0x03080000
     ,0                                                      /*tp_vectorcall */
     /* bpo-37250: kept for backwards compatibility in CPython 3.8 only */
@@ -151,36 +252,68 @@ PyTypeObject PyObjectBase::Type = {
 # pragma clang diagnostic pop
 #endif
 
+PyObject* createWeakRef(PyObjectBase* ptr)
+{
+    static bool init = false;
+    if (!init) {
+       init = true;
+       if (PyType_Ready(&PyBaseProxyType) < 0) {
+           return nullptr;
+        }
+    }
+
+    PyObject* proxy = ptr->baseProxy;
+    if (!proxy) {
+        proxy = PyType_GenericAlloc(&PyBaseProxyType, 0);
+        ptr->baseProxy = proxy;
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        reinterpret_cast<PyBaseProxy*>(proxy)->baseobject = ptr;
+    }
+
+    PyObject* ref = PyWeakref_NewRef(proxy, nullptr);
+    return ref;
+}
+
+PyObjectBase* getFromWeakRef(PyObject* ref)
+{
+    if (ref) {
+        PyObject* proxy = PyWeakref_GetObject(ref);
+        if (proxy && PyObject_TypeCheck(proxy, &PyBaseProxyType)) {
+            // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+            return static_cast<PyObjectBase*>(reinterpret_cast<PyBaseProxy*>(proxy)->baseobject);
+        }
+    }
+
+    return nullptr;
+}
+
 /*------------------------------
  * PyObjectBase Methods 	-- Every class, even the abstract one should have a Methods
 ------------------------------*/
 PyMethodDef PyObjectBase::Methods[] = {
-    {NULL, NULL, 0, NULL}        /* Sentinel */
+    {nullptr, nullptr, 0, nullptr}        /* Sentinel */
 };
 
 PyObject* PyObjectBase::__getattro(PyObject * obj, PyObject *attro)
 {
-    const char *attr;
-#if PY_MAJOR_VERSION >= 3
+    const char *attr{};
     attr = PyUnicode_AsUTF8(attro);
-#else
-    attr = PyString_AsString(attro);
-#endif
 
     // For the __class__ attribute get it directly as with
     // ExtensionContainerPy::getCustomAttributes we may get
     // the wrong type object (#0003311)
     if (streq(attr, "__class__")) {
         PyObject* res = PyObject_GenericGetAttr(obj, attro);
-        if (res)
+        if (res) {
             return res;
+        }
     }
 
     // This should be the entry in Type
     PyObjectBase* pyObj = static_cast<PyObjectBase*>(obj);
     if (!pyObj->isValid()){
         PyErr_Format(PyExc_ReferenceError, "Cannot access attribute '%s' of deleted object", attr);
-        return NULL;
+        return nullptr;
     }
 
 #ifdef ATTR_TRACKING
@@ -204,7 +337,9 @@ PyObject* PyObjectBase::__getattro(PyObject * obj, PyObject *attro)
             pyObj->trackAttribute(attr, value);
         }
     }
-    else if (value && PyCFunction_Check(value)) {
+    else
+#endif
+    if (value && PyCFunction_Check(value)) {
         // ExtensionContainerPy::initialization() transfers the methods of an
         // extension object by creating PyCFunction objects.
         // At this point no 'self' object is passed but is handled and determined
@@ -213,33 +348,30 @@ PyObject* PyObjectBase::__getattro(PyObject * obj, PyObject *attro)
         // something is wrong with the Python types. For example, a C++ class
         // that adds an extension uses the same Python type as a wrapper than
         // another C++ class without this extension.
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
         PyCFunctionObject* cfunc = reinterpret_cast<PyCFunctionObject*>(value);
         if (!cfunc->m_self) {
             Py_DECREF(cfunc);
-            value = 0;
+            value = nullptr;
             PyErr_Format(PyExc_AttributeError, "<no object bound to built-in method %s>", attr);
         }
     }
-#endif
+
     return value;
 }
 
 int PyObjectBase::__setattro(PyObject *obj, PyObject *attro, PyObject *value)
 {
-    const char *attr;
-#if PY_MAJOR_VERSION >= 3
+    const char *attr{};
     attr = PyUnicode_AsUTF8(attro);
-#else
-    attr = PyString_AsString(attro);
-#endif
 
-    //FIXME: In general we don't allow to delete attributes (i.e. value=0). However, if we want to allow
+    //Hint: In general we don't allow to delete attributes (i.e. value=0). However, if we want to allow
     //we must check then in _setattr() of all subclasses whether value is 0.
-    if ( value==0 ) {
+    if (!value) {
         PyErr_Format(PyExc_AttributeError, "Cannot delete attribute: '%s'", attr);
         return -1;
     }
-    else if (!static_cast<PyObjectBase*>(obj)->isValid()){
+    if (!static_cast<PyObjectBase*>(obj)->isValid()){
         PyErr_Format(PyExc_ReferenceError, "Cannot access attribute '%s' of deleted object", attr);
         return -1;
     }
@@ -275,71 +407,61 @@ PyObject *PyObjectBase::_getattr(const char *attr)
         // Note: We must return the type object here,
         // so that our own types feel as really Python objects
         Py_INCREF(Py_TYPE(this));
-        return (PyObject *)(Py_TYPE(this));
+        // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+        return reinterpret_cast<PyObject *>(Py_TYPE(this));
     }
-    else if (streq(attr, "__members__")) {
+    if (streq(attr, "__members__")) {
         // Use __dict__ instead as __members__ is deprecated
-        return NULL;
+        return nullptr;
     }
-    else if (streq(attr,"__dict__")) {
+    if (streq(attr,"__dict__")) {
         // Return the default dict
         PyTypeObject *tp = Py_TYPE(this);
         Py_XINCREF(tp->tp_dict);
         return tp->tp_dict;
     }
-    else if (streq(attr,"softspace")) {
+    if (streq(attr,"softspace")) {
         // Internal Python stuff
-        return NULL;
+        return nullptr;
     }
-    else {
-        // As fallback solution use Python's default method to get generic attributes
-        PyObject *w, *res;
-#if PY_MAJOR_VERSION >= 3
-        w = PyUnicode_InternFromString(attr);
-#else
-        w = PyString_InternFromString(attr);
-#endif
-        if (w != NULL) {
-            res = PyObject_GenericGetAttr(this, w);
-            Py_XDECREF(w);
-            return res;
-        } else {
-            // Throw an exception for unknown attributes
-            PyTypeObject *tp = Py_TYPE(this);
-            PyErr_Format(PyExc_AttributeError, "%.50s instance has no attribute '%.400s'", tp->tp_name, attr);
-            return NULL;
-        }
+    // As fallback solution use Python's default method to get generic attributes
+    PyObject *w{}, *res{};
+    w = PyUnicode_InternFromString(attr);
+    if (w) {
+        res = PyObject_GenericGetAttr(this, w);
+        Py_XDECREF(w);
+        return res;
     }
+    // Throw an exception for unknown attributes
+    PyTypeObject *tp = Py_TYPE(this);
+    PyErr_Format(PyExc_AttributeError, "%.50s instance has no attribute '%.400s'", tp->tp_name, attr);
+    return nullptr;
 }
 
 int PyObjectBase::_setattr(const char *attr, PyObject *value)
 {
-    if (streq(attr,"softspace"))
+    if (streq(attr,"softspace")) {
         return -1; // filter out softspace
-    PyObject *w;
+    }
+    PyObject *w{};
     // As fallback solution use Python's default method to get generic attributes
-#if PY_MAJOR_VERSION >= 3
     w = PyUnicode_InternFromString(attr); // new reference
-#else
-    w = PyString_InternFromString(attr); // new reference
-#endif
-    if (w != NULL) {
+    if (w) {
         // call methods from tp_getset if defined
         int res = PyObject_GenericSetAttr(this, w, value);
         Py_DECREF(w);
         return res;
-    } else {
-        // Throw an exception for unknown attributes
-        PyTypeObject *tp = Py_TYPE(this);
-        PyErr_Format(PyExc_AttributeError, "%.50s instance has no attribute '%.400s'", tp->tp_name, attr);
-        return -1;
     }
+    // Throw an exception for unknown attributes
+    PyTypeObject *tp = Py_TYPE(this);
+    PyErr_Format(PyExc_AttributeError, "%.50s instance has no attribute '%.400s'", tp->tp_name, attr);
+    return -1;
 }
 
 /*------------------------------
  * PyObjectBase repr    representations
 ------------------------------*/
-PyObject *PyObjectBase::_repr(void)
+PyObject *PyObjectBase::_repr()
 {
     std::stringstream a;
     a << "<base object at " << _pcTwinPointer << ">";
@@ -349,18 +471,15 @@ PyObject *PyObjectBase::_repr(void)
     return Py_BuildValue("s", a.str().c_str());
 }
 
+// Tracking functions
+
 void PyObjectBase::resetAttribute()
 {
     if (attrDict) {
         // This is the attribute name to the parent structure
         // which we search for in the dict
-#if PY_MAJOR_VERSION < 3
-        PyObject* key1 = PyString_FromString("__attribute_of_parent__");
-        PyObject* key2 = PyString_FromString("__instance_of_parent__");
-#else
         PyObject* key1 = PyBytes_FromString("__attribute_of_parent__");
         PyObject* key2 = PyBytes_FromString("__instance_of_parent__");
-#endif
         PyObject* attr = PyDict_GetItem(attrDict, key1);
         PyObject* inst = PyDict_GetItem(attrDict, key2);
         if (attr) {
@@ -379,15 +498,10 @@ void PyObjectBase::setAttributeOf(const char* attr, PyObject* par)
     if (!attrDict) {
         attrDict = PyDict_New();
     }
-#if PY_MAJOR_VERSION < 3
-    PyObject* key1 = PyString_FromString("__attribute_of_parent__");
-    PyObject* key2 = PyString_FromString("__instance_of_parent__");
-    PyObject* attro = PyString_FromString(attr);
-#else
+
     PyObject* key1 = PyBytes_FromString("__attribute_of_parent__");
     PyObject* key2 = PyBytes_FromString("__instance_of_parent__");
     PyObject* attro = PyUnicode_FromString(attr);
-#endif
     PyDict_SetItem(attrDict, key1, attro);
     PyDict_SetItem(attrDict, key2, par);
     Py_DECREF(attro);
@@ -397,19 +511,15 @@ void PyObjectBase::setAttributeOf(const char* attr, PyObject* par)
 
 void PyObjectBase::startNotify()
 {
-    if (!shouldNotify())
+    if (!shouldNotify()) {
         return;
+    }
 
     if (attrDict) {
         // This is the attribute name to the parent structure
         // which we search for in the dict
-#if PY_MAJOR_VERSION < 3
-        PyObject* key1 = PyString_FromString("__attribute_of_parent__");
-        PyObject* key2 = PyString_FromString("__instance_of_parent__");
-#else
         PyObject* key1 = PyBytes_FromString("__attribute_of_parent__");
         PyObject* key2 = PyBytes_FromString("__instance_of_parent__");
-#endif
         PyObject* attr = PyDict_GetItem(attrDict, key1);
         PyObject* parent = PyDict_GetItem(attrDict, key2);
         if (attr && parent) {
@@ -427,8 +537,9 @@ void PyObjectBase::startNotify()
             Py_DECREF(attr); // might be destroyed now
             Py_DECREF(this); // might be destroyed now
 
-            if (PyErr_Occurred())
+            if (PyErr_Occurred()) {
                 PyErr_Clear();
+            }
         }
         Py_DECREF(key1);
         Py_DECREF(key2);
@@ -437,9 +548,10 @@ void PyObjectBase::startNotify()
 
 PyObject* PyObjectBase::getTrackedAttribute(const char* attr)
 {
-    PyObject* obj = 0;
+    PyObject* obj = nullptr;
     if (attrDict) {
         obj = PyDict_GetItemString(attrDict, attr);
+        obj = getFromWeakRef(obj);
     }
     return obj;
 }
@@ -450,7 +562,10 @@ void PyObjectBase::trackAttribute(const char* attr, PyObject* obj)
         attrDict = PyDict_New();
     }
 
-    PyDict_SetItemString(attrDict, attr, obj);
+    PyObject* obj_ref = createWeakRef(static_cast<PyObjectBase*>(obj));
+    if (obj_ref) {
+        PyDict_SetItemString(attrDict, attr, obj_ref);
+    }
 }
 
 void PyObjectBase::untrackAttribute(const char* attr)
@@ -466,3 +581,4 @@ void PyObjectBase::clearAttributes()
         PyDict_Clear(attrDict);
     }
 }
+// clang-format on

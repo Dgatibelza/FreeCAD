@@ -38,6 +38,7 @@ set(PartDesign_TestScripts
     PartDesignTests/TestShapeBinder.py
     PartDesignTests/TestPad.py
     PartDesignTests/TestPocket.py
+    PartDesignTests/TestHelix.py
     PartDesignTests/TestHole.py
     PartDesignTests/TestRevolve.py
     PartDesignTests/TestLoft.py
@@ -52,12 +53,19 @@ set(PartDesign_TestScripts
     PartDesignTests/TestChamfer.py
     PartDesignTests/TestDraft.py
     PartDesignTests/TestThickness.py
+    PartDesignTests/TestTopologicalNamingProblem.py
+    PartDesignTests/TestInvoluteGear.py
+    PartDesignTests/TestHelix.py
+)
+
+set(PartDesign_TestFixtures
+    PartDesignTests/Fixtures/InvoluteGear_v0-20.FCStd
+    PartDesignTests/Fixtures/InternalInvoluteGear_v0-20.FCStd
 )
 
 set(PartDesign_GearScripts
     fcgear/__init__.py
     fcgear/fcgear.py
-    fcgear/fcgeardialog.py
     fcgear/involute.py
     fcgear/svggear.py
 )
@@ -84,6 +92,7 @@ add_custom_target(PartDesignScripts ALL SOURCES
     ${PartDesign_Scripts}
     ${PartDesign_OtherScripts}
     ${PartDesign_TestScripts}
+    ${PartDesign_TestFixtures}
     ${PartDesign_GearScripts}
     ${PartDesign_SprocketScripts}
 )
@@ -94,6 +103,7 @@ fc_target_copy_resource(PartDesignScripts
     ${PartDesign_Scripts}
     ${PartDesign_OtherScripts}
     ${PartDesign_TestScripts}
+    ${PartDesign_TestFixtures}
     ${PartDesign_GearScripts}
     ${PartDesign_SprocketScripts}
 )
@@ -118,7 +128,14 @@ INSTALL(
     DESTINATION
         Mod/PartDesign/PartDesignTests
        )
-        
+
+INSTALL(
+    FILES
+        ${PartDesign_TestFixtures}
+    DESTINATION
+        Mod/PartDesign/PartDesignTests/Fixtures
+       )
+
 INSTALL(
     FILES
         ${PartDesign_GearScripts}
@@ -187,20 +204,3 @@ if(BUILD_FEM)
             Mod/PartDesign/WizardShaft
     )
 endif(BUILD_FEM)
-
-SET(FeatureHole_SRCS
-    FeatureHole/__init__.py
-    FeatureHole/HoleGui.py
-    FeatureHole/FeatureHole.py
-    FeatureHole/TaskHole.py
-    FeatureHole/ViewProviderHole.py
-    FeatureHole/Standards.py
-    FeatureHole/PartDesign_Hole.svg
-)
-SOURCE_GROUP("featurehole" FILES ${FeatureHole_SRCS})
-
-SET(FeatureHole_UI
-    FeatureHole/TaskHole.ui
-)
-
-SET(all_featurehole_files ${FeatureHole_SRCS} ${FeatureHole_UI})

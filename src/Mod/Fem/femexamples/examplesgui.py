@@ -23,7 +23,7 @@
 # ***************************************************************************
 
 """
-https://forum.freecadweb.org/viewtopic.php?f=10&t=48427
+https://forum.freecad.org/viewtopic.php?f=10&t=48427
 """
 
 import os
@@ -38,12 +38,14 @@ import FreeCADGui
 
 class FemExamples(QtGui.QWidget):
     def __init__(self):
-        super(FemExamples, self).__init__()
+        super().__init__()
         self.init_ui()
 
-    def __del__(self,):
+    def __del__(
+        self,
+    ):
         # need as fix for qt event error
-        # --> see http://forum.freecadweb.org/viewtopic.php?f=18&t=10732&start=10#p86493
+        # --> see https://forum.freecad.org/viewtopic.php?f=18&t=10732&start=10#p86493
         return
 
     def init_ui(self):
@@ -54,11 +56,15 @@ class FemExamples(QtGui.QWidget):
         path = os.path.dirname(os.path.realpath(__file__))
         files = [f for f in os.listdir(str(path))]
         not_files = [
+            "__init__.py",
+            "__pycache__",
+            "boxanalysis_base.py",
+            "ccx_cantilever_base_edge.py",
+            "ccx_cantilever_base_face.py",
+            "ccx_cantilever_base_solid.py",
             "examplesgui.py",
             "manager.py",
             "meshes",
-            "__init__.py",
-            "__pycache__",
         ]
 
         files = [str(f) for f in files if f not in not_files]
@@ -68,7 +74,8 @@ class FemExamples(QtGui.QWidget):
         files_info = {}
         self.files_name = {}
         constraints = set()
-        meshes = set()
+        meshtypes = set()
+        mesheles = set()
         solvers = set()
         equations = set()
         materials = set()
@@ -79,8 +86,11 @@ class FemExamples(QtGui.QWidget):
                 info = getattr(module, "get_information")()
                 files_info[f] = info
                 self.files_name[info["name"]] = f
-                meshes.add(info["meshelement"])
-                equations.add(info["equation"])
+                meshtypes.add(info["meshtype"])
+                mesheles.add(info["meshelement"])
+                file_equations = info["equations"]
+                for equation in file_equations:
+                    equations.add(equation)
                 materials.add(info["material"])
                 file_solvers = info["solvers"]
                 for solver in file_solvers:
@@ -90,7 +100,8 @@ class FemExamples(QtGui.QWidget):
                     constraints.add(constraint)
 
         constraints = sorted(constraints)
-        meshes = sorted(meshes)
+        meshtypes = sorted(meshtypes)
+        mesheles = sorted(mesheles)
         solvers = sorted(solvers)
         equations = sorted(equations)
         materials = sorted(materials)
@@ -98,8 +109,8 @@ class FemExamples(QtGui.QWidget):
         all_examples = QtGui.QTreeWidgetItem(self.view, ["All"])
         for example, info in files_info.items():
             QtGui.QTreeWidgetItem(all_examples, [info["name"]])
-
         self.view.addTopLevelItem(all_examples)
+
         all_constraints = QtGui.QTreeWidgetItem(self.view, ["Constraints"])
         for constraint in constraints:
             constraint_item = QtGui.QTreeWidgetItem(all_constraints, [constraint])
@@ -107,16 +118,15 @@ class FemExamples(QtGui.QWidget):
                 file_constraints = info["constraints"]
                 if constraint in file_constraints:
                     QtGui.QTreeWidgetItem(constraint_item, [info["name"]])
-
         self.view.addTopLevelItem(all_constraints)
 
         all_equations = QtGui.QTreeWidgetItem(self.view, ["Equations"])
         for equation in equations:
             equation_item = QtGui.QTreeWidgetItem(all_equations, [equation])
             for example, info in files_info.items():
-                if info["equation"] == equation:
+                file_equations = info["equations"]
+                if equation in file_equations:
                     QtGui.QTreeWidgetItem(equation_item, [info["name"]])
-
         self.view.addTopLevelItem(all_equations)
 
         all_materials = QtGui.QTreeWidgetItem(self.view, ["Materials"])
@@ -125,17 +135,23 @@ class FemExamples(QtGui.QWidget):
             for example, info in files_info.items():
                 if info["material"] == material:
                     QtGui.QTreeWidgetItem(material_item, [info["name"]])
-
         self.view.addTopLevelItem(all_materials)
 
-        all_meshes = QtGui.QTreeWidgetItem(self.view, ["Meshes"])
-        for mesh in meshes:
-            mesh_item = QtGui.QTreeWidgetItem(all_meshes, [mesh])
+        all_meshtypes = QtGui.QTreeWidgetItem(self.view, ["MeshTypes"])
+        for mesh in meshtypes:
+            mesh_item = QtGui.QTreeWidgetItem(all_meshtypes, [mesh])
+            for example, info in files_info.items():
+                if info["meshtype"] == mesh:
+                    QtGui.QTreeWidgetItem(mesh_item, [info["name"]])
+        self.view.addTopLevelItem(all_meshtypes)
+
+        all_mesheles = QtGui.QTreeWidgetItem(self.view, ["MeshElements"])
+        for mesh in mesheles:
+            mesh_item = QtGui.QTreeWidgetItem(all_mesheles, [mesh])
             for example, info in files_info.items():
                 if info["meshelement"] == mesh:
                     QtGui.QTreeWidgetItem(mesh_item, [info["name"]])
-
-        self.view.addTopLevelItem(all_meshes)
+        self.view.addTopLevelItem(all_mesheles)
 
         all_solvers = QtGui.QTreeWidgetItem(self.view, ["Solvers"])
         for solver in solvers:
@@ -144,7 +160,6 @@ class FemExamples(QtGui.QWidget):
                 file_solvers = info["solvers"]
                 if solver in file_solvers:
                     QtGui.QTreeWidgetItem(solver_item, [info["name"]])
-
         self.view.addTopLevelItem(all_solvers)
 
         self.view.setHeaderHidden(True)
@@ -192,9 +207,9 @@ class FemExamples(QtGui.QWidget):
                 if grand_parent_name == "Solvers":
                     solver = parent.text(0)
         # if done this way the Python commands are printed in Python console
-        FreeCADGui.doCommand("from femexamples.{}  import setup".format(str(example)))
+        FreeCADGui.doCommand(f"from femexamples.{str(example)}  import setup")
         if solver is not None:
-            FreeCADGui.doCommand("setup(solvertype=\"{}\")".format(str(solver)))
+            FreeCADGui.doCommand(f'setup(solvertype="{str(solver)}")')
         else:
             FreeCADGui.doCommand("setup()")
         QtGui.QApplication.restoreOverrideCursor()
@@ -223,10 +238,11 @@ class FemExamples(QtGui.QWidget):
         # if done this way the Python commands are printed in Python console
         FreeCADGui.doCommand("from femexamples.manager import run_example")
         if solver is not None:
-            FreeCADGui.doCommand("run_example(\"{}\", solver=\"{}\")"
-                                 .format(str(example), str(solver)))
+            FreeCADGui.doCommand(
+                f'run_example("{str(example)}", solver="{str(solver)}", run_solver=True)'
+            )
         else:
-            FreeCADGui.doCommand("run_example(\"{}\")".format(str(example)))
+            FreeCADGui.doCommand(f'run_example("{str(example)}", run_solver=True)')
         QtGui.QApplication.restoreOverrideCursor()
 
     def enable_buttons(self):

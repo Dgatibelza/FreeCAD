@@ -4,17 +4,17 @@
   <context>
     <name>CmdMeshPartCrossSections</name>
     <message>
-      <location filename="../../Command.cpp" line="276"/>
+      <location filename="../../Command.cpp" line="281"/>
       <source>MeshPart</source>
       <translation>Amaraun-pieza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="277"/>
+      <location filename="../../Command.cpp" line="282"/>
       <source>Cross-sections...</source>
       <translation>Zeharkako sekzioak...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="278"/>
+      <location filename="../../Command.cpp" line="283"/>
       <source>Cross-sections</source>
       <translation>Zeharkako sekzioak</translation>
     </message>
@@ -22,17 +22,17 @@
   <context>
     <name>CmdMeshPartCurveOnMesh</name>
     <message>
-      <location filename="../../Command.cpp" line="312"/>
+      <location filename="../../Command.cpp" line="317"/>
       <source>Mesh</source>
       <translation>Amarauna</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="313"/>
+      <location filename="../../Command.cpp" line="318"/>
       <source>Curve on mesh...</source>
       <translation>Kurba amaraunean...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="314"/>
+      <location filename="../../Command.cpp" line="319"/>
       <source>Creates an approximated curve on top of a mesh.
 This command only works with a 'mesh' object.</source>
       <translation>Amaraun baten gainean hari egokitzen zaion gutxi gora beherako kurba bat sortzen du.
@@ -42,17 +42,17 @@ Komando honek 'amarauna' objektuetan soilik funtzionatzen du.</translation>
   <context>
     <name>CmdMeshPartMesher</name>
     <message>
-      <location filename="../../Command.cpp" line="59"/>
+      <location filename="../../Command.cpp" line="58"/>
       <source>Mesh</source>
       <translation>Amarauna</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="60"/>
+      <location filename="../../Command.cpp" line="59"/>
       <source>Create mesh from shape...</source>
       <translation>Sortu amarauna formatik...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="61"/>
+      <location filename="../../Command.cpp" line="60"/>
       <source>Tessellate shape</source>
       <translation>Teselatu forma</translation>
     </message>
@@ -78,20 +78,33 @@ Komando honek 'amarauna' objektuetan soilik funtzionatzen du.</translation>
   <context>
     <name>CmdMeshPartTrimByPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="84"/>
+      <location filename="../../Command.cpp" line="83"/>
       <source>Mesh</source>
       <translation>Amarauna</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="85"/>
+      <location filename="../../Command.cpp" line="84"/>
       <source>Trim mesh with a plane</source>
       <translation>Muxarratu amarauna plano batekin</translation>
     </message>
     <message>
+      <location filename="../../Command.cpp" line="85"/>
       <location filename="../../Command.cpp" line="86"/>
-      <location filename="../../Command.cpp" line="87"/>
       <source>Trims a mesh with a plane</source>
       <translation>Amaraun bat muxarratzen du plano batekin</translation>
+    </message>
+  </context>
+  <context>
+    <name>Command</name>
+    <message>
+      <location filename="../../Command.cpp" line="134"/>
+      <source>Trim with plane</source>
+      <translation>Ebaki planoarekin</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="217"/>
+      <source>Section with plane</source>
+      <translation>Sekzioa planoarekin</translation>
     </message>
   </context>
   <context>
@@ -157,7 +170,7 @@ Komando honek 'amarauna' objektuetan soilik funtzionatzen du.</translation>
       <translation>Konektatu ertzak distantzia hau baino txikiagoa bada:</translation>
     </message>
     <message>
-      <location filename="../../CrossSections.cpp" line="345"/>
+      <location filename="../../CrossSections.cpp" line="384"/>
       <source>Failure</source>
       <translation>Hutsegitea</translation>
     </message>
@@ -165,32 +178,32 @@ Komando honek 'amarauna' objektuetan soilik funtzionatzen du.</translation>
   <context>
     <name>MeshPartGui::CurveOnMeshHandler</name>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="364"/>
+      <location filename="../../CurveOnMesh.cpp" line="362"/>
       <source>Create</source>
       <translation>Sortu</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="366"/>
+      <location filename="../../CurveOnMesh.cpp" line="364"/>
       <source>Close wire</source>
       <translation>Itxi lerroa</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="368"/>
+      <location filename="../../CurveOnMesh.cpp" line="366"/>
       <source>Clear</source>
       <translation>Garbitu</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="369"/>
+      <location filename="../../CurveOnMesh.cpp" line="367"/>
       <source>Cancel</source>
       <translation>Utzi</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="615"/>
+      <location filename="../../CurveOnMesh.cpp" line="624"/>
       <source>Wrong mesh picked</source>
       <translation>Amaraun okerra aukeratu da</translation>
     </message>
     <message>
-      <location filename="../../CurveOnMesh.cpp" line="655"/>
+      <location filename="../../CurveOnMesh.cpp" line="663"/>
       <source>No point was picked</source>
       <translation>Ez da punturik aukeratu</translation>
     </message>
@@ -247,7 +260,7 @@ Komando honek 'amarauna' objektuetan soilik funtzionatzen du, ez aurpegi edo gai
       <translation>Jarraitutasuna</translation>
     </message>
     <message>
-      <location filename="../../TaskCurveOnMesh.ui" line="129"/>
+      <location filename="../../TaskCurveOnMesh.ui" line="136"/>
       <source>Maximum curve degree</source>
       <translation>Kurba-gradu maximoa</translation>
     </message>
@@ -275,24 +288,14 @@ Komando honek 'amarauna' objektuetan soilik funtzionatzen du, ez aurpegi edo gai
       <translation>Estandarra</translation>
     </message>
     <message>
-      <location filename="../../Tessellation.ui" line="145"/>
-      <source>Mefisto</source>
-      <translation>Mefisto</translation>
-    </message>
-    <message>
-      <location filename="../../Tessellation.ui" line="206"/>
-      <source>Netgen</source>
-      <translation>Netgen</translation>
+      <location filename="../../Tessellation.ui" line="33"/>
+      <source>Use the standard mesher</source>
+      <translation>Erabili amaraun-sortzaile estandarra</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="41"/>
       <source>Surface deviation:</source>
       <translation>Gainazalaren desbideratzea:</translation>
-    </message>
-    <message>
-      <location filename="../../Tessellation.ui" line="33"/>
-      <source>Use the standard mesher</source>
-      <translation>Erabili amaraun-sortzaile estandarra</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="48"/>
@@ -313,8 +316,8 @@ Komando honek 'amarauna' objektuetan soilik funtzionatzen du, ez aurpegi edo gai
       <location filename="../../Tessellation.ui" line="98"/>
       <source>The maximal linear deviation of a mesh segment will be the specified
 Surface deviation multiplied by the length of the current mesh segment (edge)</source>
-      <translation>Amaraun-segmentu baten desbideratze lineal maximoa izango da zehaztutako
-gainazal-desbideratzea bidez uneko amaraun-segmentuaren (ertzaren) luzera.
+      <translation>Amaraun segmentu baten desbideratze lineal maximoa izango da zehaztutako
+gainazal-desbideratzea bidez uneko amaraun segmentuaren (ertzaren) luzera.
 </translation>
     </message>
     <message>
@@ -337,14 +340,19 @@ gainazal-desbideratzea bidez uneko amaraun-segmentuaren (ertzaren) luzera.
       <source>Mesh segments will be grouped according to the color of the object faces.
 These groups will be exported for mesh output formats supporting
 this feature (e.g. the format OBJ).</source>
-      <translation>Amaraun-segmentuak objektu-aurpegien kolorearen arabera taldekatuko dira.
-Talde horiek eginbide hau onartzen duten irteera-formatuetara esportatuko dira
+      <translation>Amaraun segmentuak objektu-aurpegien kolorearen arabera taldekatuko dira.
+Talde horiek ezaugarri hau onartzen duten irteera-formatuetara esportatuko dira
 (adibidez, OBJ formatua).</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="124"/>
       <source>Define segments by face colors</source>
       <translation>Definitu segmentuak aurpegi-kolorearen arabera</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.ui" line="145"/>
+      <source>Mefisto</source>
+      <translation>Mefisto</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="148"/>
@@ -367,6 +375,11 @@ Baliorik txikiena 0 da.</translation>
       <location filename="../../Tessellation.ui" line="183"/>
       <source>Estimate</source>
       <translation>Zenbatetsi</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.ui" line="206"/>
+      <source>Netgen</source>
+      <translation>Netgen</translation>
     </message>
     <message>
       <location filename="../../Tessellation.ui" line="209"/>
@@ -475,17 +488,31 @@ A value in the range of 0.2-10.</source>
     </message>
     <message>
       <location filename="../../Tessellation.cpp" line="62"/>
-      <source>gmsh</source>
-      <translation>gmsh</translation>
+      <source>Gmsh</source>
+      <translation>Gmsh</translation>
     </message>
     <message>
-      <location filename="../../Tessellation.cpp" line="226"/>
-      <location filename="../../Tessellation.cpp" line="232"/>
+      <location filename="../../Tessellation.cpp" line="237"/>
+      <location filename="../../Tessellation.cpp" line="243"/>
       <source>No active document</source>
       <translation>Ez dago dokumentu aktiborik</translation>
     </message>
     <message>
-      <location filename="../../Tessellation.cpp" line="247"/>
+      <location filename="../../Tessellation.cpp" line="273"/>
+      <source>You have selected a body without tip.
+Either set the tip of the body or select a different shape, please.</source>
+      <translation>Puntarik ez duen gorputz bat hautatu duzu.
+Ezarri gorputzaren punta edo hautatu beste forma bat.</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.cpp" line="279"/>
+      <source>You have selected a shape without faces.
+Select a different shape, please.</source>
+      <translation>Aurpegirik ez duen forma bat hautatu duzu.
+Hautatu beste forma bat.</translation>
+    </message>
+    <message>
+      <location filename="../../Tessellation.cpp" line="283"/>
       <source>Select a shape for meshing, first.</source>
       <translation>Hasteko, hautatu forma bat amarauna sortzeko.</translation>
     </message>
@@ -493,12 +520,12 @@ A value in the range of 0.2-10.</source>
   <context>
     <name>MeshPart_Section</name>
     <message>
-      <location filename="../../Command.cpp" line="205"/>
+      <location filename="../../Command.cpp" line="206"/>
       <source>Select plane</source>
       <translation>Hautatu planoa</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="206"/>
+      <location filename="../../Command.cpp" line="207"/>
       <source>Please select a plane at which you section the mesh.</source>
       <translation>Hautatu amarauna ebakitzeko erabiliko den planoa.</translation>
     </message>
@@ -506,12 +533,12 @@ A value in the range of 0.2-10.</source>
   <context>
     <name>MeshPart_TrimByPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="96"/>
+      <location filename="../../Command.cpp" line="95"/>
       <source>Select plane</source>
       <translation>Hautatu planoa</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="97"/>
+      <location filename="../../Command.cpp" line="96"/>
       <source>Please select a plane at which you trim the mesh.</source>
       <translation>Hautatu amarauna muxarratzeko erabiliko den planoa.</translation>
     </message>
@@ -526,17 +553,17 @@ A value in the range of 0.2-10.</source>
       <translation>Hautatu mantendu nahi duzun aldea.</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="105"/>
+      <location filename="../../Command.cpp" line="106"/>
       <source>Below</source>
       <translation>Azpian</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="106"/>
+      <location filename="../../Command.cpp" line="108"/>
       <source>Above</source>
       <translation>Gainean</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="107"/>
+      <location filename="../../Command.cpp" line="110"/>
       <source>Split</source>
       <translation>Zatitu</translation>
     </message>
@@ -547,6 +574,32 @@ A value in the range of 0.2-10.</source>
       <location filename="../../Workbench.cpp" line="36"/>
       <source>MeshPart</source>
       <translation>Amaraun-pieza</translation>
+    </message>
+  </context>
+  <context>
+    <name>MeshPart_CreateFlatMesh</name>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="49"/>
+      <source>Unwrap mesh</source>
+      <translation>Desestali amarauna</translation>
+    </message>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="52"/>
+      <source>Find a flat representation of a mesh.</source>
+      <translation>Aurkitu amaraunaren irudikapen laua.</translation>
+    </message>
+  </context>
+  <context>
+    <name>MeshPart_CreateFlatFace</name>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="88"/>
+      <source>Unwrap face</source>
+      <translation type="unfinished">Unwrap face</translation>
+    </message>
+    <message>
+      <location filename="../../MeshFlatteningCommand.py" line="91"/>
+      <source>Find a flat representation of a face.</source>
+      <translation>Aurkitu aurpegiaren irudikapen laua.</translation>
     </message>
   </context>
 </TS>

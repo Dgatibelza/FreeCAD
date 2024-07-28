@@ -1,6 +1,6 @@
  /**************************************************************************
  *   Copyright (c) 2020 FreeCAD Developers                                 *
- *   Author: Uwe Stöhr <uwestoehr@lyx.org>                                 *
+ *   Author: Uwe StÃ¶hr <uwestoehr@lyx.org>                                 *
  *                                                                         *
  *   This file is part of the FreeCAD CAx development system.              *
  *                                                                         *
@@ -21,12 +21,14 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #ifndef DRAWINGGUI_DLGPREFSTECHDRAWIMPCOLORS_H
 #define DRAWINGGUI_DLGPREFSTECHDRAWIMPCOLORS_H
 
-#include <Gui/PropertyPage.h>
 #include <memory>
+
+#include <Gui/PropertyPage.h>
+#include <Mod/TechDraw/TechDrawGlobal.h>
+
 
 namespace TechDrawGui {
 class Ui_DlgPrefsTechDrawColorsImp;
@@ -36,13 +38,13 @@ class DlgPrefsTechDrawColorsImp : public Gui::Dialog::PreferencePage
     Q_OBJECT
 
 public:
-    DlgPrefsTechDrawColorsImp( QWidget* parent = 0 );
-    ~DlgPrefsTechDrawColorsImp();
+    explicit DlgPrefsTechDrawColorsImp( QWidget* parent = nullptr );
+    ~DlgPrefsTechDrawColorsImp() override;
 
 protected:
-    void saveSettings();
-    void loadSettings();
-    void changeEvent(QEvent *e);
+    void saveSettings() override;
+    void loadSettings() override;
+    void changeEvent(QEvent *e) override;
 
 private:
     std::unique_ptr<Ui_DlgPrefsTechDrawColorsImp> ui;

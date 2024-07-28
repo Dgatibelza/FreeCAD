@@ -23,25 +23,18 @@
 
 #include "PreCompiled.h"
 
-#ifndef _PreComp_
-# include <algorithm>
-# include <sstream>
-#endif
-
-/// Here the FreeCAD includes sorted by Base,App,Gui......
-
-#include <Base/Exception.h>
-#include <Base/Reader.h>
-#include <Base/Writer.h>
-#include <Base/Stream.h>
 #include <Base/Console.h>
 #include <Base/PyObjectBase.h>
+#include <Base/Reader.h>
+#include <Base/Stream.h>
+#include <Base/Writer.h>
 #include <Base/Uuid.h>
 
 #include "PropertyFile.h"
 #include "Document.h"
-#include "PropertyContainer.h"
 #include "DocumentObject.h"
+#include "PropertyContainer.h"
+
 
 using namespace App;
 using namespace Base;
@@ -56,10 +49,7 @@ using namespace std;
 TYPESYSTEM_SOURCE(App::PropertyFileIncluded , App::Property)
 
 
-PropertyFileIncluded::PropertyFileIncluded()
-{
-
-}
+PropertyFileIncluded::PropertyFileIncluded() = default;
 
 PropertyFileIncluded::~PropertyFileIncluded()
 {
@@ -71,7 +61,7 @@ PropertyFileIncluded::~PropertyFileIncluded()
     }
 }
 
-void PropertyFileIncluded::aboutToSetValue(void)
+void PropertyFileIncluded::aboutToSetValue()
 {
     // This is a trick to check in Copy() if it is called
     // directly from outside or by the Undo/Redo mechanism.
@@ -85,7 +75,7 @@ void PropertyFileIncluded::aboutToSetValue(void)
     this->StatusBits.reset(10);
 }
 
-std::string PropertyFileIncluded::getDocTransientPath(void) const
+std::string PropertyFileIncluded::getDocTransientPath() const
 {
     std::string path;
     PropertyContainer *co = getContainer();
@@ -107,13 +97,13 @@ std::string PropertyFileIncluded::getUniqueFileName(const std::string& path, con
     return fi.filePath();
 }
 
-std::string PropertyFileIncluded::getExchangeTempFile(void) const
+std::string PropertyFileIncluded::getExchangeTempFile() const
 {
     return Base::FileInfo::getTempFileName(Base::FileInfo
         (getValue()).fileName().c_str(), getDocTransientPath().c_str());
 }
 
-std::string PropertyFileIncluded::getOriginalFileName(void) const
+std::string PropertyFileIncluded::getOriginalFileName() const
 {
     return _OriginalName;
 }
@@ -239,25 +229,24 @@ void PropertyFileIncluded::setValue(const char* sFile, const char* sName)
     }
 }
 
-const char* PropertyFileIncluded::getValue(void) const
+const char* PropertyFileIncluded::getValue() const
 {
      return _cValue.c_str();
 }
 
-PyObject *PropertyFileIncluded::getPyObject(void)
+PyObject *PropertyFileIncluded::getPyObject()
 {
-    PyObject *p = PyUnicode_DecodeUTF8(_cValue.c_str(),_cValue.size(),0);
+    PyObject *p = PyUnicode_DecodeUTF8(_cValue.c_str(),_cValue.size(),nullptr);
     if (!p) {
         throw Base::UnicodeError("PropertyFileIncluded: UTF-8 conversion failure");
     }
     return p;
 }
 
-#if PY_MAJOR_VERSION >= 3
 namespace App {
 const char* getNameFromFile(PyObject* value)
 {
-    const char* string = 0;
+    const char* string = nullptr;
     PyObject *oname = PyObject_GetAttrString (value, "name");
     if (oname) {
         if (PyUnicode_Check (oname)) {
@@ -286,36 +275,21 @@ bool isIOFile(PyObject* file)
     return isFile;
 }
 }
-#endif
 
 void PropertyFileIncluded::setPyObject(PyObject *value)
 {
-#if PY_MAJOR_VERSION >= 3
-    std::string string;
     if (PyUnicode_Check(value)) {
-        string = PyUnicode_AsUTF8(value);
+        std::string string = PyUnicode_AsUTF8(value);
+        setValue(string.c_str());
     }
     else if (PyBytes_Check(value)) {
-        string = PyBytes_AsString(value);
+        std::string string = PyBytes_AsString(value);
+        setValue(string.c_str());
     }
     else if (isIOFile(value)){
-        string = getNameFromFile(value);
+        std::string string = getNameFromFile(value);
+        setValue(string.c_str());
     }
-#else
-    std::string string;
-    if (PyUnicode_Check(value)) {
-        PyObject* unicode = PyUnicode_AsUTF8String(value);
-        string = PyString_AsString(unicode);
-        Py_DECREF(unicode);
-    }
-    else if (PyString_Check(value)) {
-        string = PyString_AsString(value);
-    }
-    else if (PyFile_Check(value)) {
-        PyObject* FileName = PyFile_Name(value);
-        string = PyString_AsString(FileName);
-    }
-#endif
     else if (PyTuple_Check(value)) {
         if (PyTuple_Size(value) != 2)
             throw Base::TypeError("Tuple needs size of (filePath,newFileName)"); 
@@ -324,7 +298,6 @@ void PropertyFileIncluded::setPyObject(PyObject *value)
 
         // decoding file
         std::string fileStr;
-#if PY_MAJOR_VERSION >= 3
         if (PyUnicode_Check(file)) {
             fileStr = PyUnicode_AsUTF8(file);
         }
@@ -334,20 +307,6 @@ void PropertyFileIncluded::setPyObject(PyObject *value)
         else if (isIOFile(value)) {
             fileStr = getNameFromFile(file);
         }
-#else
-        if (PyUnicode_Check(file)) {
-            PyObject* unicode = PyUnicode_AsUTF8String(file);
-            fileStr = PyString_AsString(unicode);
-            Py_DECREF(unicode);
-        }
-        else if (PyString_Check(file)) {
-            fileStr = PyString_AsString(file);
-        }
-        else if (PyFile_Check(file)) {
-            PyObject* FileName = PyFile_Name(file);
-            fileStr = PyString_AsString(FileName);
-        }
-#endif
         else {
             std::string error = std::string("First item in tuple must be a file or string, not ");
             error += file->ob_type->tp_name;
@@ -356,7 +315,6 @@ void PropertyFileIncluded::setPyObject(PyObject *value)
 
         // decoding name
         std::string nameStr;
-#if PY_MAJOR_VERSION >= 3
         if (PyUnicode_Check(name)) {
             nameStr = PyUnicode_AsUTF8(name);
         }
@@ -366,15 +324,6 @@ void PropertyFileIncluded::setPyObject(PyObject *value)
         else if (isIOFile(value)) {
             nameStr = getNameFromFile(name);
         }
-#else
-        if (PyString_Check(name)) {
-            nameStr = PyString_AsString(name);
-        }
-        else if (PyFile_Check(name)) {
-            PyObject* FileName = PyFile_Name(name);
-            nameStr = PyString_AsString(FileName);
-        }
-#endif
         else {
             std::string error = std::string("Second item in tuple must be a string, not ");
             error += name->ob_type->tp_name;
@@ -382,16 +331,22 @@ void PropertyFileIncluded::setPyObject(PyObject *value)
         }
 
         setValue(fileStr.c_str(),nameStr.c_str());
-        return;
+    }
+    else if (PyDict_Check(value)) {
+        Py::Dict dict(value);
+        if (dict.hasKey("filter")) {
+            setFilter(Py::String(dict.getItem("filter")));
+        }
+        if (dict.hasKey("filename")) {
+            std::string string = static_cast<std::string>(Py::String(dict.getItem("filename")));
+            setValue(string.c_str());
+        }
     }
     else {
         std::string error = std::string("Type must be string or file, not ");
         error += value->ob_type->tp_name;
         throw Base::TypeError(error);
     }
-
-    // assign the string
-    setValue(string.c_str());
 }
 
 void PropertyFileIncluded::Save (Base::Writer &writer) const
@@ -514,7 +469,7 @@ void PropertyFileIncluded::RestoreDocFile(Base::Reader &reader)
     hasSetValue();
 }
 
-Property *PropertyFileIncluded::Copy(void) const
+Property *PropertyFileIncluded::Copy() const
 {
     std::unique_ptr<PropertyFileIncluded> prop(new PropertyFileIncluded());
 
@@ -614,12 +569,22 @@ void PropertyFileIncluded::Paste(const Property &from)
     hasSetValue();
 }
 
-unsigned int PropertyFileIncluded::getMemSize (void) const
+unsigned int PropertyFileIncluded::getMemSize () const
 {
     unsigned int mem = Property::getMemSize();
     mem += _cValue.size();
     mem += _BaseFileName.size();
     return mem;
+}
+
+void PropertyFileIncluded::setFilter(std::string filter)
+{
+    m_filter = std::move(filter);
+}
+
+std::string PropertyFileIncluded::getFilter() const
+{
+    return m_filter;
 }
 
 //**************************************************************************
@@ -633,18 +598,32 @@ PropertyFile::PropertyFile()
     m_filter = "";
 }
 
-PropertyFile::~PropertyFile()
-{
-
-}
+PropertyFile::~PropertyFile() = default;
 
 void PropertyFile::setFilter(const std::string f)
 {
     m_filter = f;
 }
 
-std::string PropertyFile::getFilter(void) const
+std::string PropertyFile::getFilter() const
 {
     return m_filter;
+}
+
+void PropertyFile::setPyObject(PyObject *value)
+{
+    if (PyDict_Check(value)) {
+        Py::Dict dict(value);
+        if (dict.hasKey("filter")) {
+            setFilter(Py::String(dict.getItem("filter")));
+        }
+        if (dict.hasKey("filename")) {
+            std::string string = static_cast<std::string>(Py::String(dict.getItem("filename")));
+            setValue(string.c_str());
+        }
+    }
+    else {
+        PropertyString::setPyObject(value);
+    }
 }
 

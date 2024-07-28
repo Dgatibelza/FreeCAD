@@ -20,34 +20,29 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <BRep_Builder.hxx>
+# include <Standard_Failure.hxx>
 # include <TopoDS_Compound.hxx>
 # include <TopExp.hxx>
 # include <TopTools_IndexedMapOfShape.hxx>
-# include <Standard_Failure.hxx>
 #endif
-
 
 #include "FeatureCompound.h"
 
 
 using namespace Part;
 
-
 PROPERTY_SOURCE(Part::Compound, Part::Feature)
 
 Compound::Compound()
 {
-    ADD_PROPERTY(Links,(0));
+    ADD_PROPERTY(Links,(nullptr));
     Links.setSize(0);
 }
 
-Compound::~Compound()
-{
-}
+Compound::~Compound() = default;
 
 short Compound::mustExecute() const
 {
@@ -56,9 +51,14 @@ short Compound::mustExecute() const
     return 0;
 }
 
-App::DocumentObjectExecReturn *Compound::execute(void)
+App::DocumentObjectExecReturn *Compound::execute()
 {
     try {
+        // avoid duplicates without changing the order
+        // See also ViewProviderCompound::updateData
+        std::set<DocumentObject*> tempLinks;
+
+#ifndef FC_USE_TNP_FIX
         std::vector<ShapeHistory> history;
         int countFaces = 0;
 
@@ -66,16 +66,12 @@ App::DocumentObjectExecReturn *Compound::execute(void)
         TopoDS_Compound comp;
         builder.MakeCompound(comp);
 
-        // avoid duplicates without changing the order
-        // See also ViewProviderCompound::updateData
-        std::set<DocumentObject*> tempLinks;
-
         const std::vector<DocumentObject*>& links = Links.getValues();
-        for (std::vector<DocumentObject*>::const_iterator it = links.begin(); it != links.end(); ++it) {
-            if (*it) {
-                auto pos = tempLinks.insert(*it);
+        for (auto link : links) {
+            if (link) {
+                auto pos = tempLinks.insert(link);
                 if (pos.second) {
-                    const TopoDS_Shape& sh = Feature::getShape(*it);
+                    const TopoDS_Shape& sh = Feature::getShape(link);
                     if (!sh.IsNull()) {
                         builder.Add(comp, sh);
                         TopTools_IndexedMapOfShape faceMap;
@@ -100,6 +96,20 @@ App::DocumentObjectExecReturn *Compound::execute(void)
         prop.touch();
 
         return App::DocumentObject::StdReturn;
+#else
+        std::vector<TopoShape> shapes;
+        for (auto obj : Links.getValues()) {
+            if (!tempLinks.insert(obj).second) {
+                continue;
+            }
+            auto sh = Feature::getTopoShape(obj);
+            if (!sh.isNull()) {
+                shapes.push_back(sh);
+            }
+        }
+        this->Shape.setValue(TopoShape().makeElementCompound(shapes));
+        return Part::Feature::execute();
+#endif
     }
     catch (Standard_Failure& e) {
         return new App::DocumentObjectExecReturn(e.GetMessageString());

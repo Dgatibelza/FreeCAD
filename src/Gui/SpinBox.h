@@ -20,15 +20,59 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #ifndef GUI_SPINBOX_H
 #define GUI_SPINBOX_H
 
-#include <QValidator>
 #include <QSpinBox>
+#include <QValidator>
 #include "ExpressionBinding.h"
 
+
+class QStyleOptionSpinBox;
+
+namespace App {
+class NumberExpression;
+}
+
 namespace Gui {
+
+class GuiExport ExpressionSpinBox : public ExpressionWidget
+{
+public:
+    explicit ExpressionSpinBox(QAbstractSpinBox*);
+    ~ExpressionSpinBox() override;
+
+    void bind(const App::ObjectIdentifier &_path) override;
+    void setExpression(std::shared_ptr<App::Expression> expr) override;
+
+protected:
+    /*! Expression handling */
+    //@{
+    enum class Number {
+        KeepCurrent = 0,
+        SetIfNumber = 1
+    };
+    void showInvalidExpression(const QString&);
+    void showValidExpression(Number number);
+    void clearExpression();
+    void updateExpression();
+    //@}
+
+    void onChange() override;
+    virtual void setNumberExpression(App::NumberExpression*) = 0;
+    virtual void showIcon();
+    virtual void validateInput();
+    void resizeWidget();
+
+    bool handleKeyEvent(const QString&);
+    virtual void openFormulaDialog();
+
+    void drawControl(QStyleOptionSpinBox&);
+
+protected:
+    QLineEdit* lineedit;
+    QAbstractSpinBox* spinbox;
+};
 
 /**
  * A validator that allows only input of unsigned int values in the range
@@ -37,15 +81,15 @@ namespace Gui {
 class GuiExport UnsignedValidator : public QValidator
 {
     Q_OBJECT
-    Q_PROPERTY( uint bottom READ bottom WRITE setBottom )
-    Q_PROPERTY( uint top READ top WRITE setTop )
+    Q_PROPERTY( uint bottom READ bottom WRITE setBottom ) // clazy:exclude=qproperty-without-notify
+    Q_PROPERTY( uint top READ top WRITE setTop ) // clazy:exclude=qproperty-without-notify
 
 public:
-    UnsignedValidator( QObject * parent );
+    explicit UnsignedValidator( QObject * parent );
     UnsignedValidator( uint bottom, uint top, QObject * parent );
-    ~UnsignedValidator();
+    ~UnsignedValidator() override;
 
-    QValidator::State validate( QString &, int & ) const;
+    QValidator::State validate( QString &, int & ) const override;
 
     void setBottom( uint );
     void setTop( uint );
@@ -65,7 +109,7 @@ class UIntSpinBoxPrivate;
  * This allows to use numbers in the range of [0, UINT_MAX]
  * @author Werner Mayer
  */
-class GuiExport UIntSpinBox : public QSpinBox, public ExpressionBinding
+class GuiExport UIntSpinBox : public QSpinBox, public ExpressionSpinBox
 {
     Q_OBJECT
     Q_OVERRIDE( uint maximum READ maximum WRITE setMaximum )
@@ -73,41 +117,37 @@ class GuiExport UIntSpinBox : public QSpinBox, public ExpressionBinding
     Q_OVERRIDE( uint value READ value WRITE setValue )
 
 public:
-    UIntSpinBox ( QWidget* parent=0 );
-    virtual ~UIntSpinBox();
+    explicit UIntSpinBox ( QWidget* parent=nullptr );
+    ~UIntSpinBox() override;
 
     void setRange( uint minVal, uint maxVal );
     uint value() const;
-    virtual QValidator::State validate ( QString & input, int & pos ) const;
+    QValidator::State validate ( QString & input, int & pos ) const override;
     uint minimum() const;
     void setMinimum( uint value );
     uint maximum() const;
     void setMaximum( uint value );
 
-    void setExpression(boost::shared_ptr<App::Expression> expr);
-    void bind(const App::ObjectIdentifier &_path);
-    bool apply(const std::string &propName);
-    bool apply();
+    bool apply(const std::string &propName) override;
+    using ExpressionSpinBox::apply;
 
-    void keyPressEvent(QKeyEvent *event);
-    void resizeEvent(QResizeEvent *event);
-    void paintEvent(QPaintEvent *event);
+    void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 
 Q_SIGNALS:
-    void valueChanged( uint value );
+    void unsignedChanged( uint value );
 
 public Q_SLOTS:
     void setValue( uint value );
 
 private Q_SLOTS:
     void valueChange( int value );
-    void finishFormulaDialog();
-    void openFormulaDialog();
 
 protected:
-    virtual QString textFromValue ( int v ) const;
-    virtual int valueFromText ( const QString & text ) const;
-    virtual void onChange();
+    QString textFromValue ( int v ) const override;
+    int valueFromText ( const QString & text ) const override;
+    void setNumberExpression(App::NumberExpression*) override;
 
 private:
     void updateValidator();
@@ -119,26 +159,21 @@ private:
  * The IntSpinBox class does exactly the same as Qt's QSpinBox but has expression support
  * @author Stefan Tröger
  */
-class GuiExport IntSpinBox : public QSpinBox, public ExpressionBinding
+class GuiExport IntSpinBox : public QSpinBox, public ExpressionSpinBox
 {
     Q_OBJECT
 
 public:
-    IntSpinBox ( QWidget* parent=0 );
-    virtual ~IntSpinBox();
+    explicit IntSpinBox ( QWidget* parent=nullptr );
+    ~IntSpinBox() override;
 
-    void setExpression(boost::shared_ptr<App::Expression> expr);
-    void bind(const App::ObjectIdentifier &_path);
-    bool apply(const std::string &propName);
+    bool apply(const std::string &propName) override;
+    using ExpressionSpinBox::apply;
+    void setNumberExpression(App::NumberExpression*) override;
 
-    void keyPressEvent(QKeyEvent *event);
-    void resizeEvent(QResizeEvent *event);
-    void paintEvent(QPaintEvent *event);
-
-private Q_SLOTS:
-    void finishFormulaDialog();
-    void openFormulaDialog();
-    virtual void onChange();
+    void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 };
 
 /**
@@ -146,26 +181,21 @@ private Q_SLOTS:
  * support
  * @author Stefan Tröger
  */
-class GuiExport DoubleSpinBox : public QDoubleSpinBox, public ExpressionBinding
+class GuiExport DoubleSpinBox : public QDoubleSpinBox, public ExpressionSpinBox
 {
     Q_OBJECT
 
 public:
-    DoubleSpinBox ( QWidget* parent=0 );
-    virtual ~DoubleSpinBox();
+    explicit DoubleSpinBox ( QWidget* parent=nullptr );
+    ~DoubleSpinBox() override;
 
-    void setExpression(boost::shared_ptr<App::Expression> expr);
-    void bind(const App::ObjectIdentifier &_path);
-    bool apply(const std::string &propName);
+    bool apply(const std::string &propName) override;
+    using ExpressionSpinBox::apply;
+    void setNumberExpression(App::NumberExpression*) override;
 
-    void keyPressEvent(QKeyEvent *event);
-    void resizeEvent(QResizeEvent *event);
-    void paintEvent(QPaintEvent *event);
-
-private Q_SLOTS:
-    void finishFormulaDialog();
-    void openFormulaDialog();
-    virtual void onChange();
+    void keyPressEvent(QKeyEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
+    void paintEvent(QPaintEvent *event) override;
 };
 
 } // namespace Gui

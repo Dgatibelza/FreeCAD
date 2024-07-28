@@ -21,23 +21,9 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
-#ifndef _PreComp_
-#endif
-
-/// Here the FreeCAD includes sorted by Base,App,Gui......
-#include <Base/Console.h>
-#include <Base/Parameter.h>
-#include <Base/Exception.h>
-#include <Base/Sequencer.h>
-#include <App/Application.h>
-#include <App/Document.h>
 #include <App/DocumentObject.h>
-#include <Gui/SoFCSelection.h>
-#include <Gui/Selection.h>
-
 #include "ViewProviderSymbol.h"
 
 using namespace TechDrawGui;
@@ -49,34 +35,23 @@ PROPERTY_SOURCE(TechDrawGui::ViewProviderSymbol, TechDrawGui::ViewProviderDrawin
 
 ViewProviderSymbol::ViewProviderSymbol()
 {
-    sPixmap = "TechDraw_Tree_Symbol";
+    sPixmap = "TechDraw_TreeSymbol";
 }
 
 ViewProviderSymbol::~ViewProviderSymbol()
 {
 }
 
-void ViewProviderSymbol::attach(App::DocumentObject *pcFeat)
-{
-    // call parent attach method
-    ViewProviderDrawingView::attach(pcFeat);
-}
-
-void ViewProviderSymbol::setDisplayMode(const char* ModeName)
-{
-    ViewProviderDrawingView::setDisplayMode(ModeName);
-}
-
-std::vector<std::string> ViewProviderSymbol::getDisplayModes(void) const
-{
-    // get the modes of the father
-    std::vector<std::string> StrList = ViewProviderDrawingView::getDisplayModes();
-
-    return StrList;
-}
-
 void ViewProviderSymbol::updateData(const App::Property* prop)
 {
+    TechDraw::DrawViewSymbol *obj = getViewObject();
+    if (prop == &obj->Scale
+        || prop == &obj->Rotation
+        || prop == &obj->Symbol
+        || prop == &obj->EditableTexts) {
+        onGuiRepaint(obj);
+    }
+
     ViewProviderDrawingView::updateData(prop);
 }
 
@@ -93,7 +68,7 @@ PROPERTY_SOURCE(TechDrawGui::ViewProviderDraft, TechDrawGui::ViewProviderSymbol)
 
 ViewProviderDraft::ViewProviderDraft()
 {
-    sPixmap = "actions/techdraw-DraftView.svg";
+    sPixmap = "actions/TechDraw_DraftView.svg";
 }
 
 ViewProviderDraft::~ViewProviderDraft()
@@ -108,7 +83,7 @@ PROPERTY_SOURCE(TechDrawGui::ViewProviderArch, TechDrawGui::ViewProviderSymbol)
 
 ViewProviderArch::ViewProviderArch()
 {
-    sPixmap = "actions/techdraw-ArchView.svg";
+    sPixmap = "actions/TechDraw_ArchView.svg";
 }
 
 ViewProviderArch::~ViewProviderArch()

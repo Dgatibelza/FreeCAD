@@ -24,30 +24,30 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-# include <boost/signals2.hpp>
-# include <boost_bind_bind.hpp>
-# include <QAbstractItemView>
 # include <QActionEvent>
+# include <QActionGroup>
 # include <QApplication>
-# include <QDesktopWidget>
 # include <QEvent>
+# include <QMenu>
 # include <QMessageBox>
+# include <QRegularExpression>
+# include <QScreen>
 # include <QTimer>
 # include <QToolBar>
 # include <QToolButton>
+# include <QToolTip>
 #endif
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-# include <QScreen>
-#endif
-
+#include <Base/Exception.h>
+#include <Base/Interpreter.h>
 #include <Base/Tools.h>
+#include <App/Document.h>
+
 #include "Action.h"
-#include "Application.h"
 #include "BitmapFactory.h"
 #include "Command.h"
 #include "DlgUndoRedo.h"
-#include "DlgWorkbenchesImp.h"
+#include "PreferencePages/DlgSettingsWorkbenchesImp.h"
 #include "Document.h"
 #include "EditorView.h"
 #include "FileDialog.h"
@@ -58,31 +58,36 @@
 #include "Widgets.h"
 #include "Workbench.h"
 #include "WorkbenchManager.h"
+#include "WorkbenchSelector.h"
+#include "ShortcutManager.h"
+#include "Tools.h"
 
-#include <Base/Exception.h>
-#include <App/Application.h>
 
 using namespace Gui;
 using namespace Gui::Dialog;
-namespace bp = boost::placeholders;
+namespace sp = std::placeholders;
 
 /**
  * Constructs an action called \a name with parent \a parent. It also stores a pointer
  * to the command object.
  */
 Action::Action (Command* pcCmd, QObject * parent)
-  : QObject(parent), _action(new QAction( this )), _pcCmd(pcCmd)
+  : QObject(parent)
+  , _action(new QAction( this ))
+  , _pcCmd(pcCmd)
 {
     _action->setObjectName(QString::fromLatin1(_pcCmd->getName()));
-    connect(_action, SIGNAL(triggered(bool)), this, SLOT(onActivated()));
+    _connection = connect(_action, &QAction::triggered, this, &Action::onActivated);
 }
 
 Action::Action (Command* pcCmd, QAction* action, QObject * parent)
-  : QObject(parent), _action(action), _pcCmd(pcCmd)
+  : QObject(parent)
+  , _action(action)
+  , _pcCmd(pcCmd)
 {
     _action->setParent(this);
     _action->setObjectName(QString::fromLatin1(_pcCmd->getName()));
-    connect(_action, SIGNAL(triggered(bool)), this, SLOT(onActivated()));
+    _connection = connect(_action, &QAction::triggered, this, &Action::onActivated);
 }
 
 Action::~Action()
@@ -91,11 +96,11 @@ Action::~Action()
 }
 
 /**
- * Adds this action to widget \a w.
+ * Adds this action to widget \a widget.
  */
-void Action::addTo(QWidget *w)
+void Action::addTo(QWidget *widget)
 {
-    w->addAction(_action);
+    widget->addAction(_action);
 }
 
 /**
@@ -103,40 +108,45 @@ void Action::addTo(QWidget *w)
  */
 void Action::onActivated ()
 {
-    _pcCmd->invoke(0,Command::TriggerAction);
+    command()->invoke(0, Command::TriggerAction);
 }
 
 /**
  * Sets whether the command is toggled.
  */
-void Action::onToggled(bool b)
+void Action::onToggled(bool toggle)
 {
-    _pcCmd->invoke( b ? 1 : 0 , Command::TriggerAction);
+    command()->invoke(toggle ? 1 : 0, Command::TriggerAction);
 }
 
-void Action::setCheckable(bool b)
+void Action::setCheckable(bool check)
 {
-    if(b == _action->isCheckable())
+    if (check == _action->isCheckable()) {
         return;
-    _action->setCheckable(b);
-    if (b) {
-        disconnect(_action, SIGNAL(triggered(bool)), this, SLOT(onActivated()));
-        connect(_action, SIGNAL(toggled(bool)), this, SLOT(onToggled(bool)));
+    }
+
+    _action->setCheckable(check);
+
+    if (check) {
+        disconnect(_connection);
+        _connection = connect(_action, &QAction::toggled, this, &Action::onToggled);
     }
     else {
-        connect(_action, SIGNAL(triggered(bool)), this, SLOT(onActivated()));
-        disconnect(_action, SIGNAL(toggled(bool)), this, SLOT(onToggled(bool)));
+        disconnect(_connection);
+        _connection = connect(_action, &QAction::triggered, this, &Action::onActivated);
     }
 }
 
-void Action::setChecked(bool b, bool no_signal)
+void Action::setChecked(bool check, bool no_signal)
 {
-    bool blocked;
-    if(no_signal)
+    bool blocked = false;
+    if (no_signal) {
         blocked = _action->blockSignals(true);
-    _action->setChecked(b);
-    if(no_signal)
+    }
+    _action->setChecked(check);
+    if (no_signal) {
         _action->blockSignals(blocked);
+    }
 }
 
 bool Action::isChecked() const
@@ -147,19 +157,25 @@ bool Action::isChecked() const
 /**
  * Sets whether the action is enabled.
  */
-void Action::setEnabled(bool b)
+void Action::setEnabled(bool enable)
 {
-    _action->setEnabled(b);
+    _action->setEnabled(enable);
 }
 
-void Action::setVisible(bool b)
+bool Action::isEnabled() const
 {
-    _action->setVisible(b);
+    return _action->isEnabled();
+}
+
+void Action::setVisible(bool visible)
+{
+    _action->setVisible(visible);
 }
 
 void Action::setShortcut(const QString & key)
 {
     _action->setShortcut(key);
+    setToolTip(_tooltip, _title);
 }
 
 QKeySequence Action::shortcut() const
@@ -177,9 +193,9 @@ QIcon Action::icon () const
     return _action->icon();
 }
 
-void Action::setStatusTip(const QString & s)
+void Action::setStatusTip(const QString & text)
 {
-    _action->setStatusTip(s);
+    _action->setStatusTip(text);
 }
 
 QString Action::statusTip() const
@@ -187,9 +203,12 @@ QString Action::statusTip() const
     return _action->statusTip();
 }
 
-void Action::setText(const QString & s)
+void Action::setText(const QString & text)
 {
-    _action->setText(s);
+    _action->setText(text);
+    if (_title.isEmpty()) {
+        setToolTip(_tooltip);
+    }
 }
 
 QString Action::text() const
@@ -197,19 +216,201 @@ QString Action::text() const
     return _action->text();
 }
 
-void Action::setToolTip(const QString & s)
+void Action::setToolTip(const QString & text, const QString & title)
 {
-    _action->setToolTip(s);
+    _tooltip = text;
+    _title = title;
+    _action->setToolTip(createToolTip(text,
+                title.isEmpty() ? _action->text() : title,
+                _action->font(),
+                _action->shortcut().toString(QKeySequence::NativeText),
+                command()));
+}
+
+QString Action::cleanTitle(const QString & title)
+{
+    QString text(title);
+    // Deal with QAction title mnemonic
+    static QRegularExpression re(QStringLiteral("&(.)"));
+    text.replace(re, QStringLiteral("\\1"));
+
+    // Probably not a good idea to trim ending punctuation
+#if 0
+    // Trim line ending punctuation
+    static QRegularExpression rePunct(QStringLiteral("[[:punct:]]+$"));
+    text.replace(rePunct, QString());
+#endif
+    return text;
+}
+
+QString Action::commandToolTip(const Command *cmd, bool richFormat)
+{
+    if (!cmd) {
+        return {};
+    }
+
+    if (richFormat) {
+        if (auto action = cmd->getAction()) {
+            return action->_action->toolTip();
+        }
+    }
+
+    QString title, tooltip;
+    if (dynamic_cast<const MacroCommand*>(cmd)) {
+        if (auto txt = cmd->getMenuText()) {
+            title = QString::fromUtf8(txt);
+        }
+        if (auto txt = cmd->getToolTipText()) {
+            tooltip = QString::fromUtf8(txt);
+        }
+    } else {
+        if (auto txt = cmd->getMenuText()) {
+            title = qApp->translate(cmd->className(), txt);
+        }
+        if (auto txt = cmd->getToolTipText()) {
+            tooltip = qApp->translate(cmd->className(), txt);
+        }
+    }
+
+    if (!richFormat) {
+        return tooltip;
+    }
+    return createToolTip(tooltip, title, QFont(), cmd->getShortcut(), cmd);
+}
+
+QString Action::commandMenuText(const Command *cmd)
+{
+    if (!cmd) {
+        return {};
+    }
+
+    QString title;
+    if (auto action = cmd->getAction()) {
+        title = action->text();
+    }
+    else if (dynamic_cast<const MacroCommand*>(cmd)) {
+        if (auto txt = cmd->getMenuText()) {
+            title = QString::fromUtf8(txt);
+        }
+    } else {
+        if (auto txt = cmd->getMenuText()) {
+            title = qApp->translate(cmd->className(), txt);
+        }
+    }
+    if (title.isEmpty()) {
+        title = QString::fromUtf8(cmd->getName());
+    }
+    else {
+        title = cleanTitle(title);
+    }
+    return title;
+}
+
+QString Action::createToolTip(QString helpText,
+                              const QString & title,
+                              const QFont &font,
+                              const QString &shortCut,
+                              const Command *command)
+{
+    QString text = cleanTitle(title);
+
+    if (text.isEmpty()) {
+        return helpText;
+    }
+
+    // The following code tries to make a more useful tooltip by inserting at
+    // the beginning of the tooltip the action title in bold followed by the
+    // shortcut.
+    //
+    // The long winding code is to deal with the fact that Qt will auto wrap
+    // a rich text tooltip but the width is too short. We can escape the auto
+    // wrapping using <p style='white-space:pre'>.
+
+    QString shortcut = shortCut;
+    if (!shortcut.isEmpty() && helpText.endsWith(shortcut)) {
+        helpText.resize(helpText.size() - shortcut.size());
+    }
+    if (!shortcut.isEmpty()) {
+        shortcut = QString::fromLatin1(" (%1)").arg(shortcut);
+    }
+
+    QString tooltip = QString::fromLatin1(
+            "<p style='white-space:pre; margin-bottom:0.5em;'><b>%1</b>%2</p>").arg(
+            text.toHtmlEscaped(), shortcut.toHtmlEscaped());
+
+    QString cmdName;
+    if (command && command->getName()) {
+        cmdName = QString::fromLatin1(command->getName());
+        if (auto groupcmd = dynamic_cast<const GroupCommand*>(command)) {
+            if (auto act = command->getAction()) {
+                int idx = act->property("defaultAction").toInt();
+                auto cmd = groupcmd->getCommand(idx);
+                if (cmd && cmd->getName()) {
+                    cmdName = QStringLiteral("%1 (%2:%3)")
+                        .arg(QString::fromLatin1(cmd->getName()), cmdName)
+                        .arg(idx);
+                }
+            }
+        }
+        cmdName = QStringLiteral("<p style='white-space:pre; margin-top:0.5em;'><i>%1</i></p>")
+            .arg(cmdName.toHtmlEscaped());
+    }
+
+    if (!shortcut.isEmpty() && helpText.endsWith(shortcut)) {
+        helpText.resize(helpText.size() - shortcut.size());
+    }
+
+    if (helpText.isEmpty()
+            || helpText == text
+            || helpText == title)
+    {
+        return tooltip + cmdName;
+    }
+    if (Qt::mightBeRichText(helpText)) {
+        // already rich text, so let it be to avoid duplicated unwrapping
+        return tooltip + helpText + cmdName;
+    }
+
+    tooltip += QString::fromLatin1(
+            "<p style='white-space:pre; margin:0;'>");
+
+    // If the user supplied tooltip contains line break, we shall honour it.
+    if (helpText.indexOf(QLatin1Char('\n')) >= 0) {
+        tooltip += helpText.toHtmlEscaped() + QString::fromLatin1("</p>") ;
+    }
+    else {
+        // If not, try to end the non wrapping paragraph at some pre defined
+        // width, so that the following text can wrap at that width.
+        float tipWidth = 400;
+        QFontMetrics fm(font);
+        int width = QtTools::horizontalAdvance(fm, helpText);
+        if (width <= tipWidth) {
+            tooltip += helpText.toHtmlEscaped() + QString::fromLatin1("</p>") ;
+        }
+        else {
+            int index = tipWidth / width * helpText.size();
+            // Try to only break at white space
+            for(int i=0; i<50 && index<helpText.size(); ++i, ++index) {
+                if (helpText[index] == QLatin1Char(' ')) {
+                    break;
+                }
+            }
+            tooltip += helpText.left(index).toHtmlEscaped()
+                + QString::fromLatin1("</p>")
+                + helpText.right(helpText.size()-index).trimmed().toHtmlEscaped();
+        }
+    }
+    return tooltip + cmdName;
 }
 
 QString Action::toolTip() const
 {
-    return _action->toolTip();
+    return _tooltip;
 }
 
-void Action::setWhatsThis(const QString & s)
+void Action::setWhatsThis(const QString & text)
 {
-    _action->setWhatsThis(s);
+    _action->setWhatsThis(text);
 }
 
 QString Action::whatsThis() const
@@ -228,12 +429,16 @@ void Action::setMenuRole(QAction::MenuRole menuRole)
  * Constructs an action called \a name with parent \a parent. It also stores a pointer
  * to the command object.
  */
-ActionGroup::ActionGroup ( Command* pcCmd,QObject * parent)
-  : Action(pcCmd, parent), _group(0), _dropDown(false),_external(false),_toggle(false)
+ActionGroup::ActionGroup(Command* pcCmd, QObject* parent)
+    : Action(pcCmd, parent)
+    , _group(nullptr)
+    , _dropDown(false)
+    , _isMode(false)
+    , _rememberLast(true)
 {
     _group = new QActionGroup(this);
-    connect(_group, SIGNAL(triggered(QAction*)), this, SLOT(onActivated (QAction*)));
-    connect(_group, SIGNAL(hovered(QAction*)), this, SLOT(onHovered(QAction*)));
+    connect(_group, &QActionGroup::triggered, this, qOverload<QAction*>(&ActionGroup::onActivated));
+    connect(_group, &QActionGroup::hovered, this, &ActionGroup::onHovered);
 }
 
 ActionGroup::~ActionGroup()
@@ -244,100 +449,131 @@ ActionGroup::~ActionGroup()
 /**
  * Adds this action to widget \a w.
  */
-void ActionGroup::addTo(QWidget *w)
+void ActionGroup::addTo(QWidget *widget)
 {
     // When adding an action that has defined a menu then shortcuts
     // of the menu actions don't work. To make this working we must
     // set the menu explicitly. This means calling QAction::setMenu()
     // and adding this action to the widget doesn't work.
     if (_dropDown) {
-        if (w->inherits("QMenu")) {
-            QMenu* menu = qobject_cast<QMenu*>(w);
-            menu = menu->addMenu(_action->text());
-            menu->addActions(_group->actions());
+        if (widget->inherits("QMenu")) {
+            auto menu = new QMenu(widget);
+            QAction* item = qobject_cast<QMenu*>(widget)->addMenu(menu);
+            item->setMenuRole(action()->menuRole());
+            menu->setTitle(action()->text());
+            menu->addActions(groupAction()->actions());
+
+            QObject::connect(menu, &QMenu::aboutToShow, [this, menu]() {
+                Q_EMIT aboutToShow(menu);
+            });
+
+            QObject::connect(menu, &QMenu::aboutToHide, [this, menu]() {
+                Q_EMIT aboutToHide(menu);
+            });
         }
-        else if (w->inherits("QToolBar")) {
-            w->addAction(_action);
-            QToolButton* tb = w->findChildren<QToolButton*>().last();
+        else if (widget->inherits("QToolBar")) {
+            widget->addAction(action());
+            QToolButton* tb = widget->findChildren<QToolButton*>().constLast();
             tb->setPopupMode(QToolButton::MenuButtonPopup);
             tb->setObjectName(QString::fromLatin1("qt_toolbutton_menubutton"));
-            QList<QAction*> acts = _group->actions();
-            QMenu* menu = new QMenu(tb);
+            QList<QAction*> acts = groupAction()->actions();
+            auto menu = new QMenu(tb);
             menu->addActions(acts);
             tb->setMenu(menu);
-            //tb->addActions(_group->actions());
+
+            QObject::connect(menu, &QMenu::aboutToShow, [this, menu]() {
+                Q_EMIT aboutToShow(menu);
+            });
+
+            QObject::connect(menu, &QMenu::aboutToHide, [this, menu]() {
+                Q_EMIT aboutToHide(menu);
+            });
         }
         else {
-            w->addActions(_group->actions()); // no drop-down
+            widget->addActions(groupAction()->actions()); // no drop-down
         }
     }
     else {
-        w->addActions(_group->actions());
+        widget->addActions(groupAction()->actions());
     }
 }
 
-void ActionGroup::setEnabled( bool b )
+void ActionGroup::setEnabled( bool check )
 {
-    Action::setEnabled(b);
-    _group->setEnabled(b);
+    Action::setEnabled(check);
+    groupAction()->setEnabled(check);
 }
 
-void ActionGroup::setDisabled (bool b)
+void ActionGroup::setDisabled (bool check)
 {
-    Action::setEnabled(!b);
-    _group->setDisabled(b);
+    Action::setEnabled(!check);
+    groupAction()->setDisabled(check);
 }
 
-void ActionGroup::setExclusive (bool b)
+void ActionGroup::setExclusive (bool check)
 {
-    _group->setExclusive(b);
+    groupAction()->setExclusive(check);
 }
 
 bool ActionGroup::isExclusive() const
 {
-    return _group->isExclusive();
+    return groupAction()->isExclusive();
 }
 
-void ActionGroup::setVisible( bool b )
+void ActionGroup::setVisible( bool check )
 {
-    Action::setVisible(b);
-    _group->setVisible(b);
+    Action::setVisible(check);
+    groupAction()->setVisible(check);
+}
+
+void ActionGroup::setRememberLast(bool remember)
+{
+    _rememberLast = remember;
+}
+
+bool ActionGroup::doesRememberLast() const
+{
+    return _rememberLast;
 }
 
 QAction* ActionGroup::addAction(QAction* action)
 {
-    int index = _group->actions().size();
-    action = _group->addAction(action);
+    int index = groupAction()->actions().size();
+    action = groupAction()->addAction(action);
     action->setData(QVariant(index));
     return action;
 }
 
 QAction* ActionGroup::addAction(const QString& text)
 {
-    int index = _group->actions().size();
-    QAction* action = _group->addAction(text);
+    int index = groupAction()->actions().size();
+    QAction* action = groupAction()->addAction(text);
     action->setData(QVariant(index));
     return action;
 }
 
 QList<QAction*> ActionGroup::actions() const
 {
-    return _group->actions();
+    return groupAction()->actions();
 }
 
 int ActionGroup::checkedAction() const
 {
-    QAction* checked = _group->checkedAction();
+    QAction* checked = groupAction()->checkedAction();
     return checked ? checked->data().toInt() : -1;
 }
 
-void ActionGroup::setCheckedAction(int i)
+void ActionGroup::setCheckedAction(int index)
 {
-    QAction* a = _group->actions()[i];
-    a->setChecked(true);
-    this->setIcon(a->icon());
-    this->setToolTip(a->toolTip());
-    this->setProperty("defaultAction", QVariant(i));
+    auto acts = groupAction()->actions();
+    QAction* act = acts.at(index);
+    act->setChecked(true);
+    this->setIcon(act->icon());
+
+    if (!this->_isMode) {
+        this->setToolTip(act->toolTip(), act->text());
+    }
+    this->setProperty("defaultAction", QVariant(index));
 }
 
 /**
@@ -345,165 +581,161 @@ void ActionGroup::setCheckedAction(int i)
  */
 void ActionGroup::onActivated ()
 {
-    _pcCmd->invoke(this->property("defaultAction").toInt(), Command::TriggerAction);
+    command()->invoke(this->property("defaultAction").toInt(), Command::TriggerAction);
 }
 
-void ActionGroup::onToggled(bool)
+void ActionGroup::onToggled(bool check)
 {
+    Q_UNUSED(check)
     onActivated();
 }
 
 /**
  * Activates the command.
  */
-void ActionGroup::onActivated (QAction* a)
+void ActionGroup::onActivated (QAction* act)
 {
-    int index = _group->actions().indexOf(a);
+    if (_rememberLast) {
+        int index = groupAction()->actions().indexOf(act);
 
-    // Calling QToolButton::setIcon() etc. has no effect if it has QAction set.
-    // We have to change the QAction icon instead
-#if 0
-    QList<QWidget*> widgets = a->associatedWidgets();
-    for (QList<QWidget*>::iterator it = widgets.begin(); it != widgets.end(); ++it) {
-        QMenu* menu = qobject_cast<QMenu*>(*it);
-        if (menu) {
-            QToolButton* button = qobject_cast<QToolButton*>(menu->parent());
-            if (button) {
-                button->setIcon(a->icon());
-                button->setText(a->text());
-                button->setToolTip(a->toolTip());
-                this->setProperty("defaultAction", QVariant(index));
-            }
+        this->setIcon(act->icon());
+        if (!this->_isMode) {
+            this->setToolTip(act->toolTip(), act->text());
         }
-    }
-#endif
-    this->setIcon(a->icon());
-    this->setToolTip(a->toolTip());
-    this->setProperty("defaultAction", QVariant(index));
-    _pcCmd->invoke(index, Command::TriggerChildAction);
-}
-
-void ActionGroup::onHovered (QAction *a)
-{
-    Gui::ToolTip::showText(QCursor::pos(), a->toolTip());
-}
-
-
-// --------------------------------------------------------------------
-
-namespace Gui {
-
-/**
- * The WorkbenchActionEvent class is used to send an event of which workbench must be activated.
- * We cannot activate the workbench directly as we will destroy the widget that emits the signal.
- * @author Werner Mayer
- */
-class WorkbenchActionEvent : public QEvent
-{
-public:
-    WorkbenchActionEvent(QAction* a)
-      : QEvent(QEvent::User), act(a)
-    { }
-    ~WorkbenchActionEvent()
-    { }
-    QAction* action() const
-    { return act; }
-private:
-    QAction* act;
-};
-}
-
-WorkbenchComboBox::WorkbenchComboBox(WorkbenchGroup* wb, QWidget* parent) : QComboBox(parent), group(wb)
-{
-    connect(this, SIGNAL(activated(int)), this, SLOT(onActivated(int)));
-    connect(getMainWindow(), SIGNAL(workbenchActivated(const QString&)),
-            this, SLOT(onWorkbenchActivated(const QString&)));
-}
-
-WorkbenchComboBox::~WorkbenchComboBox()
-{
-}
-
-void WorkbenchComboBox::showPopup()
-{
-    int rows = count();
-    if (rows > 0) {
-        int height = view()->sizeHintForRow(0);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-        int maxHeight = QApplication::primaryScreen()->size().height();
-#else
-        int maxHeight = QApplication::desktop()->height();
-#endif
-        view()->setMinimumHeight(qMin(height * rows, maxHeight/2));
-    }
-
-    QComboBox::showPopup();
-}
-
-void WorkbenchComboBox::actionEvent ( QActionEvent* e )
-{
-    QAction *action = e->action();
-    switch (e->type()) {
-    case QEvent::ActionAdded:
-        {
-            if (action->isVisible()) {
-                QIcon icon = action->icon();
-                if (icon.isNull())
-                    this->addItem(action->text(), action->data());
-                else
-                    this->addItem(icon, action->text(), action->data());
-                if (action->isChecked())
-                    this->setCurrentIndex(action->data().toInt());
-            }
-            break;
-        }
-    case QEvent::ActionChanged:
-        {
-            QVariant data = action->data();
-            int index = this->findData(data);
-            // added a workbench
-            if (index < 0 && action->isVisible()) {
-                QIcon icon = action->icon();
-                if (icon.isNull())
-                    this->addItem(action->text(), data);
-                else
-                    this->addItem(icon, action->text(), data);
-            }
-            // removed a workbench
-            else if (index >=0 && !action->isVisible()) {
-                this->removeItem(index);
-            }
-            break;
-        }
-    case QEvent::ActionRemoved:
-        {
-            //Nothing needs to be done
-            break;
-        }
-    default:
-        break;
+        this->setProperty("defaultAction", QVariant(index));
+        command()->invoke(index, Command::TriggerChildAction);
     }
 }
 
-void WorkbenchComboBox::onActivated(int i)
+void ActionGroup::onHovered (QAction *act)
 {
-    // Send the event to the workbench group to delay the destruction of the emitting widget.
-    int index = itemData(i).toInt();
-    WorkbenchActionEvent* ev = new WorkbenchActionEvent(this->actions()[index]);
-    QApplication::postEvent(this->group, ev);
-    // TODO: Test if we can use this instead
-    //QTimer::singleShot(20, this->actions()[i], SLOT(trigger()));
+    QToolTip::showText(QCursor::pos(), act->toolTip());
 }
 
-void WorkbenchComboBox::onActivated(QAction* action)
+
+/* TRANSLATOR Gui::WorkbenchGroup */
+WorkbenchGroup::WorkbenchGroup (  Command* pcCmd, QObject * parent )
+  : ActionGroup( pcCmd, parent )
 {
-    // set the according item to the action
-    QVariant data = action->data();
-    int index = this->findData(data);
-    setCurrentIndex(index);
+    refreshWorkbenchList();
+
+    //NOLINTBEGIN
+    Application::Instance->signalRefreshWorkbenches.connect(std::bind(&WorkbenchGroup::refreshWorkbenchList, this));
+    //NOLINTEND
+
+    connect(getMainWindow(), &MainWindow::workbenchActivated,
+        this, &WorkbenchGroup::onWorkbenchActivated);
 }
 
-void WorkbenchComboBox::onWorkbenchActivated(const QString& name)
+QAction* WorkbenchGroup::getOrCreateAction(const QString& wbName)
+{
+    if (!actionByWorkbenchName.contains(wbName)) {
+        actionByWorkbenchName[wbName] = new QAction(QApplication::instance());
+    }
+
+    return actionByWorkbenchName[wbName];
+}
+
+void WorkbenchGroup::addTo(QWidget *widget)
+{
+    if (widget->inherits("QToolBar")) {
+        ParameterGrp::handle hGrp;
+        hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/Workbenches");
+
+        QWidget* workbenchSelectorWidget;
+        if (hGrp->GetInt("WorkbenchSelectorType", 0) == 0) {
+            workbenchSelectorWidget = new WorkbenchComboBox(this, widget);
+        }
+        else {
+            workbenchSelectorWidget = new WorkbenchTabWidget(this, widget);
+        }
+
+        static_cast<QToolBar*>(widget)->addWidget(workbenchSelectorWidget);
+    }
+    else if (widget->inherits("QMenu")) {
+        auto menu = qobject_cast<QMenu*>(widget);
+        menu = menu->addMenu(action()->text());
+        menu->addActions(getEnabledWbActions());
+
+        connect(this, &WorkbenchGroup::workbenchListRefreshed, this, [menu](QList<QAction*> actions) {
+            menu->clear();
+            menu->addActions(actions);
+        });
+    }
+}
+
+void WorkbenchGroup::refreshWorkbenchList()
+{
+    QStringList enabledWbNames = DlgSettingsWorkbenchesImp::getEnabledWorkbenches();
+
+    // Clear the actions.
+    for (QAction* action : actions()) {
+        groupAction()->removeAction(action);
+    }
+
+    enabledWbsActions.clear();
+    disabledWbsActions.clear();
+
+    std::string activeWbName = WorkbenchManager::instance()->activeName();
+
+    // Create action list of enabled wb
+    int index = 0;
+    for (const auto& wbName : enabledWbNames) {
+        QString name = Application::Instance->workbenchMenuText(wbName);
+        QPixmap px = Application::Instance->workbenchIcon(wbName);
+        QString tip = Application::Instance->workbenchToolTip(wbName);
+
+        QAction* action = getOrCreateAction(wbName);
+        
+        groupAction()->addAction(action);
+
+        action->setText(name);
+        action->setCheckable(true);
+        action->setData(QVariant(index)); // set the index
+        action->setObjectName(wbName);
+        action->setIcon(px);
+        action->setToolTip(tip);
+        action->setStatusTip(tr("Select the '%1' workbench").arg(name));
+        if (index < 9) {
+            action->setShortcut(QKeySequence(QString::fromUtf8("W,%1").arg(index + 1)));
+        }
+        if (wbName.toStdString() == activeWbName) {
+            action->setChecked(true);
+        }
+        enabledWbsActions.push_back(action);
+        index++;
+    }
+
+    // Also create action list of disabled wbs
+    QStringList disabledWbNames = DlgSettingsWorkbenchesImp::getDisabledWorkbenches();
+    for (const auto& wbName : disabledWbNames) {
+        QString name = Application::Instance->workbenchMenuText(wbName);
+        QPixmap px = Application::Instance->workbenchIcon(wbName);
+        QString tip = Application::Instance->workbenchToolTip(wbName);
+
+        QAction* action = getOrCreateAction(wbName);
+
+        groupAction()->addAction(action);
+
+        action->setText(name);
+        action->setCheckable(true);
+        action->setData(QVariant(index)); // set the index
+        action->setObjectName(wbName);
+        action->setIcon(px);
+        action->setToolTip(tip);
+        action->setStatusTip(tr("Select the '%1' workbench").arg(name));
+        if (wbName.toStdString() == activeWbName) {
+            action->setChecked(true);
+        }
+        disabledWbsActions.push_back(action);
+        index++;
+    }
+
+    // Signal to the widgets (WorkbenchComboBox & menu) to update the wb list
+    workbenchListRefreshed(enabledWbsActions);
+}
+
+void WorkbenchGroup::onWorkbenchActivated(const QString& name)
 {
     // There might be more than only one instance of WorkbenchComboBox there.
     // However, all of them share the same QAction objects. Thus, if the user
@@ -515,168 +747,95 @@ void WorkbenchComboBox::onWorkbenchActivated(const QString& name)
     // activateWorkbench the method refreshWorkbenchList() shouldn't set the
     // checked item.
     //QVariant item = itemData(currentIndex());
-    QList<QAction*> a = actions();
-    for (QList<QAction*>::Iterator it = a.begin(); it != a.end(); ++it) {
-        if ((*it)->objectName() == name) {
-            if (/*(*it)->data() != item*/!(*it)->isChecked())
-                (*it)->trigger();
+
+    for (QAction* action : actions()) {
+        if (action->objectName() == name) {
+            if (!action->isChecked()) {
+                action->trigger();
+            }
             break;
         }
     }
 }
 
-/* TRANSLATOR Gui::WorkbenchGroup */
-WorkbenchGroup::WorkbenchGroup (  Command* pcCmd, QObject * parent )
-  : ActionGroup( pcCmd, parent )
+QList<QAction*> WorkbenchGroup::getEnabledWbActions() const
 {
-    for (int i=0; i<50; i++) {
-        QAction* action = _group->addAction(QLatin1String(""));
-        action->setVisible(false);
-        action->setCheckable(true);
-        action->setData(QVariant(i)); // set the index
+    return enabledWbsActions;
+}
+
+QList<QAction*> WorkbenchGroup::getDisabledWbActions() const
+{
+    return disabledWbsActions;
+}
+
+// --------------------------------------------------------------------
+
+class RecentFilesAction::Private: public ParameterGrp::ObserverType
+{
+public:
+    Private(const Private&) = delete;
+    Private(Private&&) = delete;
+    void operator= (const Private&) = delete;
+    void operator= (Private&&) = delete;
+
+    Private(RecentFilesAction *master, const char *path):master(master)
+    {
+        handle = App::GetApplication().GetParameterGroupByPath(path);
+        handle->Attach(this);
     }
 
-    Application::Instance->signalActivateWorkbench.connect(boost::bind(&WorkbenchGroup::slotActivateWorkbench, this, bp::_1));
-    Application::Instance->signalAddWorkbench.connect(boost::bind(&WorkbenchGroup::slotAddWorkbench, this, bp::_1));
-    Application::Instance->signalRemoveWorkbench.connect(boost::bind(&WorkbenchGroup::slotRemoveWorkbench, this, bp::_1));
-}
-
-WorkbenchGroup::~WorkbenchGroup()
-{
-}
-
-void WorkbenchGroup::addTo(QWidget *w)
-{
-    refreshWorkbenchList();
-    if (w->inherits("QToolBar")) {
-        QToolBar* bar = qobject_cast<QToolBar*>(w);
-        QComboBox* box = new WorkbenchComboBox(this, w);
-        box->setIconSize(QSize(16, 16));
-        box->setToolTip(_action->toolTip());
-        box->setStatusTip(_action->statusTip());
-        box->setWhatsThis(_action->whatsThis());
-        box->addActions(_group->actions());
-        connect(_group, SIGNAL(triggered(QAction*)), box, SLOT(onActivated (QAction*)));
-        bar->addWidget(box);
+    ~Private() override
+    {
+        handle->Detach(this);
     }
-    else if (w->inherits("QMenu")) {
-        QMenu* menu = qobject_cast<QMenu*>(w);
-        menu = menu->addMenu(_action->text());
-        menu->addActions(_group->actions());
-    }
-}
 
-void WorkbenchGroup::setWorkbenchData(int i, const QString& wb)
-{
-    QList<QAction*> workbenches = _group->actions();
-    QString name = Application::Instance->workbenchMenuText(wb);
-    QPixmap px = Application::Instance->workbenchIcon(wb);
-    QString tip = Application::Instance->workbenchToolTip(wb);
-
-    workbenches[i]->setObjectName(wb);
-    workbenches[i]->setIcon(px);
-    workbenches[i]->setText(name);
-    workbenches[i]->setToolTip(tip);
-    workbenches[i]->setStatusTip(tr("Select the '%1' workbench").arg(name));
-    workbenches[i]->setVisible(true);
-    if (i < 9)
-        workbenches[i]->setShortcut(QKeySequence(QString::fromUtf8("W,%1").arg(i+1)));
-}
-
-void WorkbenchGroup::refreshWorkbenchList()
-{
-    QStringList items = Application::Instance->workbenches();
-    QStringList enabled_wbs_list = DlgWorkbenchesImp::load_enabled_workbenches();
-    QStringList disabled_wbs_list = DlgWorkbenchesImp::load_disabled_workbenches();
-    int i=0;
-
-    // Go through the list of enabled workbenches and verify that they really exist because
-    // it might be possible that a workbench has been removed after setting up the list of
-    // enabled workbenches.
-    for (QStringList::Iterator it = enabled_wbs_list.begin(); it != enabled_wbs_list.end(); ++it) {
-        int index = items.indexOf(*it);
-        if (index >= 0) {
-            setWorkbenchData(i++, *it);
-            items.removeAt(index);
+    void OnChange(Base::Subject<const char*> & sub, const char *reason) override
+    {
+        Q_UNUSED(sub)
+        if (!updating && reason && strcmp(reason, "RecentFiles")==0) {
+            Base::StateLocker guard(updating);
+            master->restore();
         }
     }
 
-    // Filter out the actively disabled workbenches
-    for (QStringList::Iterator it = disabled_wbs_list.begin(); it != disabled_wbs_list.end(); ++it) {
-        int index = items.indexOf(*it);
-        if (index >= 0) {
-            items.removeAt(index);
+    void trySaveUserParameter()
+    {
+        // update the XML structure and save the user parameter to disk (#0001989)
+        bool saveParameter = App::GetApplication().GetParameterGroupByPath
+            ("User parameter:BaseApp/Preferences/General")->GetBool("SaveUserParameter", true);
+        if (saveParameter) {
+            saveUserParameter();
         }
     }
 
-    // Now add the remaining workbenches of 'items'. They have been added to the application
-    // after setting up the list of enabled workbenches.
-    for (QStringList::Iterator it = items.begin(); it != items.end(); ++it) {
-        setWorkbenchData(i++, *it);
+    void saveUserParameter()
+    {
+        ParameterManager* parmgr = App::GetApplication().GetParameterSet("User parameter");
+        parmgr->SaveDocument(App::Application::Config()["UserParameter"].c_str());
     }
-}
 
-void WorkbenchGroup::customEvent( QEvent* e )
-{
-    if (e->type() == QEvent::User) {
-        Gui::WorkbenchActionEvent* ce = (Gui::WorkbenchActionEvent*)e;
-        ce->action()->trigger();
-    }
-}
-
-void WorkbenchGroup::slotActivateWorkbench(const char* /*name*/)
-{
-}
-
-void WorkbenchGroup::slotAddWorkbench(const char* name)
-{
-    QList<QAction*> workbenches = _group->actions();
-    for (QList<QAction*>::Iterator it = workbenches.begin(); it != workbenches.end(); ++it) {
-        if (!(*it)->isVisible()) {
-            QString wb = QString::fromLatin1(name);
-            QPixmap px = Application::Instance->workbenchIcon(wb);
-            QString text = Application::Instance->workbenchMenuText(wb);
-            QString tip = Application::Instance->workbenchToolTip(wb);
-            (*it)->setIcon(px);
-            (*it)->setObjectName(wb);
-            (*it)->setText(text);
-            (*it)->setToolTip(tip);
-            (*it)->setStatusTip(tr("Select the '%1' workbench").arg(wb));
-            (*it)->setVisible(true); // do this at last
-            break;
-        }
-    }
-}
-
-void WorkbenchGroup::slotRemoveWorkbench(const char* name)
-{
-    QString workbench = QString::fromLatin1(name);
-    QList<QAction*> workbenches = _group->actions();
-    for (QList<QAction*>::Iterator it = workbenches.begin(); it != workbenches.end(); ++it) {
-        if ((*it)->objectName() == workbench) {
-            (*it)->setObjectName(QString());
-            (*it)->setIcon(QIcon());
-            (*it)->setText(QString());
-            (*it)->setToolTip(QString());
-            (*it)->setStatusTip(QString());
-            (*it)->setVisible(false); // do this at last
-            break;
-        }
-    }
-}
+public:
+    RecentFilesAction *master;
+    ParameterGrp::handle handle;
+    bool updating = false;
+};
 
 // --------------------------------------------------------------------
 
 /* TRANSLATOR Gui::RecentFilesAction */
 
 RecentFilesAction::RecentFilesAction ( Command* pcCmd, QObject * parent )
-  : ActionGroup( pcCmd, parent ), visibleItems(4), maximumItems(20)
+  : ActionGroup( pcCmd, parent )
+  , visibleItems(4)
+  , maximumItems(20)
 {
+    _pimpl = std::make_unique<Private>(this, "User parameter:BaseApp/Preferences/RecentFiles");
     restore();
 }
 
 RecentFilesAction::~RecentFilesAction()
 {
+    _pimpl.reset(nullptr);
 }
 
 /** Adds the new item to the recent files. */
@@ -691,13 +850,7 @@ void RecentFilesAction::appendFile(const QString& filename)
     setFiles(files);
     save();
 
-    // update the XML structure and save the user parameter to disk (#0001989)
-    bool saveParameter = App::GetApplication().GetParameterGroupByPath
-        ("User parameter:BaseApp/Preferences/General")->GetBool("SaveUserParameter", true);
-    if (saveParameter) {
-        ParameterManager* parmgr = App::GetApplication().GetParameterSet("User parameter");
-        parmgr->SaveDocument(App::Application::Config()["UserParameter"].c_str());
-    }
+    _pimpl->trySaveUserParameter();
 }
 
 /**
@@ -706,7 +859,7 @@ void RecentFilesAction::appendFile(const QString& filename)
  */
 void RecentFilesAction::setFiles(const QStringList& files)
 {
-    QList<QAction*> recentFiles = _group->actions();
+    QList<QAction*> recentFiles = groupAction()->actions();
 
     int numRecentFiles = std::min<int>(recentFiles.count(), files.count());
     for (int index = 0; index < numRecentFiles; index++) {
@@ -733,11 +886,12 @@ void RecentFilesAction::setFiles(const QStringList& files)
 QStringList RecentFilesAction::files() const
 {
     QStringList files;
-    QList<QAction*> recentFiles = _group->actions();
+    QList<QAction*> recentFiles = groupAction()->actions();
     for (int index = 0; index < recentFiles.count(); index++) {
         QString file = recentFiles[index]->toolTip();
-        if (file.isEmpty())
+        if (file.isEmpty()) {
             break;
+        }
         files.append(file);
     }
 
@@ -748,8 +902,9 @@ void RecentFilesAction::activateFile(int id)
 {
     // restore the list of recent files
     QStringList files = this->files();
-    if (id < 0 || id >= files.count())
+    if (id < 0 || id >= files.count()) {
         return; // no valid item
+    }
 
     QString filename = files[id];
     QFileInfo fi(filename);
@@ -757,6 +912,7 @@ void RecentFilesAction::activateFile(int id)
         QMessageBox::critical(getMainWindow(), tr("File not found"), tr("The file '%1' cannot be opened.").arg(filename));
         files.removeAll(filename);
         setFiles(files);
+        save();
     }
     else {
         // invokes appendFile()
@@ -773,51 +929,55 @@ void RecentFilesAction::resizeList(int size)
     this->visibleItems = size;
     int diff = this->visibleItems - this->maximumItems;
     // create new items if needed
-    for (int i=0; i<diff; i++)
-        _group->addAction(QLatin1String(""))->setVisible(false);
+    for (int i=0; i<diff; i++) {
+        groupAction()->addAction(QLatin1String(""))->setVisible(false);
+    }
     setFiles(files());
 }
 
 /** Loads all recent files from the preferences. */
 void RecentFilesAction::restore()
 {
-    ParameterGrp::handle hGrp = App::GetApplication().GetUserParameter().GetGroup("BaseApp")->GetGroup("Preferences");
-    if (hGrp->HasGroup("RecentFiles")) {
-        hGrp = hGrp->GetGroup("RecentFiles");
-        // we want at least 20 items but we do only show the number of files
-        // that is defined in user parameters
-        this->visibleItems = hGrp->GetInt("RecentFiles", this->visibleItems);
-    }
+    ParameterGrp::handle hGrp = _pimpl->handle;
+    // we want at least 20 items but we do only show the number of files
+    // that is defined in user parameters
+    this->visibleItems = hGrp->GetInt("RecentFiles", this->visibleItems);
 
     int count = std::max<int>(this->maximumItems, this->visibleItems);
-    for (int i=0; i<count; i++)
-        _group->addAction(QLatin1String(""))->setVisible(false);
+    for (int i=0; i<count; i++) {
+        groupAction()->addAction(QLatin1String(""))->setVisible(false);
+    }
     std::vector<std::string> MRU = hGrp->GetASCIIs("MRU");
     QStringList files;
-    for (std::vector<std::string>::iterator it = MRU.begin(); it!=MRU.end();++it)
-        files.append(QString::fromUtf8(it->c_str()));
+    for(const auto& it : MRU) {
+        auto filePath = QString::fromUtf8(it.c_str());
+        if (QFileInfo::exists(filePath)) {
+            files.append(filePath);
+        }
+    }
     setFiles(files);
 }
 
 /** Saves all recent files to the preferences. */
 void RecentFilesAction::save()
 {
-    ParameterGrp::handle hGrp = App::GetApplication().GetUserParameter().GetGroup("BaseApp")
-                                ->GetGroup("Preferences")->GetGroup("RecentFiles");
+    ParameterGrp::handle hGrp = _pimpl->handle;
     int count = hGrp->GetInt("RecentFiles", this->visibleItems); // save number of files
     hGrp->Clear();
 
     // count all set items
-    QList<QAction*> recentFiles = _group->actions();
+    QList<QAction*> recentFiles = groupAction()->actions();
     int num = std::min<int>(count, recentFiles.count());
     for (int index = 0; index < num; index++) {
         QString key = QString::fromLatin1("MRU%1").arg(index);
         QString value = recentFiles[index]->toolTip();
-        if (value.isEmpty())
+        if (value.isEmpty()) {
             break;
+        }
         hGrp->SetASCII(key.toLatin1(), value.toUtf8());
     }
 
+    Base::StateLocker guard(_pimpl->updating);
     hGrp->SetInt("RecentFiles", count); // restore
 }
 
@@ -826,13 +986,11 @@ void RecentFilesAction::save()
 /* TRANSLATOR Gui::RecentMacrosAction */
 
 RecentMacrosAction::RecentMacrosAction ( Command* pcCmd, QObject * parent )
-  : ActionGroup( pcCmd, parent ), visibleItems(4), maximumItems(20)
+  : ActionGroup( pcCmd, parent )
+  , visibleItems(4)
+  , maximumItems(20)
 {
     restore();
-}
-
-RecentMacrosAction::~RecentMacrosAction()
-{
 }
 
 /** Adds the new item to the recent files. */
@@ -867,20 +1025,32 @@ void RecentMacrosAction::setFiles(const QStringList& files)
     this->shortcut_modifiers = hGrp->GetASCII("ShortcutModifiers","Ctrl+Shift+");
     this->shortcut_count = std::min<int>(hGrp->GetInt("ShortcutCount",3),9);//max = 9, e.g. Ctrl+Shift+9
     this->visibleItems = hGrp->GetInt("RecentMacros",12);
-    QList<QAction*> recentFiles = _group->actions();
+    QList<QAction*> recentFiles = groupAction()->actions();
 
     int numRecentFiles = std::min<int>(recentFiles.count(), files.count());
+    QStringList existingCommands;
+    auto accel_col = QString::fromStdString(shortcut_modifiers);
     for (int index = 0; index < numRecentFiles; index++) {
         QFileInfo fi(files[index]);
-        QString accel = tr(QString::fromLatin1(shortcut_modifiers.c_str())\
-                           .append(QString::number(index+1,10)).toStdString().c_str());
-        recentFiles[index]->setText(QString::fromLatin1("%1 %2").arg(index+1).arg(fi.baseName()));
-        recentFiles[index]->setStatusTip(tr("Run macro %1 (Shift+click to edit) shortcut: %2").arg(files[index]).arg(accel));
+        recentFiles[index]->setText(QString::fromLatin1("%1 %2").arg(index+1).arg(fi.completeBaseName()));
         recentFiles[index]->setToolTip(files[index]); // set the full name that we need later for saving
         recentFiles[index]->setData(QVariant(index));
+        QString accel(tr("none"));
         if (index < shortcut_count){
-            recentFiles[index]->setShortcut(accel);
+            auto accel_tmp = QString::fromStdString(shortcut_modifiers);
+            accel_tmp.append(QString::number(index+1,10)).toStdString();
+            auto check = Application::Instance->commandManager().checkAcceleratorForConflicts(qPrintable(accel_tmp));
+            if (check) {
+                recentFiles[index]->setShortcut(QKeySequence());
+                accel_col.append(accel_tmp);
+                existingCommands.append(QLatin1String(check->getName()));
+            }
+            else {
+                accel = accel_tmp;
+                recentFiles[index]->setShortcut(accel);
+            }
         }
+        recentFiles[index]->setStatusTip(tr("Run macro %1 (Shift+click to edit) keyboard shortcut: %2").arg(files[index], accel));
         recentFiles[index]->setVisible(true);
     }
 
@@ -891,6 +1061,22 @@ void RecentMacrosAction::setFiles(const QStringList& files)
         recentFiles[index]->setText(QString());
         recentFiles[index]->setToolTip(QString());
     }
+    // Raise a single warning no matter how many conflicts
+    if (!existingCommands.isEmpty()) {
+        auto msgMain = QStringLiteral("Recent macros : keyboard shortcut(s)");
+        for (int index = 0; index < accel_col.size(); index++) {
+            msgMain += QStringLiteral(" %1").arg(accel_col[index]);
+        }
+        msgMain += QStringLiteral(" disabled because of conflicts with");
+        for (int index = 0; index < existingCommands.count(); index++) {
+            msgMain += QStringLiteral(" %1").arg(existingCommands[index]);
+        }
+        msgMain += QStringLiteral(" respectively.\nHint: In Preferences -> Python -> Macro ->"
+                             " Recent Macros menu -> Keyboard Modifiers this should be Ctrl+Shift+"
+                             " by default, if this is now blank then you should revert it back to"
+                             " Ctrl+Shift+ by pressing both keys at the same time.");
+        Base::Console().Warning("%s\n", qPrintable(msgMain));
+    }
 }
 
 /**
@@ -899,11 +1085,12 @@ void RecentMacrosAction::setFiles(const QStringList& files)
 QStringList RecentMacrosAction::files() const
 {
     QStringList files;
-    QList<QAction*> recentFiles = _group->actions();
+    QList<QAction*> recentFiles = groupAction()->actions();
     for (int index = 0; index < recentFiles.count(); index++) {
         QString file = recentFiles[index]->toolTip();
-        if (file.isEmpty())
+        if (file.isEmpty()) {
             break;
+        }
         files.append(file);
     }
 
@@ -914,8 +1101,9 @@ void RecentMacrosAction::activateFile(int id)
 {
     // restore the list of recent files
     QStringList files = this->files();
-    if (id < 0 || id >= files.count())
+    if (id < 0 || id >= files.count()) {
         return; // no valid item
+    }
 
     QString filename = files[id];
     QFileInfo fi(filename);
@@ -926,9 +1114,9 @@ void RecentMacrosAction::activateFile(int id)
     }
     else {
         if (QApplication::keyboardModifiers() == Qt::ShiftModifier){ //open for editing on Shift+click
-            PythonEditor* editor = new PythonEditor();
+            auto editor = new PythonEditor();
             editor->setWindowIcon(Gui::BitmapFactory().iconFromTheme("applications-python"));
-            PythonEditorView* edit = new PythonEditorView(editor, getMainWindow());
+            auto edit = new PythonEditorView(editor, getMainWindow());
             edit->setDisplayName(PythonEditorView::FileName);
             edit->open(filename);
             edit->resize(400, 300);
@@ -940,14 +1128,15 @@ void RecentMacrosAction::activateFile(int id)
                 getMainWindow()->appendRecentMacro(fi.filePath());
                 Application::Instance->macroManager()->run(Gui::MacroManager::File, fi.filePath().toUtf8());
                 // after macro run recalculate the document
-                if (Application::Instance->activeDocument())
+                if (Application::Instance->activeDocument()) {
                     Application::Instance->activeDocument()->getDocument()->recompute();
+                }
             }
             catch (const Base::SystemExitException&) {
                 // handle SystemExit exceptions
                 Base::PyGILStateLocker locker;
-                Base::PyException e;
-                e.ReportException();
+                Base::PyException exc;
+                exc.ReportException();
             }
         }
     }
@@ -958,31 +1147,28 @@ void RecentMacrosAction::resizeList(int size)
     this->visibleItems = size;
     int diff = this->visibleItems - this->maximumItems;
     // create new items if needed
-    for (int i=0; i<diff; i++)
-        _group->addAction(QLatin1String(""))->setVisible(false);
+    for (int i=0; i<diff; i++) {
+        groupAction()->addAction(QLatin1String(""))->setVisible(false);
+    }
     setFiles(files());
 }
 
 /** Loads all recent files from the preferences. */
 void RecentMacrosAction::restore()
 {
-    ParameterGrp::handle hGrp = App::GetApplication().GetUserParameter().GetGroup("BaseApp")->GetGroup("Preferences");
-    if (hGrp->HasGroup("RecentMacros")) {
-        hGrp = hGrp->GetGroup("RecentMacros");
-        // we want at least 20 items but we do only show the number of files
-        // that is defined in user parameters
-        this->visibleItems = hGrp->GetInt("RecentMacros", this->visibleItems);
-        this->shortcut_count = hGrp->GetInt("ShortcutCount", 3); // number of shortcuts
-        this->shortcut_modifiers = hGrp->GetASCII("ShortcutModifiers","Ctrl+Shift+");
-    }
+    ParameterGrp::handle hGrp = App::GetApplication().GetUserParameter().GetGroup("BaseApp")
+                                ->GetGroup("Preferences")->GetGroup("RecentMacros");
 
-    int count = std::max<int>(this->maximumItems, this->visibleItems);
-    for (int i=0; i<count; i++)
-        _group->addAction(QLatin1String(""))->setVisible(false);
+    for (int i=groupAction()->actions().size(); i<this->maximumItems; i++) {
+        groupAction()->addAction(QLatin1String(""))->setVisible(false);
+    }
+    resizeList(hGrp->GetInt("RecentMacros"));
+
     std::vector<std::string> MRU = hGrp->GetASCIIs("MRU");
     QStringList files;
-    for (std::vector<std::string>::iterator it = MRU.begin(); it!=MRU.end();++it)
-        files.append(QString::fromUtf8(it->c_str()));
+    for (auto& filename : MRU) {
+        files.append(QString::fromUtf8(filename.c_str()));
+    }
     setFiles(files);
 }
 
@@ -995,13 +1181,14 @@ void RecentMacrosAction::save()
     hGrp->Clear();
 
     // count all set items
-    QList<QAction*> recentFiles = _group->actions();
+    QList<QAction*> recentFiles = groupAction()->actions();
     int num = std::min<int>(count, recentFiles.count());
     for (int index = 0; index < num; index++) {
         QString key = QString::fromLatin1("MRU%1").arg(index);
         QString value = recentFiles[index]->toolTip();
-        if (value.isEmpty())
+        if (value.isEmpty()) {
             break;
+        }
         hGrp->SetASCII(key.toLatin1(), value.toUtf8());
     }
 
@@ -1017,7 +1204,7 @@ UndoAction::UndoAction (Command* pcCmd,QObject * parent)
 {
     _toolAction = new QAction(this);
     _toolAction->setMenu(new UndoDialog());
-    connect(_toolAction, SIGNAL(triggered(bool)), this, SLOT(onActivated()));
+    connect(_toolAction, &QAction::triggered, this, &UndoAction::onActivated);
 }
 
 UndoAction::~UndoAction()
@@ -1027,15 +1214,15 @@ UndoAction::~UndoAction()
     delete _toolAction;
 }
 
-void UndoAction::addTo (QWidget * w)
+void UndoAction::addTo (QWidget * widget)
 {
-    if (w->inherits("QToolBar")) {
+    if (widget->inherits("QToolBar")) {
         actionChanged();
-        connect(_action, SIGNAL(changed()), this, SLOT(actionChanged()));
-        w->addAction(_toolAction);
+        connect(action(), &QAction::changed, this, &UndoAction::actionChanged);
+        widget->addAction(_toolAction);
     }
     else {
-        w->addAction(_action);
+        widget->addAction(action());
     }
 }
 
@@ -1044,23 +1231,23 @@ void UndoAction::actionChanged()
     // Do NOT set the shortcut again for _toolAction since this is already
     // reserved for _action. Otherwise we get an ambiguity of it with the
     // result that it doesn't work anymore.
-    _toolAction->setText(_action->text());
-    _toolAction->setToolTip(_action->toolTip());
-    _toolAction->setStatusTip(_action->statusTip());
-    _toolAction->setWhatsThis(_action->whatsThis());
-    _toolAction->setIcon(_action->icon());
+    _toolAction->setText(action()->text());
+    _toolAction->setToolTip(action()->toolTip());
+    _toolAction->setStatusTip(action()->statusTip());
+    _toolAction->setWhatsThis(action()->whatsThis());
+    _toolAction->setIcon(action()->icon());
 }
 
-void UndoAction::setEnabled(bool b)
+void UndoAction::setEnabled(bool check)
 {
-    Action::setEnabled(b);
-    _toolAction->setEnabled(b);
+    Action::setEnabled(check);
+    _toolAction->setEnabled(check);
 }
 
-void UndoAction::setVisible(bool b)
+void UndoAction::setVisible(bool check)
 {
-    Action::setVisible(b);
-    _toolAction->setVisible(b);
+    Action::setVisible(check);
+    _toolAction->setVisible(check);
 }
 
 // --------------------------------------------------------------------
@@ -1070,7 +1257,7 @@ RedoAction::RedoAction ( Command* pcCmd,QObject * parent )
 {
     _toolAction = new QAction(this);
     _toolAction->setMenu(new RedoDialog());
-    connect(_toolAction, SIGNAL(triggered(bool)), this, SLOT(onActivated()));
+    connect(_toolAction, &QAction::triggered, this, &RedoAction::onActivated);
 }
 
 RedoAction::~RedoAction()
@@ -1080,15 +1267,15 @@ RedoAction::~RedoAction()
     delete _toolAction;
 }
 
-void RedoAction::addTo ( QWidget * w )
+void RedoAction::addTo ( QWidget * widget )
 {
-    if (w->inherits("QToolBar")) {
+    if (widget->inherits("QToolBar")) {
         actionChanged();
-        connect(_action, SIGNAL(changed()), this, SLOT(actionChanged()));
-        w->addAction(_toolAction);
+        connect(action(), &QAction::changed, this, &RedoAction::actionChanged);
+        widget->addAction(_toolAction);
     }
     else {
-        w->addAction(_action);
+        widget->addAction(action());
     }
 }
 
@@ -1097,29 +1284,30 @@ void RedoAction::actionChanged()
     // Do NOT set the shortcut again for _toolAction since this is already
     // reserved for _action. Otherwise we get an ambiguity of it with the
     // result that it doesn't work anymore.
-    _toolAction->setText(_action->text());
-    _toolAction->setToolTip(_action->toolTip());
-    _toolAction->setStatusTip(_action->statusTip());
-    _toolAction->setWhatsThis(_action->whatsThis());
-    _toolAction->setIcon(_action->icon());
+    _toolAction->setText(action()->text());
+    _toolAction->setToolTip(action()->toolTip());
+    _toolAction->setStatusTip(action()->statusTip());
+    _toolAction->setWhatsThis(action()->whatsThis());
+    _toolAction->setIcon(action()->icon());
 }
 
-void RedoAction::setEnabled  ( bool b )
+void RedoAction::setEnabled  ( bool check )
 {
-    Action::setEnabled(b);
-    _toolAction->setEnabled(b);
+    Action::setEnabled(check);
+    _toolAction->setEnabled(check);
 }
 
-void RedoAction::setVisible ( bool b )
+void RedoAction::setVisible ( bool check )
 {
-    Action::setVisible(b);
-    _toolAction->setVisible(b);
+    Action::setVisible(check);
+    _toolAction->setVisible(check);
 }
 
 // --------------------------------------------------------------------
 
 DockWidgetAction::DockWidgetAction ( Command* pcCmd, QObject * parent )
-  : Action(pcCmd, parent), _menu(0)
+  : Action(pcCmd, parent)
+  , _menu(nullptr)
 {
 }
 
@@ -1128,21 +1316,22 @@ DockWidgetAction::~DockWidgetAction()
     delete _menu;
 }
 
-void DockWidgetAction::addTo ( QWidget * w )
+void DockWidgetAction::addTo ( QWidget * widget )
 {
     if (!_menu) {
-      _menu = new QMenu();
-      _action->setMenu(_menu);
-      connect(_menu, SIGNAL(aboutToShow()), getMainWindow(), SLOT(onDockWindowMenuAboutToShow()));
+        _menu = new QMenu();
+        action()->setMenu(_menu);
+        getMainWindow()->setDockWindowMenu(_menu);
     }
 
-    w->addAction(_action);
+    widget->addAction(action());
 }
 
 // --------------------------------------------------------------------
 
 ToolBarAction::ToolBarAction ( Command* pcCmd, QObject * parent )
-  : Action(pcCmd, parent), _menu(0)
+  : Action(pcCmd, parent)
+  , _menu(nullptr)
 {
 }
 
@@ -1151,46 +1340,41 @@ ToolBarAction::~ToolBarAction()
     delete _menu;
 }
 
-void ToolBarAction::addTo ( QWidget * w )
+void ToolBarAction::addTo ( QWidget * widget )
 {
     if (!_menu) {
       _menu = new QMenu();
-      _action->setMenu(_menu);
-      connect(_menu, SIGNAL(aboutToShow()), getMainWindow(), SLOT(onToolBarMenuAboutToShow()));
+      action()->setMenu(_menu);
+      getMainWindow()->setToolBarMenu(_menu);
     }
 
-    w->addAction(_action);
+    widget->addAction(action());
 }
 
 // --------------------------------------------------------------------
 
 WindowAction::WindowAction ( Command* pcCmd, QObject * parent )
-  : ActionGroup(pcCmd, parent), _menu(0)
+  : ActionGroup(pcCmd, parent)
+  , _menu(nullptr)
 {
 }
 
-WindowAction::~WindowAction()
+void WindowAction::addTo ( QWidget * widget )
 {
-}
-
-void WindowAction::addTo ( QWidget * w )
-{
-    QMenu* menu = qobject_cast<QMenu*>(w);
+    auto menu = qobject_cast<QMenu*>(widget);
     if (!menu) {
         if (!_menu) {
             _menu = new QMenu();
-            _action->setMenu(_menu);
-            _menu->addActions(_group->actions());
-            connect(_menu, SIGNAL(aboutToShow()),
-                    getMainWindow(), SLOT(onWindowsMenuAboutToShow()));
+            action()->setMenu(_menu);
+            _menu->addActions(groupAction()->actions());
+            getMainWindow()->setWindowsMenu(_menu);
         }
 
-        w->addAction(_action);
+        widget->addAction(action());
     }
     else {
-        menu->addActions(_group->actions());
-        connect(menu, SIGNAL(aboutToShow()),
-                getMainWindow(), SLOT(onWindowsMenuAboutToShow()));
+        menu->addActions(groupAction()->actions());
+        getMainWindow()->setWindowsMenu(menu);
     }
 }
 

@@ -20,7 +20,6 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <TopoDS_Shape.hxx>
@@ -44,18 +43,14 @@
 #define M_PI       3.14159265358979323846
 #endif
 
-
-#include <Base/Console.h>
-#include <Base/Exception.h>
-#include <Base/Reader.h>
-#include <App/Property.h>
-#include <App/PropertyLinks.h>
-#include "Part2DObject.h"
-#include "Geometry.h"
-#include "DatumFeature.h"
-
 #include <App/FeaturePythonPyImp.h>
-#include <Mod/Part/App/Part2DObjectPy.h>
+#include <App/PropertyLinks.h>
+#include <Base/Reader.h>
+
+#include "Part2DObject.h"
+#include "Part2DObjectPy.h"
+#include "Geometry.h"
+
 
 using namespace Part;
 
@@ -73,14 +68,14 @@ Part2DObject::Part2DObject()
 }
 
 
-App::DocumentObjectExecReturn *Part2DObject::execute(void)
+App::DocumentObjectExecReturn *Part2DObject::execute()
 {
     return Feature::execute();
 }
 
 void Part2DObject::transformPlacement(const Base::Placement &transform)
 {
-    if (Support.getValues().size() > 0) {
+    if (!AttachmentSupport.getValues().empty()) {
         //part->transformPlacement(transform);
         positionBySupport();
     } else {
@@ -88,7 +83,7 @@ void Part2DObject::transformPlacement(const Base::Placement &transform)
     }
 }
 
-int Part2DObject::getAxisCount(void) const
+int Part2DObject::getAxisCount() const
 {
     return 0;
 }
@@ -104,15 +99,15 @@ Base::Axis Part2DObject::getAxis(int axId) const
     else if (axId == N_Axis) {
         return Base::Axis(Base::Vector3d(0,0,0), Base::Vector3d(0,0,1));
     }
-    return Base::Axis();
+    return {};
 }
 
 bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
-                                  int GeoId, const Base::Vector3d &point,
-                                  int &GeoId1, Base::Vector3d &intersect1,
-                                  int &GeoId2, Base::Vector3d &intersect2)
+                                  int geometryIndex, const Base::Vector3d &point,
+                                  int &geometryIndex1, Base::Vector3d &intersect1,
+                                  int &geometryIndex2, Base::Vector3d &intersect2)
 {
-    if (GeoId >= int(geomlist.size()))
+    if ( geometryIndex >= int(geomlist.size()))
         return false;
 
     gp_Pln plane(gp_Pnt(0,0,0),gp_Dir(0,0,1));
@@ -120,7 +115,7 @@ bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
     Standard_Boolean periodic=Standard_False;
     double period = 0;
     Handle(Geom2d_Curve) primaryCurve;
-    Handle(Geom_Geometry) geom = (geomlist[GeoId])->handle();
+    Handle(Geom_Geometry) geom = (geomlist[geometryIndex])->handle();
     Handle(Geom_Curve) curve3d = Handle(Geom_Curve)::DownCast(geom);
 
     if (curve3d.IsNull())
@@ -141,14 +136,14 @@ bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
     double pickedParam = Projector.LowerDistanceParameter();
 
     // find intersection points
-    GeoId1 = -1;
-    GeoId2 = -1;
+    geometryIndex1 = -1;
+    geometryIndex2 = -1;
     double param1=-1e10,param2=1e10;
     gp_Pnt2d p1,p2;
     Handle(Geom2d_Curve) secondaryCurve;
     for (int id=0; id < int(geomlist.size()); id++) {
         // #0000624: Trim tool doesn't work with construction lines
-        if (id != GeoId/* && !geomlist[id]->Construction*/) {
+        if (id != geometryIndex/* && !geomlist[id]->Construction*/) {
             geom = (geomlist[id])->handle();
             curve3d = Handle(Geom_Curve)::DownCast(geom);
             if (!curve3d.IsNull()) {
@@ -160,9 +155,9 @@ bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
                 // #2463 Check for endpoints of secondarycurve on primary curve
                 // If the OCCT Intersector should detect endpoint tangency when trimming, then
                 // this is just a work-around until that bug is fixed.
-                // https://www.freecadweb.org/tracker/view.php?id=2463
+                // https://www.freecad.org/tracker/view.php?id=2463
                 // https://tracker.dev.opencascade.org/view.php?id=30217
-                if (geomlist[id]->getTypeId().isDerivedFrom(Part::GeomBoundedCurve::getClassTypeId())) {
+                if (geomlist[id]->isDerivedFrom<Part::GeomBoundedCurve>()) {
 
                     Part::GeomBoundedCurve * bcurve = static_cast<Part::GeomBoundedCurve *>(geomlist[id]);
 
@@ -205,24 +200,24 @@ bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
                         if (param > param1) {
                             param1 = param;
                             p1 = p;
-                            GeoId1 = id;
+                            geometryIndex1 = id;
                         }
                         param -= period; // transfer param into the interval (pickedParam pickedParam+period]
                         if (param < param2) {
                             param2 = param;
                             p2 = p;
-                            GeoId2 = id;
+                            geometryIndex2 = id;
                         }
                     }
                     else if (param < pickedParam && param > param1) {
                         param1 = param;
                         p1 = p;
-                        GeoId1 = id;
+                        geometryIndex1 = id;
                     }
                     else if (param > pickedParam && param < param2) {
                         param2 = param;
                         p2 = p;
-                        GeoId2 = id;
+                        geometryIndex2 = id;
                     }
                 }
             }
@@ -233,18 +228,18 @@ bool Part2DObject::seekTrimPoints(const std::vector<Geometry *> &geomlist,
         // in case both points coincide, cancel the selection of one of both
         if (fabs(param2-param1-period) < 1e-10) {
             if (param2 - pickedParam >= pickedParam - param1)
-                GeoId2 = -1;
+                geometryIndex2 = -1;
             else
-                GeoId1 = -1;
+                geometryIndex1 = -1;
         }
     }
 
-    if (GeoId1 < 0 && GeoId2 < 0)
+    if ( geometryIndex1 < 0 && geometryIndex2 < 0)
         return false;
 
-    if (GeoId1 >= 0)
+    if ( geometryIndex1 >= 0)
         intersect1 = Base::Vector3d(p1.X(),p1.Y(),0.f);
-    if (GeoId2 >= 0)
+    if ( geometryIndex2 >= 0)
         intersect2 = Base::Vector3d(p2.X(),p2.Y(),0.f);
     return true;
 }
@@ -259,39 +254,15 @@ void Part2DObject::Restore(Base::XMLReader &reader)
     Part::Feature::Restore(reader);
 }
 
-void Part2DObject::handleChangedPropertyType(Base::XMLReader &reader,
-                                             const char * TypeName,
-                                             App::Property * prop)
-{
-    //override generic restoration to convert Support property from PropertyLinkSub to PropertyLinkSubList
-    if (prop->isDerivedFrom(App::PropertyLinkSubList::getClassTypeId())) {
-        //reading legacy Support - when the Support could only be a single flat face.
-        App::PropertyLinkSub tmp;
-        if (0 == strcmp(tmp.getTypeId().getName(),TypeName)) {
-            tmp.setContainer(this);
-            tmp.Restore(reader);
-            static_cast<App::PropertyLinkSubList*>(prop)->setValue(tmp.getValue(), tmp.getSubValues());
-        }
-        this->MapMode.setValue(Attacher::mmFlatFace);
-    }
-}
-
-void Part2DObject::handleChangedPropertyName(Base::XMLReader &reader,
-                                             const char * TypeName,
-                                             const char *PropName)
-{
-    extHandleChangedPropertyName(reader, TypeName, PropName); // AttachExtension
-}
-
 // Python Drawing feature ---------------------------------------------------------
 
 namespace App {
 /// @cond DOXERR
   PROPERTY_SOURCE_TEMPLATE(Part::Part2DObjectPython, Part::Part2DObject)
-  template<> const char* Part::Part2DObjectPython::getViewProviderName(void) const {
+  template<> const char* Part::Part2DObjectPython::getViewProviderName() const {
     return "PartGui::ViewProvider2DObjectPython";
   }
-  template<> PyObject* Part::Part2DObjectPython::getPyObject(void) {
+  template<> PyObject* Part::Part2DObjectPython::getPyObject() {
         if (PythonObject.is(Py::_None())) {
             // ref counter is set to 1
             PythonObject = Py::Object(new FeaturePythonPyT<Part::Part2DObjectPy>(this),true);

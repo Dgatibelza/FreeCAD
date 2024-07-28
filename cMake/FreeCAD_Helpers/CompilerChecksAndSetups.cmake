@@ -17,9 +17,9 @@ macro(CompilerChecksAndSetups)
         add_definitions(-DHAVE_SNPRINTF)
     endif()
 
-    # Allow developers to use Boost < 1.55
+    # Allow developers to use Boost < 1.65
     if (NOT BOOST_MIN_VERSION)
-        set(BOOST_MIN_VERSION 1.55)
+        set(BOOST_MIN_VERSION 1.65)
     endif()
 
     # For older cmake versions the variable 'CMAKE_CXX_COMPILER_VERSION' is missing
@@ -28,32 +28,24 @@ macro(CompilerChecksAndSetups)
                         OUTPUT_VARIABLE CMAKE_CXX_COMPILER_VERSION)
     endif(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_CXX_COMPILER_VERSION)
 
-    # Enabled C++11 for Freecad 0.17 and later
-    if (FREECAD_VERSION VERSION_GREATER 0.16)
-        set(BUILD_ENABLE_CXX_STD "C++11"  CACHE STRING  "Enable C++ standard")
+    # Enabled C++17 for Freecad 0.20 and later
+        set(BUILD_ENABLE_CXX_STD "C++17"  CACHE STRING  "Enable C++ standard")
         set_property(CACHE BUILD_ENABLE_CXX_STD PROPERTY STRINGS
-                     "C++11"
-                     "C++14"
                      "C++17"
                      "C++20"
         )
 
-        if (CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.7)
-            message(FATAL_ERROR "FreeCAD 0.17 and later requires C++11.  G++ must be 4.7 or later, the used version is ${CMAKE_CXX_COMPILER_VERSION}")
-        elseif(CMAKE_COMPILER_IS_CLANGXX AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.3)
-            message(FATAL_ERROR "FreeCAD 0.17 and later requires C++11.  Clang must be 3.3 or later, the used version is ${CMAKE_CXX_COMPILER_VERSION}")
+        if (CMAKE_COMPILER_IS_GNUCXX AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7.3)
+            message(FATAL_ERROR "FreeCAD 0.20 and later requires C++17.  G++ must be 7.3 or later, the used version is ${CMAKE_CXX_COMPILER_VERSION}")
+        elseif(CMAKE_COMPILER_IS_CLANGXX AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 6.0)
+            message(FATAL_ERROR "FreeCAD 0.20 and later requires C++17.  Clang must be 6.0 or later, the used version is ${CMAKE_CXX_COMPILER_VERSION}")
         endif()
-    endif(FREECAD_VERSION VERSION_GREATER 0.16)
 
     # Escape the two plus chars as otherwise cmake complains about invalid regex
     if(${BUILD_ENABLE_CXX_STD} MATCHES "C\\+\\+20")
         set(CMAKE_CXX_STANDARD 20)
     elseif(${BUILD_ENABLE_CXX_STD} MATCHES "C\\+\\+17")
         set(CMAKE_CXX_STANDARD 17)
-    elseif(${BUILD_ENABLE_CXX_STD} MATCHES "C\\+\\+14")
-        set(CMAKE_CXX_STANDARD 14)
-    elseif (${BUILD_ENABLE_CXX_STD} MATCHES "C\\+\\+11")
-        set(CMAKE_CXX_STANDARD 11)
     endif()
 
     # Log the compiler and version
@@ -61,7 +53,7 @@ macro(CompilerChecksAndSetups)
 
     if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGXX)
         include(${CMAKE_SOURCE_DIR}/cMake/ConfigureChecks.cmake)
-        configure_file(${CMAKE_SOURCE_DIR}/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+        configure_file(${CMAKE_SOURCE_DIR}/src/config.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/config.h)
         add_definitions(-DHAVE_CONFIG_H)
 
         # For now only set pedantic option for clang
@@ -81,7 +73,11 @@ macro(CompilerChecksAndSetups)
             endif()
         else(BUILD_DYNAMIC_LINK_PYTHON)
             if(CMAKE_COMPILER_IS_CLANGXX)
-                set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,dynamic_lookup")
+                if(APPLE)
+                    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined,dynamic_lookup")
+                elseif(UNIX)
+                    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--undefined,dynamic_lookup")
+                endif()
             endif()
         endif(BUILD_DYNAMIC_LINK_PYTHON)
     endif(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_COMPILER_IS_CLANGXX)
@@ -97,13 +93,14 @@ macro(CompilerChecksAndSetups)
             endif()
             add_definitions(-DGL_SILENCE_DEPRECATION)
         elseif (UNIX)
-            if (NOT CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.9)
-                set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-undefined-var-template")
-            endif()
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-undefined-var-template")
         endif()
 
         # older boost.preprocessor turn off variadics for clang
         add_definitions(-DBOOST_PP_VARIADICS=1)
         message(STATUS "Force BOOST_PP_VARIADICS=1 for clang")
     endif()
+
+    set (COMPILE_DEFINITIONS ${COMPILE_DEFINITIONS} BOOST_NO_CXX98_FUNCTION_BASE)
+
 endmacro(CompilerChecksAndSetups)

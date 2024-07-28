@@ -20,28 +20,15 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
-# include <cfloat>
-# include "InventorAll.h"
-# include <QAction>
-# include <QActionGroup>
+# include <Inventor/nodes/SoCamera.h>
 # include <QApplication>
-# include <QByteArray>
-# include <QCursor>
-# include <QList>
-# include <QMenu>
-# include <QMetaObject>
-# include <QRegExp>
 #endif
 
-#include <App/Application.h>
 #include "NavigationStyle.h"
 #include "View3DInventorViewer.h"
-#include "Application.h"
-#include "MenuManager.h"
-#include "MouseSelection.h"
+
 
 using namespace Gui;
 
@@ -55,9 +42,7 @@ RevitNavigationStyle::RevitNavigationStyle() : lockButton1(false)
 {
 }
 
-RevitNavigationStyle::~RevitNavigationStyle()
-{
-}
+RevitNavigationStyle::~RevitNavigationStyle() = default;
 
 const char* RevitNavigationStyle::mouseButtons(ViewerMode mode)
 {
@@ -80,7 +65,9 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
     // Events when in "ready-to-seek" mode are ignored, except those
     // which influence the seek mode itself -- these are handled further
     // up the inheritance hierarchy.
-    if (this->isSeekMode()) { return inherited::processSoEvent(ev); }
+    if (this->isSeekMode()) {
+        return inherited::processSoEvent(ev);
+    }
     // Switch off viewing mode (Bug #0000911)
     if (!this->isSeekMode() && !this->isAnimating() && this->isViewing())
         this->setViewing(false); // by default disable viewing mode to render the scene
@@ -88,12 +75,10 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
     const SoType type(ev->getTypeId());
 
     const SbViewportRegion & vp = viewer->getSoRenderManager()->getViewportRegion();
-    const SbVec2s size(vp.getViewportSizePixels());
-    const SbVec2f prevnormalized = this->lastmouseposition;
     const SbVec2s pos(ev->getPosition());
-    const SbVec2f posn((float) pos[0] / (float) std::max((int)(size[0] - 1), 1),
-                       (float) pos[1] / (float) std::max((int)(size[1] - 1), 1));
+    const SbVec2f posn = normalizePixelPos(pos);
 
+    const SbVec2f prevnormalized = this->lastmouseposition;
     this->lastmouseposition = posn;
 
     // Set to true if any event processing happened. Note that it is not
@@ -107,15 +92,7 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
 
     // Mismatches in state of the modifier keys happens if the user
     // presses or releases them outside the viewer window.
-    if (this->ctrldown != ev->wasCtrlDown()) {
-        this->ctrldown = ev->wasCtrlDown();
-    }
-    if (this->shiftdown != ev->wasShiftDown()) {
-        this->shiftdown = ev->wasShiftDown();
-    }
-    if (this->altdown != ev->wasAltDown()) {
-        this->altdown = ev->wasAltDown();
-    }
+    syncModifierKeys(ev);
 
     // give the nodes in the foreground root the chance to handle events (e.g color bar)
     if (!viewer->isEditing()) {
@@ -126,42 +103,13 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
 
     // Keyboard handling
     if (type.isDerivedFrom(SoKeyboardEvent::getClassTypeId())) {
-        const SoKeyboardEvent * const event = (const SoKeyboardEvent *) ev;
-        const SbBool press = event->getState() == SoButtonEvent::DOWN ? true : false;
-        switch (event->getKey()) {
-        case SoKeyboardEvent::LEFT_CONTROL:
-        case SoKeyboardEvent::RIGHT_CONTROL:
-            this->ctrldown = press;
-            break;
-        case SoKeyboardEvent::LEFT_SHIFT:
-        case SoKeyboardEvent::RIGHT_SHIFT:
-            this->shiftdown = press;
-            break;
-        case SoKeyboardEvent::LEFT_ALT:
-        case SoKeyboardEvent::RIGHT_ALT:
-            this->altdown = press;
-            break;
-        case SoKeyboardEvent::H:
-            processed = true;
-            viewer->saveHomePosition();
-            break;
-        case SoKeyboardEvent::S:
-        case SoKeyboardEvent::HOME:
-        case SoKeyboardEvent::LEFT_ARROW:
-        case SoKeyboardEvent::UP_ARROW:
-        case SoKeyboardEvent::RIGHT_ARROW:
-        case SoKeyboardEvent::DOWN_ARROW:
-            if (!this->isViewing())
-                this->setViewing(true);
-            break;
-        default:
-            break;
-        }
+        const auto event = static_cast<const SoKeyboardEvent *>(ev);
+        processed = processKeyboardEvent(event);
     }
 
     // Mouse Button / Spaceball Button handling
     if (type.isDerivedFrom(SoMouseButtonEvent::getClassTypeId())) {
-        const SoMouseButtonEvent * const event = (const SoMouseButtonEvent *) ev;
+        const auto event = (const SoMouseButtonEvent *) ev;
         const int button = event->getButton();
         const SbBool press = event->getState() == SoButtonEvent::DOWN ? true : false;
 
@@ -175,10 +123,6 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
                 this->seekToPoint(pos); // implicitly calls interactiveCountInc()
                 processed = true;
             }
-            //else if (press && (this->currentmode == NavigationStyle::IDLE)) {
-            //    this->setViewing(true);
-            //    processed = true;
-            //}
             else if (press && (this->currentmode == NavigationStyle::PANNING ||
                                this->currentmode == NavigationStyle::ZOOMING)) {
                 newmode = NavigationStyle::DRAGGING;
@@ -186,49 +130,31 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
                 this->centerTime = ev->getTime();
                 processed = true;
             }
+            else if (!press && (this->currentmode == NavigationStyle::DRAGGING)) {
+                processed = true;
+            }
             else if (viewer->isEditing() && (this->currentmode == NavigationStyle::SPINNING)) {
                 processed = true;
             }
-            // issue #0002433: avoid to swallow the UP event if down the
-            // scene graph somewhere a dialog gets opened
-            else if (press) {
-                SbTime tmp = (ev->getTime() - mouseDownConsumedEvent.getTime());
-                float dci = (float)QApplication::doubleClickInterval()/1000.0f;
-                // a double-click?
-                if (tmp.getValue() < dci) {
-                    mouseDownConsumedEvent = *event;
-                    mouseDownConsumedEvent.setTime(ev->getTime());
-                    processed = true;
-                }
-                else {
-                    mouseDownConsumedEvent.setTime(ev->getTime());
-                    // 'ANY' is used to mark that we don't know yet if it will
-                    // be a double-click event.
-                    mouseDownConsumedEvent.setButton(SoMouseButtonEvent::ANY);
-                }
-            }
-            else if (!press) {
-                if (mouseDownConsumedEvent.getButton() == SoMouseButtonEvent::BUTTON1) {
-                    // now handle the postponed event
-                    inherited::processSoEvent(&mouseDownConsumedEvent);
-                    mouseDownConsumedEvent.setButton(SoMouseButtonEvent::ANY);
-                }
+            else {
+                processed = processClickEvent(event);
             }
             break;
         case SoMouseButtonEvent::BUTTON2:
             // If we are in edit mode then simply ignore the RMB events
             // to pass the event to the base class.
             this->lockrecenter = true;
-            if (!viewer->isEditing()) {
-                // If we are in zoom or pan mode ignore RMB events otherwise
-                // the canvas doesn't get any release events
+
+            // Don't show the context menu after dragging, panning or zooming
+            if (!press && (hasDragged || hasPanned || hasZoomed)) {
+                processed = true;
+            }
+            else if (!press && !viewer->isEditing()) {
                 if (this->currentmode != NavigationStyle::ZOOMING &&
                     this->currentmode != NavigationStyle::PANNING &&
                     this->currentmode != NavigationStyle::DRAGGING) {
                     if (this->isPopupMenuEnabled()) {
-                        if (!press) { // release right mouse button
-                            this->openPopupMenu(event->getPosition());
-                        }
+                        this->openPopupMenu(event->getPosition());
                     }
                 }
             }
@@ -245,9 +171,7 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
         case SoMouseButtonEvent::BUTTON3:
             if (press) {
                 this->centerTime = ev->getTime();
-                float ratio = vp.getViewportAspectRatio();
-                SbViewVolume vv = viewer->getSoRenderManager()->getCamera()->getViewVolume(ratio);
-                this->panningplane = vv.getPlane(viewer->getSoRenderManager()->getCamera()->focalDistance.getValue());
+                setupPanningPlane(getCamera());
                 this->lockrecenter = false;
             }
             else {
@@ -255,10 +179,7 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
                 float dci = (float)QApplication::doubleClickInterval()/1000.0f;
                 // is it just a middle click?
                 if (tmp.getValue() < dci && !this->lockrecenter) {
-                    if (!this->lookAtPoint(pos)) {
-                        panToCenter(panningplane, posn);
-                        this->interactiveCountDec();
-                    }
+                    lookAtPoint(pos);
                     processed = true;
                 }
             }
@@ -272,7 +193,7 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
     // Mouse Movement handling
     if (type.isDerivedFrom(SoLocation2Event::getClassTypeId())) {
         this->lockrecenter = true;
-        const SoLocation2Event * const event = (const SoLocation2Event *) ev;
+        const auto event = (const SoLocation2Event *) ev;
         if (this->currentmode == NavigationStyle::ZOOMING) {
             this->zoomByCursor(posn, prevnormalized);
             processed = true;
@@ -292,7 +213,7 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
 
     // Spaceball & Joystick handling
     if (type.isDerivedFrom(SoMotion3Event::getClassTypeId())) {
-        const SoMotion3Event * const event = static_cast<const SoMotion3Event *>(ev);
+        const auto event = static_cast<const SoMotion3Event *>(ev);
         if (event)
             this->processMotionEvent(event);
         processed = true;
@@ -316,29 +237,26 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
     case 0:
         if (curmode == NavigationStyle::SPINNING) { break; }
         newmode = NavigationStyle::IDLE;
-        // The left mouse button has been released right now but
-        // we want to avoid that the event is processed elsewhere
+        // The left mouse button has been released right now
         if (this->lockButton1) {
             this->lockButton1 = false;
-            processed = true;
+            if (curmode != NavigationStyle::SELECTION) {
+                processed = true;
+            }
         }
-
-        //if (curmode == NavigationStyle::DRAGGING) {
-        //    if (doSpin())
-        //        newmode = NavigationStyle::SPINNING;
-        //}
         break;
     case BUTTON1DOWN:
     case CTRLDOWN|BUTTON1DOWN:
         // make sure not to change the selection when stopping spinning
-        if (curmode == NavigationStyle::SPINNING || this->lockButton1)
+        if (curmode == NavigationStyle::SPINNING
+            || (this->lockButton1 && curmode != NavigationStyle::SELECTION)) {
             newmode = NavigationStyle::IDLE;
-        else
+        }
+        else {
             newmode = NavigationStyle::SELECTION;
+        }
         break;
     case BUTTON1DOWN|BUTTON2DOWN:
-        newmode = NavigationStyle::PANNING;
-        break;
     case BUTTON3DOWN:
         newmode = NavigationStyle::PANNING;
         break;
@@ -348,34 +266,43 @@ SbBool RevitNavigationStyle::processSoEvent(const SoEvent * const ev)
         }
         newmode = NavigationStyle::DRAGGING;
         break;
-    //case BUTTON1DOWN|BUTTON2DOWN|BUTTON3DOWN:
-    //    newmode = NavigationStyle::ZOOMING;
-    //    break;
     case CTRLDOWN|SHIFTDOWN|BUTTON2DOWN:
     case CTRLDOWN|BUTTON3DOWN:
         newmode = NavigationStyle::ZOOMING;
         break;
 
     default:
+        // Reset mode to SELECTION when button 3 is released
+        // This stops the DRAGGING when button 3 is released but SHIFT is still pressed
+        // This stops the ZOOMING when button 3 is released but CTRL is still pressed
+        if ((curmode == NavigationStyle::DRAGGING || curmode == NavigationStyle::ZOOMING)
+            && !this->button3down) {
+            newmode = NavigationStyle::SELECTION;
+        }
         break;
+    }
+
+    // If the selection button is pressed together with another button
+    // and the other button is released, don't switch to selection mode.
+    // Process when selection button is pressed together with other buttons that could trigger different actions.
+    if (this->button1down && (this->button2down || this->button3down)) {
+        this->lockButton1 = true;
+        processed = true;
+    }
+
+    // Prevent interrupting rubber-band selection in sketcher
+    if (viewer->isEditing() && curmode == NavigationStyle::SELECTION && newmode != NavigationStyle::IDLE) {
+        newmode = NavigationStyle::SELECTION;
+        processed = false;
     }
 
     if (newmode != curmode) {
         this->setViewingMode(newmode);
     }
 
-    // If for dragging the buttons 1 and 3 are pressed
-    // but then button 3 is released we shouldn't switch
-    // into selection mode.
-    if (this->button1down && this->button3down)
-        this->lockButton1 = true;
-
     // If not handled in this class, pass on upwards in the inheritance
     // hierarchy.
-    if (/*(curmode == NavigationStyle::SELECTION || viewer->isEditing()) && */!processed)
+    if (!processed)
         processed = inherited::processSoEvent(ev);
-    else
-        return true;
-
     return processed;
 }

@@ -23,10 +23,7 @@
 
 #include "PreCompiled.h"
 
-#ifndef _PreComp_
-#endif
-
-#include <App/Document.h>
+#include <App/DocumentObject.h>
 
 #include "Part.h"
 #include "PartPy.h"
@@ -43,10 +40,10 @@ PROPERTY_SOURCE_WITH_EXTENSIONS(App::Part, App::GeoFeature)
 //===========================================================================
 
 
-Part::Part(void)
+Part::Part()
 {
     ADD_PROPERTY(Type,(""));
-    ADD_PROPERTY_TYPE(Material, (), 0, App::Prop_None, "Map with material properties");
+    ADD_PROPERTY_TYPE(Material, (nullptr), 0, App::Prop_None, "The Material for this Part");
     ADD_PROPERTY_TYPE(Meta, (), 0, App::Prop_None, "Map with additional meta information");
 
     // create the uuid for the document
@@ -63,21 +60,38 @@ Part::Part(void)
     GroupExtension::initExtension(this);
 }
 
-Part::~Part(void)
+Part::~Part() = default;
+
+static App::Part *_getPartOfObject(const DocumentObject *obj,
+                                   std::set<const DocumentObject*> *objset)
 {
-}
-
-App::Part *Part::getPartOfObject (const DocumentObject* obj) {
-
     // as a Part is a geofeaturegroup it must directly link to all
     // objects it contains, even if they are in additional groups etc.
-    auto list = obj->getInList();
-    for (auto obj : list) {
-        if(obj->isDerivedFrom(App::Part::getClassTypeId()))
-            return static_cast<App::Part*>(obj);
+    // But we still must call 'hasObject()' to exclude link brought in by
+    // expressions.
+    for (auto inObj : obj->getInList()) {
+        if (objset && !objset->insert(inObj).second)
+            continue;
+        auto group = inObj->getExtensionByType<GeoFeatureGroupExtension>(true);
+        if(group && group->hasObject(obj)) {
+            if(inObj->isDerivedFrom(App::Part::getClassTypeId()))
+                return static_cast<App::Part*>(inObj);
+            else if (objset)
+                return _getPartOfObject(inObj, objset);
+            // Only one parent geofeature group per object, so break
+            break;
+        }
     }
 
     return nullptr;
+}
+
+App::Part *Part::getPartOfObject (const DocumentObject* obj, bool recursive) {
+    if (!recursive)
+        return _getPartOfObject(obj, nullptr);
+    std::set<const DocumentObject *> objset;
+    objset.insert(obj);
+    return _getPartOfObject(obj, &objset);
 }
 
 
@@ -88,6 +102,21 @@ PyObject *Part::getPyObject()
         PythonObject = Py::Object(new PartPy(this),true);
     }
     return Py::new_reference_to(PythonObject);
+}
+
+void Part::handleChangedPropertyType(Base::XMLReader &reader, const char *TypeName, App::Property *prop)
+{
+    // Migrate Material from App::PropertyMap to App::PropertyLink
+    if (!strcmp(TypeName, "App::PropertyMap")) {
+        App::PropertyMap oldvalue;
+        oldvalue.Restore(reader);
+        if (oldvalue.getSize()) {
+            auto oldprop = static_cast<App::PropertyMap*>(addDynamicProperty("App::PropertyMap", "Material_old", "Base"));
+            oldprop->setValues(oldvalue.getValues());
+        }
+    } else {
+        App::GeoFeature::handleChangedPropertyType(reader, TypeName, prop);
+    }
 }
 
 // Python feature ---------------------------------------------------------

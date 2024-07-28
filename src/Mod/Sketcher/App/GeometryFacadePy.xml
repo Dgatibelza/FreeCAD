@@ -10,7 +10,8 @@
       Namespace="Sketcher"
       FatherInclude="Base/BaseClassPy.h"
       FatherNamespace="Base"
-      Constructor="true">
+      Constructor="true"
+      Delete="true">
     <Documentation>
       <Author Licence="LGPL" Name="Abdullah Tahiri" EMail="abdullah.tahiri.yo@gmail.com" />
       <UserDocu>Describes a GeometryFacade</UserDocu>
@@ -54,6 +55,14 @@
         <UserDocu>Sets/returns this geometry as a construction one, which will not be part of a later built shape.</UserDocu>
       </Documentation>
       <Parameter Name="Construction" Type="Boolean"/>
+    </Attribute>
+    <Attribute Name="GeometryLayerId" ReadOnly="false">
+        <Documentation>
+            <UserDocu>
+                Returns the Id of the geometry Layer in which the geometry is located.
+            </UserDocu>
+        </Documentation>
+        <Parameter Name="GeometryLayerId" Type="Long"/>
     </Attribute>
     <Methode Name="mirror">
       <Documentation>

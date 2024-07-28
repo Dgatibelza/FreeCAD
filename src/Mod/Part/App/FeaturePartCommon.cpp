@@ -20,32 +20,34 @@
  *                                                                         *
  ***************************************************************************/
 
-
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <BRepAlgoAPI_Common.hxx>
 # include <BRepCheck_Analyzer.hxx>
 # include <Standard_Failure.hxx>
+# include <TopExp.hxx>
 # include <TopoDS_Iterator.hxx>
 # include <TopTools_IndexedMapOfShape.hxx>
-# include <TopExp.hxx>
 #endif
 
-
-#include "FeaturePartCommon.h"
-#include "modelRefine.h"
 #include <App/Application.h>
 #include <Base/Parameter.h>
-#include <Base/Exception.h>
+
+#include "FeaturePartCommon.h"
+#include "TopoShapeOpCode.h"
+#include "modelRefine.h"
+
 
 using namespace Part;
 
 PROPERTY_SOURCE(Part::Common, Part::Boolean)
 
 
-Common::Common(void)
+Common::Common() = default;
+
+const char *Common::opCode() const
 {
+    return Part::OpCodes::Common;
 }
 
 BRepAlgoAPI_BooleanOperation* Common::makeOperation(const TopoDS_Shape& base, const TopoDS_Shape& tool) const
@@ -59,9 +61,9 @@ BRepAlgoAPI_BooleanOperation* Common::makeOperation(const TopoDS_Shape& base, co
 PROPERTY_SOURCE(Part::MultiCommon, Part::Feature)
 
 
-MultiCommon::MultiCommon(void)
+MultiCommon::MultiCommon()
 {
-    ADD_PROPERTY(Shapes,(0));
+    ADD_PROPERTY(Shapes,(nullptr));
     Shapes.setSize(0);
     ADD_PROPERTY_TYPE(History,(ShapeHistory()), "Boolean", (App::PropertyType)
         (App::Prop_Output|App::Prop_Transient|App::Prop_Hidden), "Shape history");
@@ -82,8 +84,9 @@ short MultiCommon::mustExecute() const
     return 0;
 }
 
-App::DocumentObjectExecReturn *MultiCommon::execute(void)
+App::DocumentObjectExecReturn *MultiCommon::execute()
 {
+#ifndef FC_USE_TNP_FIX
     std::vector<TopoDS_Shape> s;
     std::vector<App::DocumentObject*> obj = Shapes.getValues();
 
@@ -123,7 +126,7 @@ App::DocumentObjectExecReturn *MultiCommon::execute(void)
                 // Let's call algorithm computing a fuse operation:
                 BRepAlgoAPI_Common mkCommon(resShape, *it);
                 // Let's check if the fusion has been successful
-                if (!mkCommon.IsDone()) 
+                if (!mkCommon.IsDone())
                     throw BooleanException("Intersection failed");
                 resShape = mkCommon.Shape();
 
@@ -134,8 +137,8 @@ App::DocumentObjectExecReturn *MultiCommon::execute(void)
                     history.push_back(hist2);
                 }
                 else {
-                    for (std::vector<ShapeHistory>::iterator jt = history.begin(); jt != history.end(); ++jt)
-                        *jt = joinHistory(*jt, hist1);
+                    for (auto & jt : history)
+                        jt = joinHistory(jt, hist1);
                     history.push_back(hist2);
                 }
             }
@@ -144,7 +147,7 @@ App::DocumentObjectExecReturn *MultiCommon::execute(void)
 
             Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
                 .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/Part/Boolean");
-            if (hGrp->GetBool("CheckModel", false)) {
+            if (hGrp->GetBool("CheckModel", true)) {
                  BRepCheck_Analyzer aChecker(resShape);
                  if (! aChecker.IsValid() ) {
                      return new App::DocumentObjectExecReturn("Resulting shape is invalid");
@@ -156,8 +159,8 @@ App::DocumentObjectExecReturn *MultiCommon::execute(void)
                     BRepBuilderAPI_RefineModel mkRefine(oldShape);
                     resShape = mkRefine.Shape();
                     ShapeHistory hist = buildHistory(mkRefine, TopAbs_FACE, resShape, oldShape);
-                    for (std::vector<ShapeHistory>::iterator jt = history.begin(); jt != history.end(); ++jt)
-                        *jt = joinHistory(*jt, hist);
+                    for (auto & jt : history)
+                        jt = joinHistory(jt, hist);
                 }
                 catch (Standard_Failure&) {
                     // do nothing
@@ -198,4 +201,39 @@ App::DocumentObjectExecReturn *MultiCommon::execute(void)
     }
 
     return App::DocumentObject::StdReturn;
+#else
+    std::vector<TopoShape> shapes;
+    for (auto obj : Shapes.getValues()) {
+        TopoShape sh = Feature::getTopoShape(obj);
+        if (sh.isNull()) {
+            return new App::DocumentObjectExecReturn("Input shape is null");
+        }
+        shapes.push_back(sh);
+    }
+
+    TopoShape res {0};
+    res.makeElementBoolean(Part::OpCodes::Common, shapes);
+    if (res.isNull()) {
+        throw Base::RuntimeError("Resulting shape is null");
+    }
+
+    Base::Reference<ParameterGrp> hGrp = App::GetApplication()
+                                             .GetUserParameter()
+                                             .GetGroup("BaseApp")
+                                             ->GetGroup("Preferences")
+                                             ->GetGroup("Mod/Part/Boolean");
+    if (hGrp->GetBool("CheckModel", true)) {
+        BRepCheck_Analyzer aChecker(res.getShape());
+        if (!aChecker.IsValid()) {
+            return new App::DocumentObjectExecReturn("Resulting shape is invalid");
+        }
+    }
+
+    if (this->Refine.getValue()) {
+        res = res.makeElementRefine();
+    }
+    this->Shape.setValue(res);
+
+    return Part::Feature::execute();
+#endif
 }

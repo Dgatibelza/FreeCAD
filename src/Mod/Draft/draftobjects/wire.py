@@ -33,9 +33,8 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 import FreeCAD as App
 import DraftGeomUtils
 import DraftVecUtils
-
-from draftutils.utils import get_param
 from draftobjects.base import DraftObject
+from draftutils import params
 
 
 class Wire(DraftObject):
@@ -91,21 +90,24 @@ class Wire(DraftObject):
         _tip = QT_TRANSLATE_NOOP("App::Property",
                 "The area of this object")
         obj.addProperty("App::PropertyArea","Area", "Draft",_tip)
-        
-        obj.MakeFace = get_param("fillmode",True)
+
+        obj.MakeFace = params.get_param("fillmode")
         obj.Closed = False
 
     def execute(self, obj):
+        if self.props_changed_placement_only(obj): # Supplying obj is required because of `Base` and `Tool`.
+            obj.positionBySupport()
+            self.update_start_end(obj)
+            self.props_changed_clear()
+            return
+
         import Part
         plm = obj.Placement
         if obj.Base and (not obj.Tool):
             if obj.Base.isDerivedFrom("Sketcher::SketchObject"):
                 shape = obj.Base.Shape.copy()
                 if obj.Base.Shape.isClosed():
-                    if hasattr(obj,"MakeFace"):
-                        if obj.MakeFace:
-                            shape = Part.Face(shape)
-                    else:
+                    if getattr(obj,"MakeFace",True):
                         shape = Part.Face(shape)
                 obj.Shape = shape
         elif obj.Base and obj.Tool:
@@ -126,21 +128,20 @@ class Wire(DraftObject):
                 obj.Points.pop()
             if obj.Closed and (len(obj.Points) > 2):
                 pts = obj.Points
-                if hasattr(obj,"Subdivisions"):
-                    if obj.Subdivisions > 0:
-                        npts = []
-                        for i in range(len(pts)):
-                            p1 = pts[i]
-                            npts.append(pts[i])
-                            if i == len(pts)-1:
-                                p2 = pts[0]
-                            else:
-                                p2 = pts[i+1]
-                            v = p2.sub(p1)
-                            v = DraftVecUtils.scaleTo(v,v.Length/(obj.Subdivisions+1))
-                            for j in range(obj.Subdivisions):
-                                npts.append(p1.add(App.Vector(v).multiply(j+1)))
-                        pts = npts
+                if getattr(obj,"Subdivisions",0) > 0:
+                    npts = []
+                    for i in range(len(pts)):
+                        p1 = pts[i]
+                        npts.append(pts[i])
+                        if i == len(pts)-1:
+                            p2 = pts[0]
+                        else:
+                            p2 = pts[i+1]
+                        v = p2.sub(p1)
+                        v = DraftVecUtils.scaleTo(v,v.Length/(obj.Subdivisions+1))
+                        for j in range(obj.Subdivisions):
+                            npts.append(p1.add(App.Vector(v).multiply(j+1)))
+                    pts = npts
                 shape = Part.makePolygon(pts+[pts[0]])
                 if "ChamferSize" in obj.PropertiesList:
                     if obj.ChamferSize.Value != 0:
@@ -153,10 +154,7 @@ class Wire(DraftObject):
                         if w:
                             shape = w
                 try:
-                    if hasattr(obj,"MakeFace"):
-                        if obj.MakeFace:
-                            shape = Part.Face(shape)
-                    else:
+                    if getattr(obj,"MakeFace",True):
                         shape = Part.Face(shape)
                 except Part.OCCError:
                     pass
@@ -166,18 +164,15 @@ class Wire(DraftObject):
                 lp = obj.Points[0]
                 for p in pts:
                     if not DraftVecUtils.equals(lp,p):
-                        if hasattr(obj,"Subdivisions"):
-                            if obj.Subdivisions > 0:
-                                npts = []
-                                v = p.sub(lp)
-                                v = DraftVecUtils.scaleTo(v,v.Length/(obj.Subdivisions+1))
-                                edges.append(Part.LineSegment(lp,lp.add(v)).toShape())
-                                lv = lp.add(v)
-                                for j in range(obj.Subdivisions):
-                                    edges.append(Part.LineSegment(lv,lv.add(v)).toShape())
-                                    lv = lv.add(v)
-                            else:
-                                edges.append(Part.LineSegment(lp,p).toShape())
+                        if getattr(obj,"Subdivisions",0) > 0:
+                            npts = []
+                            v = p.sub(lp)
+                            v = DraftVecUtils.scaleTo(v,v.Length/(obj.Subdivisions+1))
+                            edges.append(Part.LineSegment(lp,lp.add(v)).toShape())
+                            lv = lp.add(v)
+                            for j in range(obj.Subdivisions):
+                                edges.append(Part.LineSegment(lv,lv.add(v)).toShape())
+                                lv = lv.add(v)
                         else:
                             edges.append(Part.LineSegment(lp,p).toShape())
                         lp = p
@@ -205,15 +200,19 @@ class Wire(DraftObject):
 
         obj.Placement = plm
         obj.positionBySupport()
-        self.onChanged(obj,"Placement")
+        self.update_start_end(obj)
+        self.props_changed_clear()
 
     def onChanged(self, obj, prop):
+        self.props_changed_store(prop)
+        tol = 1e-7
+
         if prop == "Start":
             pts = obj.Points
             invpl = App.Placement(obj.Placement).inverse()
             realfpstart = invpl.multVec(obj.Start)
             if pts:
-                if pts[0] != realfpstart:
+                if not pts[0].isEqual(realfpstart, tol):
                     pts[0] = realfpstart
                     obj.Points = pts
 
@@ -222,27 +221,31 @@ class Wire(DraftObject):
             invpl = App.Placement(obj.Placement).inverse()
             realfpend = invpl.multVec(obj.End)
             if len(pts) > 1:
-                if pts[-1] != realfpend:
+                if not pts[-1].isEqual(realfpend, tol):
                     pts[-1] = realfpend
                     obj.Points = pts
 
         elif prop == "Length":
-            if obj.Shape and not obj.Shape.isNull():
-                if obj.Length.Value != obj.Shape.Length:
-                    if len(obj.Points) == 2:
-                        v = obj.Points[-1].sub(obj.Points[0])
-                        v = DraftVecUtils.scaleTo(v,obj.Length.Value)
-                        obj.Points = [obj.Points[0],obj.Points[0].add(v)]
+            if (len(obj.Points) == 2
+                    and obj.Length.Value > tol
+                    and obj.Shape
+                    and (not obj.Shape.isNull())
+                    and abs(obj.Length.Value - obj.Shape.Length) > tol):
+                v = obj.Points[-1].sub(obj.Points[0])
+                v = DraftVecUtils.scaleTo(v, obj.Length.Value)
+                obj.Points = [obj.Points[0], obj.Points[0].add(v)]
 
-        elif prop == "Placement":
-            pl = App.Placement(obj.Placement)
-            if len(obj.Points) >= 2:
-                displayfpstart = pl.multVec(obj.Points[0])
-                displayfpend = pl.multVec(obj.Points[-1])
-                if obj.Start != displayfpstart:
-                    obj.Start = displayfpstart
-                if obj.End != displayfpend:
-                    obj.End = displayfpend
+    def update_start_end(self, obj):
+        tol = 1e-7
+
+        pl = App.Placement(obj.Placement)
+        if len(obj.Points) > 1:
+            displayfpstart = pl.multVec(obj.Points[0])
+            displayfpend = pl.multVec(obj.Points[-1])
+            if not obj.Start.isEqual(displayfpstart, tol):
+                obj.Start = displayfpstart
+            if not obj.End.isEqual(displayfpend, tol):
+                obj.End = displayfpend
 
 
 # Alias for compatibility with v0.18 and earlier

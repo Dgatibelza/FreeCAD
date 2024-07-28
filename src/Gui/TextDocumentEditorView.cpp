@@ -20,28 +20,19 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
-# include <QAbstractTextDocumentLayout>
 # include <QApplication>
 # include <QClipboard>
-# include <QString>
 # include <QMessageBox>
 # include <QPushButton>
-# include <QTextBlock>
-# include <iostream>
-# include <boost_bind_bind.hpp>
-# include <boost/signals2.hpp>
+# include <QString>
 #endif
 
-
-#include <App/TextDocument.h>
-#include <Gui/Document.h>
-#include <Gui/Application.h>
-#include <Gui/MainWindow.h>
-
 #include "TextDocumentEditorView.h"
+#include "Application.h"
+#include "Document.h"
+#include "MainWindow.h"
 
 
 using namespace Gui;
@@ -62,9 +53,9 @@ TextDocumentEditorView::TextDocumentEditorView(
 
     // update editor actions on request
     Gui::MainWindow* mw = Gui::getMainWindow();
-    connect(editor, SIGNAL(undoAvailable(bool)), mw, SLOT(updateEditorActions()));
-    connect(editor, SIGNAL(redoAvailable(bool)), mw, SLOT(updateEditorActions()));
-    connect(editor, SIGNAL(copyAvailable(bool)), mw, SLOT(updateEditorActions()));
+    connect(editor, &QPlainTextEdit::undoAvailable, mw, &MainWindow::updateEditorActions);
+    connect(editor, &QPlainTextEdit::redoAvailable, mw, &MainWindow::updateEditorActions);
+    connect(editor, &QPlainTextEdit::copyAvailable, mw, &MainWindow::updateEditorActions);
 }
 
 TextDocumentEditorView::~TextDocumentEditorView()
@@ -106,8 +97,8 @@ bool TextDocumentEditorView::event(QEvent *event)
 
 void TextDocumentEditorView::setupEditor()
 {
-    connect(getEditor()->document(), SIGNAL(modificationChanged(bool)),
-            this, SLOT(setWindowModified(bool)));
+    connect(getEditor()->document(), &QTextDocument::modificationChanged,
+            this, &TextDocumentEditorView::setWindowModified);
     setWindowTitle(QString::fromUtf8(textDocument->Label.getValue())
             + QString::fromLatin1("[*]"));
     getEditor()->setPlainText(
@@ -116,10 +107,12 @@ void TextDocumentEditorView::setupEditor()
 
 void TextDocumentEditorView::setupConnection()
 {
+    //NOLINTBEGIN
     textConnection = textDocument->connectText(
-            boost::bind(&TextDocumentEditorView::sourceChanged, this));
+            std::bind(&TextDocumentEditorView::sourceChanged, this));
     labelConnection = textDocument->connectLabel(
-            boost::bind(&TextDocumentEditorView::labelChanged, this));
+            std::bind(&TextDocumentEditorView::labelChanged, this));
+    //NOLINTEND
 }
 
 void TextDocumentEditorView::sourceChanged()
@@ -167,7 +160,7 @@ bool TextDocumentEditorView::onMsg(const char* msg, const char**)
 
     if (strcmp(msg,"Save") == 0) {
         saveToObject();
-        return true;
+        return getGuiDocument()->save();
     }
     if (strcmp(msg,"Cut") == 0) {
         getEditor()->cut();
@@ -204,7 +197,7 @@ bool TextDocumentEditorView::onHasMsg(const char* msg) const
         return false;
 
     if (strcmp(msg,"Save") == 0) {
-        return isEditorModified();
+        return true;
     }
     if (strcmp(msg,"Cut") == 0) {
         return (!getEditor()->isReadOnly() &&
@@ -285,6 +278,7 @@ void TextDocumentEditorView::saveToObject()
     boost::signals2::shared_connection_block textBlock {textConnection};
     textDocument->Text.setValue(
             getEditor()->document()->toPlainText().toUtf8());
+    textDocument->purgeTouched();
     getEditor()->document()->setModified(false);
 }
 

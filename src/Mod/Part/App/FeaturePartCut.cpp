@@ -20,24 +20,24 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <BRepAlgoAPI_Cut.hxx>
 #endif
 
-
 #include "FeaturePartCut.h"
-
-#include <Base/Exception.h>
+#include "TopoShapeOpCode.h"
 
 using namespace Part;
 
 PROPERTY_SOURCE(Part::Cut, Part::Boolean)
 
 
-Cut::Cut(void)
+Cut::Cut() = default;
+
+const char *Cut::opCode() const
 {
+    return Part::OpCodes::Cut;
 }
 
 BRepAlgoAPI_BooleanOperation* Cut::makeOperation(const TopoDS_Shape& base, const TopoDS_Shape& tool) const

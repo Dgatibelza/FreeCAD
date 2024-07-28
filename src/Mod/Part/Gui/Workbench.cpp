@@ -23,10 +23,6 @@
 
 #include "PreCompiled.h"
 
-#ifndef _PreComp_
-# include <qobject.h>
-#endif
-
 #include "Workbench.h"
 #include <Gui/MenuManager.h>
 #include <Gui/ToolBarManager.h>
@@ -44,18 +40,15 @@ using namespace PartGui;
     qApp->translate("Workbench", "Join");
     qApp->translate("Workbench", "Split");
     qApp->translate("Workbench", "Compound");
+    qApp->translate("Workbench", "Create a copy");
 #endif
 
 /// @namespace PartGui @class Workbench
 TYPESYSTEM_SOURCE(PartGui::Workbench, Gui::StdWorkbench)
 
-Workbench::Workbench()
-{
-}
+Workbench::Workbench() = default;
 
-Workbench::~Workbench()
-{
-}
+Workbench::~Workbench() = default;
 
 Gui::MenuItem* Workbench::setupMenuBar() const
 {
@@ -124,38 +117,30 @@ Gui::MenuItem* Workbench::setupMenuBar() const
           << copy
           << "Part_CheckGeometry"
           << "Part_Defeaturing"
+          << "Materials_InspectAppearance"
+          << "Materials_InspectMaterial"
           << "Separator"
           << bop << join << split << compound
           << "Separator"
-          << "Part_Section"
-          << "Part_CrossSections"
-          << "Part_MakeFace"
+          << "Sketcher_NewSketch"
           << "Part_Extrude"
           << "Part_Revolve"
           << "Part_Mirror"
+          << "Part_Scale"
           << "Part_Fillet"
           << "Part_Chamfer"
+          << "Part_MakeFace"
           << "Part_RuledSurface"
           << "Part_Loft"
           << "Part_Sweep"
+          << "Part_Section"
+          << "Part_CrossSections"
           << "Part_Offset"
           << "Part_Offset2D"
           << "Part_Thickness"
           << "Part_ProjectionOnSurface"
           << "Separator"
           << "Part_EditAttachment";
-
-    Gui::MenuItem* measure = new Gui::MenuItem;
-    root->insertItem(item,measure);
-    measure->setCommand("Measure");
-    *measure << "Part_Measure_Linear"
-             << "Part_Measure_Angular"
-             << "Separator"
-             << "Part_Measure_Refresh"
-             << "Part_Measure_Clear_All"
-             << "Part_Measure_Toggle_All"
-             << "Part_Measure_Toggle_3D"
-             << "Part_Measure_Toggle_Delta";
 
     Gui::MenuItem* view = root->findItem("&View");
     if (view) {
@@ -186,14 +171,19 @@ Gui::ToolBarItem* Workbench::setupToolBars() const
 
     Gui::ToolBarItem* tool = new Gui::ToolBarItem(root);
     tool->setCommand("Part tools");
-    *tool << "Part_Extrude"
+    *tool << "Sketcher_NewSketch"
+          << "Part_Extrude"
           << "Part_Revolve"
           << "Part_Mirror"
+          << "Part_Scale"
           << "Part_Fillet"
           << "Part_Chamfer"
+          << "Part_MakeFace"
           << "Part_RuledSurface"
           << "Part_Loft"
           << "Part_Sweep"
+          << "Part_Section"
+          << "Part_CrossSections"
           << "Part_CompOffset"
           << "Part_Thickness"
           << "Part_ProjectionOnSurface"
@@ -209,20 +199,7 @@ Gui::ToolBarItem* Workbench::setupToolBars() const
             << "Part_CompJoinFeatures"
             << "Part_CompSplitFeatures"
             << "Part_CheckGeometry"
-            << "Part_Defeaturing"
-            << "Part_Section"
-            << "Part_CrossSections";
-
-    Gui::ToolBarItem* measure = new Gui::ToolBarItem(root);
-    measure->setCommand("Measure");
-    *measure << "Part_Measure_Linear"
-             << "Part_Measure_Angular"
-             << "Separator"
-             << "Part_Measure_Refresh"
-             << "Part_Measure_Clear_All"
-             << "Part_Measure_Toggle_All"
-             << "Part_Measure_Toggle_3D"
-             << "Part_Measure_Toggle_Delta";
+            << "Part_Defeaturing";
 
     return root;
 }

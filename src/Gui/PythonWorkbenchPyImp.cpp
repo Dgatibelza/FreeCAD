@@ -20,14 +20,12 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
-
-#include "Workbench.h"
 
 // inclusion of the generated files (generated out of PythonWorkbenchPy.xml)
 #include "PythonWorkbenchPy.h"
 #include "PythonWorkbenchPy.cpp"
+
 
 using namespace Gui;
 
@@ -42,9 +40,9 @@ using namespace Gui;
  */
 
 // returns a string which represent the object e.g. when printed in python
-std::string PythonWorkbenchPy::representation(void) const
+std::string PythonWorkbenchPy::representation() const
 {
-    return std::string("<Workbench object>");
+    return {"<Workbench object>"};
 }
 
 /** Appends a new menu */
@@ -63,36 +61,15 @@ PyObject*  PythonWorkbenchPy::appendMenu(PyObject *args)
             for (int j=0; j<nDepth;++j) {
                 PyObject* item = PyList_GetItem(pPath, j);
                 if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
                     const char* pItem = PyUnicode_AsUTF8(item);
-                    path.push_back(pItem);
-#else
-                    PyObject* unicode = PyUnicode_AsEncodedString(item, "utf-8", 0);
-                    char* pItem = PyString_AsString(unicode);
-                    path.push_back(pItem);
-                    Py_DECREF(unicode);
-                } else if (PyString_Check(item)) {
-                    char* pItem = PyString_AsString(item);
-                    path.push_back(pItem);
-#endif
+                    path.emplace_back(pItem);
                 } else {
                     continue;
                 }
             }
         } else if (PyUnicode_Check(pPath)) {
-#if PY_MAJOR_VERSION >= 3
             const char* pItem = PyUnicode_AsUTF8(pPath);
-            path.push_back(pItem);
-#else
-            PyObject* unicode = PyUnicode_AsEncodedString(pPath, "utf-8", 0);
-            char* pItem = PyString_AsString(unicode);
-            path.push_back(pItem);
-            Py_DECREF(unicode);
-        } else if (PyString_Check(pPath)) {
-            // one single item
-            char* pItem = PyString_AsString(pPath);
-            path.push_back(pItem);
-#endif
+            path.emplace_back(pItem);
         } else {
             PyErr_SetString(PyExc_AssertionError, "Expected either a string or a stringlist as first argument");
             return nullptr;
@@ -105,36 +82,15 @@ PyObject*  PythonWorkbenchPy::appendMenu(PyObject *args)
             for (int i=0; i<nItems;++i) {
                 PyObject* item = PyList_GetItem(pItems, i);
                 if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
                     const char* pItem = PyUnicode_AsUTF8(item);
-                    items.push_back(pItem);
-#else
-                    PyObject* unicode = PyUnicode_AsEncodedString(item, "utf-8", 0);
-                    char* pItem = PyString_AsString(unicode);
-                    items.push_back(pItem);
-                    Py_DECREF(unicode);
-                } else if (PyString_Check(item)) {
-                    char* pItem = PyString_AsString(item);
-                    items.push_back(pItem);
-#endif
+                    items.emplace_back(pItem);
                 } else {
                     continue;
                 }
             }
         } else if (PyUnicode_Check(pItems)) {
-#if PY_MAJOR_VERSION >= 3
             const char* pItem = PyUnicode_AsUTF8(pItems);
-            items.push_back(pItem);
-#else
-            PyObject* unicode = PyUnicode_AsEncodedString(pItems, "utf-8", 0);
-            char* pItem = PyString_AsString(unicode);
-            items.push_back(pItem);
-            Py_DECREF(unicode);
-        } else if (PyString_Check(pItems)) {
-            // one single item
-            char* pItem = PyString_AsString(pItems);
-            items.push_back(pItem);
-#endif
+            items.emplace_back(pItem);
         } else {
             PyErr_SetString(PyExc_AssertionError, "Expected either a string or a stringlist as first argument");
             return nullptr;
@@ -175,36 +131,15 @@ PyObject*  PythonWorkbenchPy::appendContextMenu(PyObject *args)
             for (int j=0; j<nDepth;++j) {
                 PyObject* item = PyList_GetItem(pPath, j);
                 if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
                     const char* pItem = PyUnicode_AsUTF8(item);
-                    path.push_back(pItem);
-#else
-                    PyObject* unicode = PyUnicode_AsEncodedString(item, "utf-8", 0);
-                    char* pItem = PyString_AsString(unicode);
-                    path.push_back(pItem);
-                    Py_DECREF(unicode);
-                } else if (PyString_Check(item)) {
-                    char* pItem = PyString_AsString(item);
-                    path.push_back(pItem);
-#endif
+                    path.emplace_back(pItem);
                 } else {
                     continue;
                 }
             }
         } else if (PyUnicode_Check(pPath)) {
-#if PY_MAJOR_VERSION >= 3
             const char* pItem = PyUnicode_AsUTF8(pPath);
-            path.push_back(pItem);
-#else
-            PyObject* unicode = PyUnicode_AsEncodedString(pPath, "utf-8", 0);
-            char* pItem = PyString_AsString(unicode);
-            path.push_back(pItem);
-            Py_DECREF(unicode);
-        } else if (PyString_Check(pPath)) {
-            // one single item
-            char* pItem = PyString_AsString(pPath);
-            path.push_back(pItem);
-#endif
+            path.emplace_back(pItem);
         } else {
             PyErr_SetString(PyExc_AssertionError, "Expected either a string or a stringlist as first argument");
             return nullptr;
@@ -217,36 +152,15 @@ PyObject*  PythonWorkbenchPy::appendContextMenu(PyObject *args)
             for (int i=0; i<nItems;++i) {
                 PyObject* item = PyList_GetItem(pItems, i);
                 if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
                     const char* pItem = PyUnicode_AsUTF8(item);
-                    items.push_back(pItem);
-#else
-                    PyObject* unicode = PyUnicode_AsEncodedString(item, "utf-8", 0);
-                    char* pItem = PyString_AsString(unicode);
-                    items.push_back(pItem);
-                    Py_DECREF(unicode);
-                } else if (PyString_Check(item)) {
-                    char* pItem = PyString_AsString(item);
-                    items.push_back(pItem);
-#endif
+                    items.emplace_back(pItem);
                 } else {
                     continue;
                 }
             }
         } else if (PyUnicode_Check(pItems)) {
-#if PY_MAJOR_VERSION >= 3
             const char* pItem = PyUnicode_AsUTF8(pItems);
-            items.push_back(pItem);
-#else
-            PyObject* unicode = PyUnicode_AsEncodedString(pItems, "utf-8", 0);
-            char* pItem = PyString_AsString(unicode);
-            items.push_back(pItem);
-            Py_DECREF(unicode);
-        } else if (PyString_Check(pItems)) {
-            // one single item
-            char* pItem = PyString_AsString(pItems);
-            items.push_back(pItem);
-#endif
+            items.emplace_back(pItem);
         } else {
             PyErr_SetString(PyExc_AssertionError, "Expected either a string or a stringlist as first argument");
             return nullptr;
@@ -289,18 +203,8 @@ PyObject*  PythonWorkbenchPy::appendToolbar(PyObject *args)
         for (int i=0; i<nSize;++i) {
             PyObject* item = PyList_GetItem(pObject, i);
             if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
                 const char* pItem = PyUnicode_AsUTF8(item);
-                items.push_back(pItem);
-#else
-                PyObject* unicode = PyUnicode_AsEncodedString(item, "utf-8", 0);
-                char* pItem = PyString_AsString(unicode);
-                items.push_back(pItem);
-                Py_DECREF(unicode);
-            } else if (PyString_Check(item)) {
-                char* pItem = PyString_AsString(item);
-                items.push_back(pItem);
-#endif
+                items.emplace_back(pItem);
             } else {
                 continue;
             }
@@ -342,18 +246,8 @@ PyObject*  PythonWorkbenchPy::appendCommandbar(PyObject *args)
         for (int i=0; i<nSize;++i) {
             PyObject* item = PyList_GetItem(pObject, i);
             if (PyUnicode_Check(item)) {
-#if PY_MAJOR_VERSION >= 3
                 const char* pItem = PyUnicode_AsUTF8(item);
-                items.push_back(pItem);
-#else
-                PyObject* unicode = PyUnicode_AsEncodedString(item, "utf-8", 0);
-                char* pItem = PyString_AsString(unicode);
-                items.push_back(pItem);
-                Py_DECREF(unicode);
-            } else if (PyString_Check(item)) {
-                char* pItem = PyString_AsString(item);
-                items.push_back(pItem);
-#endif
+                items.emplace_back(pItem);
             } else {
                 continue;
             }

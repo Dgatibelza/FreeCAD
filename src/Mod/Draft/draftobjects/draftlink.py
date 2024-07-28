@@ -64,22 +64,22 @@ class DraftLink(DraftObject):
         if obj:
             self.attach(obj)
 
-    def __getstate__(self):
+    def dumps(self):
         """Return a tuple of all serializable objects or None."""
         return self.__dict__
 
-    def __setstate__(self, state):
+    def loads(self, state):
         """Set some internal properties for all restored objects."""
         if isinstance(state, dict):
             self.__dict__ = state
         else:
             self.use_link = False
-            super(DraftLink, self).__setstate__(state)
+            super(DraftLink, self).loads(state)
 
     def attach(self, obj):
         """Set up the properties when the object is attached."""
         if self.use_link:
-            obj.addExtension('App::LinkExtensionPython', None)
+            obj.addExtension('App::LinkExtensionPython')
             self.linkSetup(obj)
 
     def canLinkProperties(self, _obj):
@@ -92,6 +92,14 @@ class DraftLink(DraftObject):
     def linkSetup(self, obj):
         """Set up the link properties on attachment."""
         obj.configLinkProperty('Placement', LinkedObject='Base')
+
+        if not hasattr(obj, 'AlwaysSyncPlacement'):
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                'Force sync pattern placements even when array elements are expanded')
+            obj.addProperty("App::PropertyBool",
+                            "AlwaysSyncPlacement",
+                            "Draft",
+                            _tip)
 
         if hasattr(obj, 'ShowElement'):
             # Rename 'ShowElement' property to 'ExpandArray' to avoid conflict
@@ -128,7 +136,13 @@ class DraftLink(DraftObject):
                             ' Link')
             obj.setPropertyStatus('ColoredElements', 'Hidden')
 
-        obj.configLinkProperty('LinkTransform', 'ColoredElements')
+        if not hasattr(obj,'LinkCopyOnChange'):
+            obj.addProperty("App::PropertyEnumeration","LinkCopyOnChange"," Link")
+
+        obj.configLinkProperty('LinkCopyOnChange','LinkTransform','ColoredElements')
+
+        if not getattr(obj, 'Fuse', False):
+            obj.setPropertyStatus('Shape', 'Transient')
 
     def getViewProviderName(self, _obj):
         """Override the view provider name."""
@@ -167,14 +181,23 @@ class DraftLink(DraftObject):
             else:
                 self.execute(obj)
 
+        # Object properties are updated when the document is opened.
+        self.props_changed_clear()
+
     def buildShape(self, obj, pl, pls):
         """Build the shape of the link object."""
         if self.use_link:
-            if not getattr(obj, 'ExpandArray', True) or obj.Count != len(pls):
+            if not getattr(obj, 'ExpandArray', False) or obj.Count != len(pls):
                 obj.setPropertyStatus('PlacementList', '-Immutable')
                 obj.PlacementList = pls
                 obj.setPropertyStatus('PlacementList', 'Immutable')
                 obj.Count = len(pls)
+            if getattr(obj, 'ExpandArray', False) \
+                    and getattr(obj, 'AlwaysSyncPlacement', False):
+                for pla,child in zip(pls,obj.ElementList):
+                    child.Placement = pla
+        elif obj.Count != len(pls):
+            obj.Count = len(pls)
 
         if obj.Base:
             shape = getattr(obj.Base, 'Shape', None)
@@ -185,18 +208,18 @@ class DraftLink(DraftObject):
                             "from '{}'\n".format(obj.Label, obj.Base.Label))
                 raise RuntimeError(_err_msg)
             else:
+                # Resetting the Placement of the copied shape does not work for
+                # Part_Vertex and Draft_Point objects, we need to transform:
+                place = shape.Placement
                 shape = shape.copy()
-                shape.Placement = App.Placement()
+                shape.transformShape(place.Matrix.inverse())
                 base = []
                 for i, pla in enumerate(pls):
                     vis = getattr(obj, 'VisibilityList', [])
                     if len(vis) > i and not vis[i]:
                         continue
 
-                    # 'I' is a prefix for disambiguation
-                    # when mapping element names
-                    base.append(shape.transformed(pla.toMatrix(),
-                                                  op='I{}'.format(i)))
+                    base.append(shape.transformed(pla.toMatrix()))
 
                 if getattr(obj, 'Fuse', False) and len(base) > 1:
                     obj.Shape = base[0].multiFuse(base[1:]).removeSplitter()
@@ -211,6 +234,8 @@ class DraftLink(DraftObject):
 
     def onChanged(self, obj, prop):
         """Execute when a property changes."""
+        self.props_changed_store(prop)
+
         if not getattr(self, 'use_link', False):
             return
 

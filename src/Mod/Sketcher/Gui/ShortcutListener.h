@@ -20,34 +20,32 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #ifndef SKETCHERGUI_SHORTCUTLISTENER_H
 #define SKETCHERGUI_SHORTCUTLISTENER_H
 
 #include <QObject>
 
 
-namespace SketcherGui {
+namespace SketcherGui
+{
 
 class ViewProviderSketch;
 
-
 class ShortcutListener: public QObject
 {
-    //Q_OBJECT
+    // Q_OBJECT
 
 public:
-    ShortcutListener(ViewProviderSketch * vp);
-    ~ShortcutListener();
+    explicit ShortcutListener(ViewProviderSketch* vp);
+    ~ShortcutListener() override;
 
 protected:
-    bool eventFilter(QObject *obj, QEvent *event);
+    bool eventFilter(QObject* obj, QEvent* event) override;
 
-    ViewProviderSketch * pViewProvider;
+    ViewProviderSketch* pViewProvider;
 };
 
-} // namespace SketcherGui
+}  // namespace SketcherGui
 
 
-#endif // SKETCHERGUI_SHORTCUTLISTENER_H
-
+#endif  // SKETCHERGUI_SHORTCUTLISTENER_H

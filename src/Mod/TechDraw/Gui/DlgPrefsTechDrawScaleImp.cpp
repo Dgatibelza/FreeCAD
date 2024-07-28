@@ -22,12 +22,11 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #include "DlgPrefsTechDrawScaleImp.h"
 #include "ui_DlgPrefsTechDrawScale.h"
-#include <Gui/PrefWidgets.h>
+
 
 using namespace TechDrawGui;
 
@@ -40,8 +39,8 @@ DlgPrefsTechDrawScaleImp::DlgPrefsTechDrawScaleImp( QWidget* parent )
     ui->pdsbTemplateMark->setUnit(Base::Unit::Length);
     ui->pdsbTemplateMark->setMinimum(0);
 
-    connect(ui->cbViewScaleType, SIGNAL(currentIndexChanged(int)),
-        this, SLOT(onScaleTypeChanged(int)));
+    connect(ui->cbViewScaleType, qOverload<int>(&QComboBox::currentIndexChanged),
+            this, &DlgPrefsTechDrawScaleImp::onScaleTypeChanged);
 }
 
 DlgPrefsTechDrawScaleImp::~DlgPrefsTechDrawScaleImp()
@@ -61,32 +60,24 @@ void DlgPrefsTechDrawScaleImp::onScaleTypeChanged(int index)
 
 void DlgPrefsTechDrawScaleImp::saveSettings()
 {
-    ui->pdsbToleranceScale->onSave();
-    ui->pdsbTemplateMark->onSave();
-    ui->pdsbVertexScale->onSave();
-    ui->pdsbCenterScale->onSave();
     ui->pdsbPageScale->onSave();
     ui->cbViewScaleType->onSave();
     ui->pdsbViewScale->onSave();
-    ui->pdsbEdgeFuzz->onSave();
-    ui->pdsbMarkFuzz->onSave();
+    ui->pdsbVertexScale->onSave();
+    ui->pdsbCenterScale->onSave();
     ui->pdsbTemplateMark->onSave();
     ui->pdsbSymbolScale->onSave();
 }
 
 void DlgPrefsTechDrawScaleImp::loadSettings()
 {
-    double markDefault = 3.0;
-    ui->pdsbTemplateMark->setValue(markDefault);
-    ui->pdsbToleranceScale->onRestore();
-    ui->pdsbTemplateMark->onRestore();
-    ui->pdsbVertexScale->onRestore();
-    ui->pdsbCenterScale->onRestore();
     ui->pdsbPageScale->onRestore();
     ui->cbViewScaleType->onRestore();
     ui->pdsbViewScale->onRestore();
-    ui->pdsbEdgeFuzz->onRestore();
-    ui->pdsbMarkFuzz->onRestore();
+    ui->pdsbVertexScale->onRestore();
+    ui->pdsbCenterScale->onRestore();
+    double markDefault = 3.0;
+    ui->pdsbTemplateMark->setValue(markDefault);
     ui->pdsbTemplateMark->onRestore();
     ui->pdsbSymbolScale->onRestore();
 }
@@ -97,9 +88,7 @@ void DlgPrefsTechDrawScaleImp::loadSettings()
 void DlgPrefsTechDrawScaleImp::changeEvent(QEvent *e)
 {
     if (e->type() == QEvent::LanguageChange) {
-        saveSettings();
         ui->retranslateUi(this);
-        loadSettings();
     }
     else {
         QWidget::changeEvent(e);

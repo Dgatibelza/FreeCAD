@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>353</width>
-    <height>407</height>
+    <width>262</width>
+    <height>270</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string notr="true">Form</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
@@ -97,7 +97,14 @@
         </layout>
        </item>
        <item>
-        <widget class="QListWidget" name="listWidgetReferences"/>
+        <widget class="QListWidget" name="listWidgetReferences">
+         <property name="toolTip">
+          <string>List can be reordered by dragging</string>
+         </property>
+         <property name="dragDropMode">
+          <enum>QAbstractItemView::InternalMove</enum>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

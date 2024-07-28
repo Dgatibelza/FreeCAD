@@ -34,11 +34,11 @@ import FreeCAD as App
 import FreeCADGui as Gui
 import Draft
 import Draft_rc  # include resources, icons, ui files
-import draftutils.todo as todo
-
-from draftutils.messages import _msg, _log
-from draftutils.translate import _tr
 from draftguitools import gui_base
+from draftutils import gui_utils
+from draftutils import todo
+from draftutils.messages import _log
+from draftutils.translate import translate
 from drafttaskpanels import task_polararray
 
 # The module is used to prevent complaints from code checkers (flake8)
@@ -49,7 +49,7 @@ class PolarArray(gui_base.GuiCommandBase):
     """Gui command for the PolarArray tool."""
 
     def __init__(self):
-        super(PolarArray, self).__init__()
+        super().__init__()
         self.command_name = "Polar array"
         self.location = None
         self.mouse_event = None
@@ -61,17 +61,9 @@ class PolarArray(gui_base.GuiCommandBase):
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _tip = ("Creates copies of the selected object, "
-                "and places the copies in a polar pattern\n"
-                "defined by a center of rotation and its angle.\n"
-                "\n"
-                "The array can be turned into an orthogonal "
-                "or a circular array by changing its type.")
-
-        d = {'Pixmap': 'Draft_PolarArray',
-             'MenuText': QT_TRANSLATE_NOOP("Draft", "Polar array"),
-             'ToolTip': QT_TRANSLATE_NOOP("Draft", _tip)}
-        return d
+        return {'Pixmap': 'Draft_PolarArray',
+                'MenuText': QT_TRANSLATE_NOOP("Draft_PolarArray", "Polar array"),
+                'ToolTip': QT_TRANSLATE_NOOP("Draft_PolarArray", "Creates copies of the selected object, and places the copies in a polar pattern\ndefined by a center of rotation and its angle.\n\nThe array can be turned into an orthogonal or a circular array by changing its type.")}
 
     def Activated(self):
         """Execute when the command is called.
@@ -79,9 +71,7 @@ class PolarArray(gui_base.GuiCommandBase):
         We add callbacks that connect the 3D view with
         the widgets of the task panel.
         """
-        _log("GuiCommand: {}".format(_tr(self.command_name)))
-        _msg("{}".format(16*"-"))
-        _msg("GuiCommand: {}".format(_tr(self.command_name)))
+        _log("GuiCommand: {}".format(self.command_name))
 
         self.location = coin.SoLocation2Event.getClassTypeId()
         self.mouse_event = coin.SoMouseButtonEvent.getClassTypeId()
@@ -138,9 +128,10 @@ class PolarArray(gui_base.GuiCommandBase):
                                           self.callback_move)
         self.view.removeEventCallbackPivy(self.mouse_event,
                                           self.callback_click)
+        gui_utils.end_all_events()
         if Gui.Control.activeDialog():
             Gui.Control.closeDialog()
-            super(PolarArray, self).finish()
+            self.finish()
 
 
 Gui.addCommand('Draft_PolarArray', PolarArray())

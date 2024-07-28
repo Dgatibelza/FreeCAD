@@ -20,52 +20,48 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <BRepFilletAPI_MakeChamfer.hxx>
 # include <Precision.hxx>
 # include <TopExp.hxx>
-# include <TopExp_Explorer.hxx>
 # include <TopoDS.hxx>
 # include <TopoDS_Edge.hxx>
-# include <TopTools_ListOfShape.hxx>
-# include <TopTools_IndexedMapOfShape.hxx>
 # include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
+# include <TopTools_IndexedMapOfShape.hxx>
 #endif
 
-
 #include "FeatureChamfer.h"
+#include "TopoShapeOpCode.h"
 
 
 using namespace Part;
 
-
 PROPERTY_SOURCE(Part::Chamfer, Part::FilletBase)
 
-Chamfer::Chamfer()
-{
-}
+Chamfer::Chamfer() = default;
 
-App::DocumentObjectExecReturn *Chamfer::execute(void)
+App::DocumentObjectExecReturn *Chamfer::execute()
 {
     App::DocumentObject* link = Base.getValue();
     if (!link)
         return new App::DocumentObjectExecReturn("No object linked");
 
     try {
+        TopoShape baseTopoShape = Feature::getTopoShape(link);
         auto baseShape = Feature::getShape(link);
         BRepFilletAPI_MakeChamfer mkChamfer(baseShape);
-        TopTools_IndexedMapOfShape mapOfEdges;
         TopTools_IndexedDataMapOfShapeListOfShape mapEdgeFace;
         TopExp::MapShapesAndAncestors(baseShape, TopAbs_EDGE, TopAbs_FACE, mapEdgeFace);
+        TopTools_IndexedMapOfShape mapOfEdges;
         TopExp::MapShapes(baseShape, TopAbs_EDGE, mapOfEdges);
+#ifndef FC_USE_TNP_FIX
 
         std::vector<FilletElement> values = Edges.getValues();
-        for (std::vector<FilletElement>::iterator it = values.begin(); it != values.end(); ++it) {
-            int id = it->edgeid;
-            double radius1 = it->radius1;
-            double radius2 = it->radius2;
+        for (const auto & value : values) {
+            int id = value.edgeid;
+            double radius1 = value.radius1;
+            double radius2 = value.radius2;
             const TopoDS_Edge& edge = TopoDS::Edge(mapOfEdges.FindKey(id));
             const TopoDS_Face& face = TopoDS::Face(mapEdgeFace.FindFromKey(edge).First());
             mkChamfer.Add(radius1, radius2, edge, face);
@@ -76,7 +72,7 @@ App::DocumentObjectExecReturn *Chamfer::execute(void)
             return new App::DocumentObjectExecReturn("Resulting shape is null");
 
         //shapefix re #4285
-        //https://www.forum.freecadweb.org/viewtopic.php?f=3&t=43890&sid=dae2fa6fda71670863a103b42739e47f
+        //https://www.forum.freecad.org/viewtopic.php?f=3&t=43890&sid=dae2fa6fda71670863a103b42739e47f
         TopoShape* ts = new TopoShape(shape);
         double minTol = 2.0 * Precision::Confusion();
         double maxTol = 4.0 * Precision::Confusion();
@@ -96,6 +92,39 @@ App::DocumentObjectExecReturn *Chamfer::execute(void)
         prop.touch();
 
         return App::DocumentObject::StdReturn;
+#else
+        const auto &vals = EdgeLinks.getSubValues();
+        const auto &subs = EdgeLinks.getShadowSubs();
+        if(subs.size()!=(size_t)Edges.getSize())
+            return new App::DocumentObjectExecReturn("Edge link size mismatch");
+        size_t i=0;
+        for(const auto &info : Edges.getValues()) {
+            auto &sub = subs[i];
+            auto &ref = sub.newName.size()?sub.newName:vals[i];
+            ++i;
+            // Toponaming project March 2024:  Replaced this code because it wouldn't work:
+//            TopoDS_Shape edge;
+//            try {
+//                edge = baseTopoShape.getSubShape(ref.c_str());
+//            }catch(...){}
+            auto id = Data::MappedName(ref.c_str()).toIndexedName().getIndex();
+            const TopoDS_Edge& edge = TopoDS::Edge(mapOfEdges.FindKey(id));
+            if(edge.IsNull())
+                return new App::DocumentObjectExecReturn("Invalid edge link");
+            double radius1 = info.radius1;
+            double radius2 = info.radius2;
+            const TopoDS_Face& face = TopoDS::Face(mapEdgeFace.FindFromKey(edge).First());
+            mkChamfer.Add(radius1, radius2, TopoDS::Edge(edge), face);
+        }
+
+        TopoDS_Shape shape = mkChamfer.Shape();
+        if (shape.IsNull())
+            return new App::DocumentObjectExecReturn("Resulting shape is null");
+
+        TopoShape res(0);
+        this->Shape.setValue(res.makeElementShape(mkChamfer,baseTopoShape,Part::OpCodes::Chamfer));
+        return Part::Feature::execute();
+#endif
     }
     catch (Standard_Failure& e) {
         return new App::DocumentObjectExecReturn(e.GetMessageString());

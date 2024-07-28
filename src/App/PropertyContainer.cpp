@@ -23,22 +23,14 @@
 
 #include "PreCompiled.h"
 
-#ifndef _PreComp_
-# include <cassert>
-# include <algorithm>
-# include <functional>
-#endif
-
-/// Here the FreeCAD includes sorted by Base,App,Gui......
-#include <Base/Reader.h>
-#include <Base/Writer.h>
 #include <Base/Console.h>
 #include <Base/Exception.h>
+#include <Base/Reader.h>
+#include <Base/Writer.h>
 
-#include "Application.h"
 #include "Property.h"
 #include "PropertyContainer.h"
-#include "PropertyLinks.h"
+
 
 FC_LOG_LEVEL_INIT("App",true,true)
 
@@ -55,15 +47,12 @@ TYPESYSTEM_SOURCE(App::PropertyContainer,Base::Persistence)
 // Here's the implementation! Description should take place in the header file!
 PropertyContainer::PropertyContainer()
 {
-    propertyData.parentPropertyData = 0;
+    propertyData.parentPropertyData = nullptr;
 }
 
-PropertyContainer::~PropertyContainer()
-{
+PropertyContainer::~PropertyContainer() = default;
 
-}
-
-unsigned int PropertyContainer::getMemSize (void) const
+unsigned int PropertyContainer::getMemSize () const
 {
     std::map<std::string,Property*> Map;
     getPropertyMap(Map);
@@ -85,7 +74,9 @@ App::Property* PropertyContainer::addDynamicProperty(
 Property *PropertyContainer::getPropertyByName(const char* name) const
 {
     auto prop = dynamicProps.getDynamicPropertyByName(name);
-    if(prop) return prop;
+    if (prop) {
+        return prop;
+    }
     return getPropertyData().getPropertyByName(this,name);
 }
 
@@ -101,12 +92,18 @@ void PropertyContainer::getPropertyList(std::vector<Property*> &List) const
     getPropertyData().getPropertyList(this,List);
 }
 
+void PropertyContainer::getPropertyNamedList(std::vector<std::pair<const char*, Property*> > &List) const
+{
+    dynamicProps.getPropertyNamedList(List);
+    getPropertyData().getPropertyNamedList(this,List);
+}
+
 void PropertyContainer::setPropertyStatus(unsigned char bit,bool value)
 {
     std::vector<Property*> List;
     getPropertyList(List);
-    for(std::vector<Property*>::const_iterator it=List.begin();it!=List.end();++it)
-        (**it).StatusBits.set(bit,value);
+    for(auto it : List)
+        it->StatusBits.set(bit,value);
 }
 
 short PropertyContainer::getPropertyType(const Property* prop) const
@@ -122,28 +119,32 @@ short PropertyContainer::getPropertyType(const char *name) const
 const char* PropertyContainer::getPropertyGroup(const Property* prop) const
 {
     auto group = dynamicProps.getPropertyGroup(prop);
-    if(group) return group;
+    if(group)
+        return group;
     return getPropertyData().getGroup(this,prop);
 }
 
 const char* PropertyContainer::getPropertyGroup(const char *name) const
 {
     auto group = dynamicProps.getPropertyGroup(name);
-    if(group) return group;
+    if(group)
+        return group;
     return getPropertyData().getGroup(this,name);
 }
 
 const char* PropertyContainer::getPropertyDocumentation(const Property* prop) const
 {
     auto doc = dynamicProps.getPropertyDocumentation(prop);
-    if(doc) return doc;
+    if(doc)
+        return doc;
     return getPropertyData().getDocumentation(this,prop);
 }
 
 const char* PropertyContainer::getPropertyDocumentation(const char *name) const
 {
     auto doc = dynamicProps.getPropertyDocumentation(name);
-    if(doc) return doc;
+    if(doc)
+        return doc;
     return getPropertyData().getDocumentation(this,name);
 }
 
@@ -175,8 +176,9 @@ const char* PropertyContainer::getPropertyName(const Property* prop)const
     return res;
 }
 
-const PropertyData * PropertyContainer::getPropertyDataPtr(void){return &propertyData;}
-const PropertyData & PropertyContainer::getPropertyData(void) const{return propertyData;}
+const PropertyData * PropertyContainer::getPropertyDataPtr(){return &propertyData;}
+const PropertyData & PropertyContainer::getPropertyData() const{return propertyData;}
+
 
 /**
  * @brief PropertyContainer::handleChangedPropertyName is called during restore to possibly
@@ -218,7 +220,24 @@ void PropertyContainer::handleChangedPropertyType(XMLReader &reader, const char 
 
 PropertyData PropertyContainer::propertyData;
 
-void PropertyContainer::Save (Base::Writer &writer) const 
+void PropertyContainer::beforeSave() const
+{
+    std::map<std::string, Property*> Map;
+    getPropertyMap(Map);
+    for (auto& entry : Map) {
+        auto prop = entry.second;
+        if (!prop->testStatus(Property::PropDynamic)
+            && (prop->testStatus(Property::Transient)
+                || ((getPropertyType(prop) & Prop_Transient) != 0))) {
+            // Nothing
+        }
+        else {
+            prop->beforeSave();
+        }
+    }
+}
+
+void PropertyContainer::Save (Base::Writer &writer) const
 {
     std::map<std::string,Property*> Map;
     getPropertyMap(Map);
@@ -236,8 +255,9 @@ void PropertyContainer::Save (Base::Writer &writer) const
         {
             transients.push_back(prop);
             it = Map.erase(it);
-        }else
+        } else {
             ++it;
+        }
     }
 
     writer.incInd(); // indentation for 'Properties Count'
@@ -249,28 +269,28 @@ void PropertyContainer::Save (Base::Writer &writer) const
     // older versions of FC.
     writer.incInd();
     for(auto prop : transients) {
-        writer.Stream() << writer.ind() << "<_Property name=\"" << prop->getName() 
-            << "\" type=\"" << prop->getTypeId().getName() 
+        writer.Stream() << writer.ind() << "<_Property name=\"" << prop->getName()
+            << "\" type=\"" << prop->getTypeId().getName()
             << "\" status=\"" << prop->getStatus() << "\"/>" << std::endl;
     }
     writer.decInd();
 
     // Now store normal properties
-    for (auto it = Map.begin(); it != Map.end(); ++it)
+    for (const auto& it : Map)
     {
         writer.incInd(); // indentation for 'Property name'
-        writer.Stream() << writer.ind() << "<Property name=\"" << it->first << "\" type=\"" 
-                        << it->second->getTypeId().getName();
+        writer.Stream() << writer.ind() << "<Property name=\"" << it.first << "\" type=\""
+                        << it.second->getTypeId().getName();
 
-        dynamicProps.save(it->second,writer);
+        dynamicProps.save(it.second,writer);
 
-        auto status = it->second->getStatus();
+        auto status = it.second->getStatus();
         if(status)
             writer.Stream() << "\" status=\"" << status;
         writer.Stream() << "\">";
 
-        if(it->second->testStatus(Property::Transient) 
-                || it->second->getType() & Prop_Transient) 
+        if(it.second->testStatus(Property::Transient)
+                || it.second->getType() & Prop_Transient)
         {
             writer.decInd();
             writer.Stream() << "</Property>" << std::endl;
@@ -278,14 +298,14 @@ void PropertyContainer::Save (Base::Writer &writer) const
         }
 
         writer.Stream() << std::endl;
-       
+
         writer.incInd(); // indentation for the actual property
 
         try {
             // We must make sure to handle all exceptions accordingly so that
             // the project file doesn't get invalidated. In the error case this
             // means to proceed instead of aborting the write operation.
-            it->second->Save(writer);
+            it.second->Save(writer);
         }
         catch (const Base::Exception &e) {
             Base::Console().Error("%s\n", e.what());
@@ -302,7 +322,7 @@ void PropertyContainer::Save (Base::Writer &writer) const
         }
 #endif
         writer.decInd(); // indentation for the actual property
-        writer.Stream() << writer.ind() << "</Property>" << endl;    
+        writer.Stream() << writer.ind() << "</Property>" << endl;
         writer.decInd(); // indentation for 'Property name'
     }
     writer.Stream() << writer.ind() << "</Properties>" << endl;
@@ -332,27 +352,28 @@ void PropertyContainer::Restore(Base::XMLReader &reader)
         reader.readElement("Property");
         std::string PropName = reader.getAttribute("name");
         std::string TypeName = reader.getAttribute("type");
-        auto prop = dynamicProps.restore(*this,PropName.c_str(),TypeName.c_str(),reader);
-        if(!prop)
-            prop = getPropertyByName(PropName.c_str());
-
-        decltype(Property::StatusBits) status;
-        if(reader.hasAttribute("status")) {
-            status = decltype(status)(reader.getAttributeAsUnsigned("status"));
-            if(prop)
-                prop->setStatusValue(status.to_ulong());
-        }
         // NOTE: We must also check the type of the current property because a
         // subclass of PropertyContainer might change the type of a property but
         // not its name. In this case we would force to read-in a wrong property
         // type and the behaviour would be undefined.
         try {
+            auto prop = getPropertyByName(PropName.c_str());
+            if (!prop || prop->getContainer() != this) {
+                prop = dynamicProps.restore(*this,PropName.c_str(),TypeName.c_str(),reader);
+            }
+
+            decltype(Property::StatusBits) status;
+            if(reader.hasAttribute("status")) {
+                status = decltype(status)(reader.getAttributeAsUnsigned("status"));
+                if(prop)
+                    prop->setStatusValue(status.to_ulong());
+            }
             // name and type match
             if (prop && strcmp(prop->getTypeId().getName(), TypeName.c_str()) == 0) {
-                if (!prop->testStatus(Property::Transient) 
+                if (!prop->testStatus(Property::Transient)
                         && !status.test(Property::Transient)
                         && !status.test(Property::PropTransient)
-                        && !(getPropertyType(prop) & Prop_Transient))
+                        && !prop->testStatus(Property::PropTransient))
                 {
                     FC_TRACE("restore property '" << prop->getName() << "'");
                     prop->Restore(reader);
@@ -410,7 +431,7 @@ void PropertyContainer::onPropertyStatusChanged(const Property &prop, unsigned l
 void PropertyData::addProperty(OffsetBase offsetBase,const char* PropName, Property *Prop, const char* PropertyGroup , PropertyType Type, const char* PropertyDocu)
 {
 #ifdef FC_DEBUG
-    if(!parentMerged) 
+    if(!parentMerged)
 #endif
     {
         short offset = offsetBase.getOffsetTo(Prop);
@@ -428,7 +449,7 @@ void PropertyData::addProperty(OffsetBase offsetBase,const char* PropName, Prope
                 FC_ERR("Duplicate property '" << PropName << "'");
             }
 #endif
-        } 
+        }
     }
 
     Prop->syncType(Type);
@@ -472,7 +493,7 @@ const PropertyData::PropertySpec *PropertyData::findProperty(OffsetBase offsetBa
     auto it = index.find(PropName);
     if(it != index.end())
         return &(*it);
-    return 0;
+    return nullptr;
 }
 
 const PropertyData::PropertySpec *PropertyData::findProperty(OffsetBase offsetBase,const Property* prop) const
@@ -480,14 +501,14 @@ const PropertyData::PropertySpec *PropertyData::findProperty(OffsetBase offsetBa
     merge();
     int diff = offsetBase.getOffsetTo(prop);
     if(diff<0)
-        return 0;
+        return nullptr;
 
     auto &index = propertyData.get<2>();
     auto it = index.find(diff);
     if(it!=index.end())
         return &(*it);
-  
-    return 0;
+
+    return nullptr;
 }
 
 const char* PropertyData::getName(OffsetBase offsetBase,const Property* prop) const
@@ -497,7 +518,7 @@ const char* PropertyData::getName(OffsetBase offsetBase,const Property* prop) co
   if(Spec)
     return Spec->Name;
   else
-    return 0;
+    return nullptr;
 }
 
 short PropertyData::getType(OffsetBase offsetBase,const Property* prop) const
@@ -527,7 +548,7 @@ const char* PropertyData::getGroup(OffsetBase offsetBase,const Property* prop) c
   if(Spec)
     return Spec->Group;
   else
-    return 0;
+    return nullptr;
 }
 
 const char* PropertyData::getGroup(OffsetBase offsetBase,const char* name) const
@@ -537,7 +558,7 @@ const char* PropertyData::getGroup(OffsetBase offsetBase,const char* name) const
   if(Spec)
     return Spec->Group;
   else
-    return 0;
+    return nullptr;
 }
 
 const char* PropertyData::getDocumentation(OffsetBase offsetBase,const Property* prop) const
@@ -547,7 +568,7 @@ const char* PropertyData::getDocumentation(OffsetBase offsetBase,const Property*
   if(Spec)
     return Spec->Docu;
   else
-    return 0;
+    return nullptr;
 }
 
 const char* PropertyData::getDocumentation(OffsetBase offsetBase,const char* name) const
@@ -557,7 +578,7 @@ const char* PropertyData::getDocumentation(OffsetBase offsetBase,const char* nam
   if(Spec)
     return Spec->Docu;
   else
-    return 0;
+    return nullptr;
 }
 
 Property *PropertyData::getPropertyByName(OffsetBase offsetBase,const char* name) const
@@ -565,16 +586,16 @@ Property *PropertyData::getPropertyByName(OffsetBase offsetBase,const char* name
   const PropertyData::PropertySpec* Spec = findProperty(offsetBase,name);
 
   if(Spec)
-    return (Property *) (Spec->Offset + offsetBase.getOffset());
+    return reinterpret_cast<Property *>(Spec->Offset + offsetBase.getOffset());
   else
-    return 0;
+    return nullptr;
 }
 
 void PropertyData::getPropertyMap(OffsetBase offsetBase,std::map<std::string,Property*> &Map) const
 {
     merge();
-    for(auto &spec : propertyData.get<0>()) 
-        Map[spec.Name] = (Property *) (spec.Offset + offsetBase.getOffset());
+    for(auto &spec : propertyData.get<0>())
+        Map[spec.Name] = reinterpret_cast<Property *>(spec.Offset + offsetBase.getOffset());
 }
 
 void PropertyData::getPropertyList(OffsetBase offsetBase,std::vector<Property*> &List) const
@@ -583,7 +604,19 @@ void PropertyData::getPropertyList(OffsetBase offsetBase,std::vector<Property*> 
     size_t base = List.size();
     List.reserve(base+propertyData.size());
     for (auto &spec : propertyData.get<0>())
-        List.push_back((Property *) (spec.Offset + offsetBase.getOffset()));
+        List.push_back(reinterpret_cast<Property *>(spec.Offset + offsetBase.getOffset()));
+}
+
+void PropertyData::getPropertyNamedList(OffsetBase offsetBase,
+        std::vector<std::pair<const char*,Property*> > &List) const
+{
+    merge();
+    size_t base = List.size();
+    List.reserve(base+propertyData.size());
+    for (auto &spec : propertyData.get<0>()) {
+        auto prop = reinterpret_cast<Property *>(spec.Offset + offsetBase.getOffset());
+        List.emplace_back(prop->getName(),prop);
+    }
 }
 
 

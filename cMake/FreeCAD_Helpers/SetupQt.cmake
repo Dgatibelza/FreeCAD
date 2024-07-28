@@ -1,117 +1,107 @@
 # -------------------------------- Qt --------------------------------
 
-if (NOT BUILD_QT5)
-    # If using MacPorts, help the Qt4 finder.
-    if(MACPORTS_PREFIX)
-        if(NOT QT_QMAKE_EXECUTABLE)
-            set(QT_QMAKE_EXECUTABLE ${MACPORTS_PREFIX}/libexec/qt4/bin/qmake)
+set(FREECAD_QT_COMPONENTS Core Concurrent Network Xml)
+if (FREECAD_QT_MAJOR_VERSION EQUAL 6)
+    set (Qt6Core_MOC_EXECUTABLE Qt6::moc)
+endif()
+
+if(BUILD_GUI)
+    if (FREECAD_QT_MAJOR_VERSION EQUAL 5)
+        if (WIN32)
+            list (APPEND FREECAD_QT_COMPONENTS WinExtras)
         endif()
+    elseif (FREECAD_QT_MAJOR_VERSION EQUAL 6)
+        list (APPEND FREECAD_QT_COMPONENTS GuiTools)
+        list (APPEND FREECAD_QT_COMPONENTS SvgWidgets)
     endif()
 
-    set(QT_MIN_VERSION 4.5.0)
-    set(QT_USE_QTNETWORK TRUE)
-    set(QT_USE_QTXML TRUE)
-    if(BUILD_GUI)
-        set(QT_USE_QTOPENGL TRUE)
-        set(QT_USE_QTSVG TRUE)
-        set(QT_USE_QTUITOOLS TRUE)
-        set(QT_USE_QTWEBKIT TRUE)
-    endif(BUILD_GUI)
+    list (APPEND FREECAD_QT_COMPONENTS OpenGL PrintSupport Svg UiTools Widgets LinguistTools)
 
-    find_package(Qt4)# REQUIRED
+    if(BUILD_DESIGNER_PLUGIN)
+        list (APPEND FREECAD_QT_COMPONENTS Designer)
+    endif()
+endif()
 
-    include(${QT_USE_FILE})
+if (ENABLE_DEVELOPER_TESTS)
+    list (APPEND FREECAD_QT_COMPONENTS Test)
+endif ()
 
-    if(NOT QT4_FOUND)
-        message(FATAL_ERROR "========================\n"
-                            "Qt4 libraries not found.\n"
-                            "========================\n")
-    endif(NOT QT4_FOUND)
+foreach(COMPONENT IN LISTS FREECAD_QT_COMPONENTS)
+    find_package(Qt${FREECAD_QT_MAJOR_VERSION} REQUIRED COMPONENTS ${COMPONENT})
+    set(Qt${COMPONENT}_LIBRARIES ${Qt${FREECAD_QT_MAJOR_VERSION}${COMPONENT}_LIBRARIES})
+    set(Qt${COMPONENT}_INCLUDE_DIRS ${Qt${FREECAD_QT_MAJOR_VERSION}${COMPONENT}_INCLUDE_DIRS})
+    set(Qt${COMPONENT}_FOUND ${Qt${FREECAD_QT_MAJOR_VERSION}${COMPONENT}_FOUND})
+    set(Qt${COMPONENT}_VERSION ${Qt${FREECAD_QT_MAJOR_VERSION}${COMPONENT}_VERSION})
+endforeach()
 
-    if(NOT QT_QTWEBKIT_FOUND)
-        message("========================================================\n"
-                "Qt Webkit not found, will not build browser integration.\n"
-                "========================================================\n")
-    endif(NOT QT_QTWEBKIT_FOUND)
+set(CMAKE_AUTOMOC TRUE)
+set(CMAKE_AUTOUIC TRUE)
+set(QtCore_MOC_EXECUTABLE ${Qt${FREECAD_QT_MAJOR_VERSION}Core_MOC_EXECUTABLE})
 
-    # This is a special version of the built in macro qt4_wrap_cpp
-    # It is required since moc'ed files are now included instead of being added to projects directly
-    # It adds a reverse dependency to solve this
-    # This has the unfortunate side effect that some files are always rebuilt
-    # There is probably a cleaner solution than this
-    macro(fc_wrap_cpp outfiles)
-        # get include dirs
-        QT4_GET_MOC_FLAGS(moc_flags)
-        QT4_EXTRACT_OPTIONS(moc_files moc_options moc_target ${ARGN})
-        # fixes bug 0000585: bug with boost 1.48
-        set(moc_options ${moc_options} -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
+add_definitions(-DQT_NO_KEYWORDS)
 
-        foreach(it ${moc_files})
-            get_filename_component(it ${it} ABSOLUTE)
-            QT4_MAKE_OUTPUT_FILE(${it} moc_ cpp outfile)
-            ADD_CUSTOM_COMMAND(OUTPUT ${outfile}
-                COMMAND ${QT_MOC_EXECUTABLE}
-                ARGS ${moc_options} ${it} -o ${outfile}
-                MAIN_DEPENDENCY ${it}
-            )
-            set(${outfiles} ${${outfiles}} ${outfile})
-            add_file_dependencies(${it} ${outfile})
-        endforeach(it)
-    endmacro(fc_wrap_cpp)
+message(STATUS "Set up to compile with Qt ${Qt${FREECAD_QT_MAJOR_VERSION}Core_VERSION}")
 
-elseif (BUILD_QT5)
-    find_package(Qt5Core REQUIRED)
-    find_package(Qt5Network REQUIRED)
-    find_package(Qt5Xml REQUIRED)
-    find_package(Qt5XmlPatterns REQUIRED)
-    find_package(Qt5Concurrent REQUIRED)
-    if(BUILD_GUI)
-        find_package(Qt5Widgets REQUIRED)
-        find_package(Qt5PrintSupport REQUIRED)
-        find_package(Qt5OpenGL REQUIRED)
-        find_package(Qt5Svg REQUIRED)
-        find_package(Qt5UiTools REQUIRED)
-        if (BUILD_WEB)
-            if (${FREECAD_USE_QTWEBMODULE} MATCHES "Qt Webkit")
-                find_package(Qt5WebKitWidgets REQUIRED)
-            elseif(${FREECAD_USE_QTWEBMODULE} MATCHES "Qt WebEngine")
-                find_package(Qt5WebEngineWidgets REQUIRED)
-                if (Qt5WebEngineWidgets_VERSION VERSION_LESS 5.7.0)
-                    message(FATAL_ERROR "** Minimum supported Qt5WebEngine version is 5.7.0!\n")
-                endif()
-            else() # Automatic
-                find_package(Qt5WebKitWidgets QUIET)
-                if(NOT Qt5WebKitWidgets_FOUND)
-                    find_package(Qt5WebEngineWidgets REQUIRED)
-                    if (Qt5WebEngineWidgets_VERSION VERSION_LESS 5.7.0)
-                        message(FATAL_ERROR "** Minimum supported Qt5WebEngine version is 5.7.0!\n")
-                    endif()
-                endif()
+# In Qt 5.15 they added more generic names for these functions: "backport" those new names
+# so we can migrate to using the non-version-named functions in all instances.
+if (Qt${FREECAD_QT_MAJOR_VERSION}Core_VERSION VERSION_LESS 5.15.0)
+    message(STATUS "Manually creating qt_wrap_cpp() and qt_add_resources() to support Qt ${Qt${FREECAD_QT_MAJOR_VERSION}Core_VERSION}")
+
+    # Wrapper code adapted from Qt 6's Qt6CoreMacros.cmake file:
+    function(qt_add_resources outfiles)
+        qt5_add_resources("${outfiles}" ${ARGN})
+        if(TARGET ${outfiles})
+            cmake_parse_arguments(PARSE_ARGV 1 arg "" "OUTPUT_TARGETS" "")
+            if (arg_OUTPUT_TARGETS)
+                set(${arg_OUTPUT_TARGETS} ${${arg_OUTPUT_TARGETS}} PARENT_SCOPE)
             endif()
+        else()
+            set("${outfiles}" "${${outfiles}}" PARENT_SCOPE)
         endif()
-        if(MSVC AND ${Qt5Core_VERSION} VERSION_GREATER "5.2.0")
-          find_package(Qt5WinExtras QUIET)
-        endif()
-    endif(BUILD_GUI)
+    endfunction()
 
-    # This is a special version of the built in macro qt5_wrap_cpp
-    # It is required since moc'ed files are now included instead of being added to projects directly
-    # It adds a reverse dependency to solve this
-    # This has the unfortunate side effect that some files are always rebuilt
-    # There is probably a cleaner solution than this
-    macro(fc_wrap_cpp outfiles )
-        # get include dirs
-        qt5_get_moc_flags(moc_flags)
-        set(moc_files ${ARGN})
-        # fixes bug 0000585: bug with boost 1.48
-        set(moc_options ${moc_options} -DBOOST_TT_HAS_OPERATOR_HPP_INCLUDED)
+    function(qt_wrap_cpp outfiles)
+        qt5_wrap_cpp("${outfiles}" ${ARGN})
+        set("${outfiles}" "${${outfiles}}" PARENT_SCOPE)
+    endfunction()
 
-        foreach(it ${moc_files})
-            get_filename_component(it ${it} ABSOLUTE)
-            qt5_make_output_file(${it} moc_ cpp outfile)
-            qt5_create_moc_command(${it} ${outfile} "${moc_flags}" "${moc_options}" "${moc_target}" "${moc_depends}")
-            set(${outfiles} ${${outfiles}} ${outfile})
-            add_file_dependencies(${it} ${outfile})
-        endforeach(it)
-    endmacro(fc_wrap_cpp)
-endif (NOT BUILD_QT5)
+    function(qt_add_translation _qm_files)
+        qt5_add_translation("${_qm_files}" ${ARGN})
+        set("${_qm_files}" "${${_qm_files}}" PARENT_SCOPE)
+    endfunction()
+
+    # Since Qt 5.15 Q_DISABLE_COPY_MOVE is defined
+    set (HAVE_Q_DISABLE_COPY_MOVE 0)
+else()
+    # Since Qt 5.15 Q_DISABLE_COPY_MOVE is defined
+    set (HAVE_Q_DISABLE_COPY_MOVE 1)
+endif()
+
+configure_file(${CMAKE_SOURCE_DIR}/src/QtCore.h.cmake ${CMAKE_BINARY_DIR}/src/QtCore.h)
+
+function(qt_find_and_add_translation _qm_files _tr_dir _qm_dir)
+    file(GLOB _ts_files ${_tr_dir})
+    set_source_files_properties(${_ts_files} PROPERTIES OUTPUT_LOCATION ${_qm_dir})
+    qt_add_translation("${_qm_files}" ${_ts_files})
+    set("${_qm_files}" "${${_qm_files}}" PARENT_SCOPE)
+endfunction()
+
+function(qt_create_resource_file outfile)
+    set(QRC "<RCC>\n  <qresource>\n")
+    foreach (it ${ARGN})
+        get_filename_component(qmfile "${it}" NAME)
+        string(APPEND QRC "        <file>translations/${qmfile}</file>")
+    endforeach()
+    string(APPEND QRC "  </qresource>\n</RCC>\n")
+    file(WRITE ${outfile} ${QRC})
+endfunction()
+
+function(qt_create_resource_file_prefix outfile)
+    set(QRC "<RCC>\n  <qresource prefix=\"/translations\">\n")
+    foreach (it ${ARGN})
+        get_filename_component(qmfile "${it}" NAME)
+        string(APPEND QRC "        <file>${qmfile}</file>")
+    endforeach()
+    string(APPEND QRC "  </qresource>\n</RCC>\n")
+    file(WRITE ${outfile} ${QRC})
+endfunction()

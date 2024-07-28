@@ -20,16 +20,15 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #ifndef _SoFCSelectionAction_h
 #define _SoFCSelectionAction_h
 
-//#include <Inventor/SoAction.h>
-#include <Inventor/actions/SoSubAction.h>
-#include <Inventor/events/SoSubEvent.h>
-#include <Inventor/actions/SoGLRenderAction.h>
 #include <Inventor/SbColor.h>
+#include <Inventor/actions/SoGLRenderAction.h>
+#include <Inventor/fields/SoSFColor.h>
+#include <Inventor/fields/SoSFString.h>
 #include <vector>
+#include <FCGlobal.h>
 
 class SoSFString;
 class SoSFColor;
@@ -49,15 +48,15 @@ class GuiExport SoFCHighlightAction : public SoAction
 
 public:
     SoFCHighlightAction (const SelectionChanges &SelCh);
-    ~SoFCHighlightAction();
+    ~SoFCHighlightAction() override;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
     const SelectionChanges &SelChange;
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -74,15 +73,15 @@ class GuiExport SoFCSelectionAction : public SoAction
 
 public:
     SoFCSelectionAction (const SelectionChanges &SelCh);
-    ~SoFCSelectionAction();
+    ~SoFCSelectionAction() override;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
     const SelectionChanges &SelChange;
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -99,15 +98,15 @@ class GuiExport SoFCEnableSelectionAction : public SoAction
 
 public:
     SoFCEnableSelectionAction (const SbBool& sel);
-    ~SoFCEnableSelectionAction();
+    ~SoFCEnableSelectionAction() override;
 
-    const SbBool& selection;
+    SbBool selection;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -124,15 +123,15 @@ class GuiExport SoFCEnableHighlightAction : public SoAction
 
 public:
     SoFCEnableHighlightAction (const SbBool& sel);
-    ~SoFCEnableHighlightAction();
+    ~SoFCEnableHighlightAction() override;
 
-    const SbBool& highlight;
+    SbBool highlight;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -149,15 +148,15 @@ class GuiExport SoFCSelectionColorAction : public SoAction
 
 public:
     SoFCSelectionColorAction (const SoSFColor& col);
-    ~SoFCSelectionColorAction();
+    ~SoFCSelectionColorAction() override;
 
-    const SoSFColor& selectionColor;
+    SoSFColor selectionColor;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -174,15 +173,15 @@ class GuiExport SoFCHighlightColorAction : public SoAction
 
 public:
     SoFCHighlightColorAction (const SoSFColor& col);
-    ~SoFCHighlightColorAction();
+    ~SoFCHighlightColorAction() override;
 
-    const SoSFColor& highlightColor;
+    SoSFColor highlightColor;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -199,15 +198,15 @@ class GuiExport SoFCDocumentAction : public SoAction
 
 public:
     SoFCDocumentAction (const SoSFString& docName);
-    ~SoFCDocumentAction();
+    ~SoFCDocumentAction() override;
 
-    const SoSFString& documentName;
+    SoSFString documentName;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -224,16 +223,16 @@ class GuiExport SoFCDocumentObjectAction : public SoAction
 
 public:
     SoFCDocumentObjectAction ();
-    ~SoFCDocumentObjectAction();
+    ~SoFCDocumentObjectAction() override;
 
     void setHandled();
     SbBool isHandled() const;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -244,7 +243,7 @@ public:
     SbString componentName;
 
 private:
-    SbBool _handled;
+    SbBool _handled{false};
 };
 
 /**
@@ -257,7 +256,7 @@ class GuiExport SoGLSelectAction : public SoAction
 
 public:
     SoGLSelectAction (const SbViewportRegion& region, const SbViewportRegion& select);
-    ~SoGLSelectAction();
+    ~SoGLSelectAction() override;
 
     void setHandled();
     SbBool isHandled() const;
@@ -266,7 +265,7 @@ public:
     static void initClass();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
@@ -277,7 +276,7 @@ public:
 private:
     const SbViewportRegion& vpregion;
     const SbViewportRegion& vpselect;
-    SbBool _handled;
+    SbBool _handled{false};
 };
 
 /**
@@ -289,7 +288,7 @@ class GuiExport SoVisibleFaceAction : public SoAction
 
 public:
     SoVisibleFaceAction ();
-    ~SoVisibleFaceAction();
+    ~SoVisibleFaceAction() override;
 
     void setHandled();
     SbBool isHandled() const;
@@ -297,13 +296,13 @@ public:
     static void initClass();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);
 
 private:
-    SbBool _handled;
+    SbBool _handled{false};
 };
 
 class SoBoxSelectionRenderActionP;
@@ -312,34 +311,34 @@ class SoBoxSelectionRenderActionP;
  * @author Werner Mayer
  */
 class GuiExport SoBoxSelectionRenderAction : public SoGLRenderAction {
-    typedef SoGLRenderAction inherited;
+    using inherited = SoGLRenderAction;
 
     SO_ACTION_HEADER(SoBoxSelectionRenderAction);
 
 public:
-    SoBoxSelectionRenderAction(void);
+    SoBoxSelectionRenderAction();
     SoBoxSelectionRenderAction(const SbViewportRegion & viewportregion);
-    virtual ~SoBoxSelectionRenderAction();
+    ~SoBoxSelectionRenderAction() override;
 
-    static void initClass(void);
+    static void initClass();
 
-    virtual void apply(SoNode * node);
-    virtual void apply(SoPath * path);
-    virtual void apply(const SoPathList & pathlist, SbBool obeysrules = false);
+    void apply(SoNode * node) override;
+    void apply(SoPath * path) override;
+    void apply(const SoPathList & pathlist, SbBool obeysrules = false) override;
     void setVisible(SbBool b) { hlVisible = b; }
     SbBool isVisible() const { return hlVisible; }
     void setColor(const SbColor & color);
-    const SbColor & getColor(void);
+    const SbColor & getColor();
     void setLinePattern(unsigned short pattern);
-    unsigned short getLinePattern(void) const;
+    unsigned short getLinePattern() const;
     void setLineWidth(const float width);
-    float getLineWidth(void) const;
+    float getLineWidth() const;
 
 protected:
     SbBool hlVisible;
 
 private:
-    void constructorCommon(void);
+    void constructorCommon();
     void drawBoxes(SoPath * pathtothis, const SoPathList * pathlist);
 
     SoBoxSelectionRenderActionP * pimpl;
@@ -355,13 +354,13 @@ class GuiExport SoUpdateVBOAction : public SoAction
 
 public:
     SoUpdateVBOAction ();
-    ~SoUpdateVBOAction();
+    ~SoUpdateVBOAction() override;
 
     static void initClass();
-    static void finish(void);
+    static void finish();
 
 protected:
-    virtual void beginTraversal(SoNode *node);
+    void beginTraversal(SoNode *node) override;
 
 private:
     static void callDoAction(SoAction *action,SoNode *node);

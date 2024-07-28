@@ -46,8 +46,8 @@ import draftguitools.gui_base_original as gui_base_original
 import draftguitools.gui_tool_utils as gui_tool_utils
 import draftguitools.gui_trackers as trackers
 
-from draftutils.messages import _msg
-from draftutils.translate import translate, _tr
+from draftutils.messages import _msg, _toolmsg
+from draftutils.translate import translate
 
 # The module is used to prevent complaints from code checkers (flake8)
 True if Draft_rc.__name__ else False
@@ -58,23 +58,20 @@ class Stretch(gui_base_original.Modifier):
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _tip = ("Stretches the selected objects.\n"
-                "Select an object, then draw a rectangle "
-                "to pick the vertices that will be stretched,\n"
-                "then draw a line to specify the distance "
-                "and direction of stretching.")
 
         return {'Pixmap': 'Draft_Stretch',
                 'Accel': "S, H",
                 'MenuText': QT_TRANSLATE_NOOP("Draft_Stretch", "Stretch"),
-                'ToolTip': QT_TRANSLATE_NOOP("Draft_Stretch", _tip)}
+                'ToolTip': QT_TRANSLATE_NOOP("Draft_Stretch", "Stretches the selected objects.\nSelect an object, then draw a rectangle to pick the vertices that will be stretched,\nthen draw a line to specify the distance and direction of stretching.")}
 
     def Activated(self):
         """Execute when the command is called."""
-        super(Stretch, self).Activated(name=_tr("Stretch"))
+        super().Activated(name="Stretch")
+        self.rectracker = None
+        self.nodetracker = None
         if self.ui:
             if not Gui.Selection.getSelection():
-                self.ui.selectUi()
+                self.ui.selectUi(on_close_call=self.finish)
                 _msg(translate("draft", "Select an object to stretch"))
                 self.call = \
                     self.view.addEventCallback("SoEvent",
@@ -104,6 +101,10 @@ class Stretch(gui_base_original.Modifier):
                         if base:
                             if utils.getType(base) in supported:
                                 self.sel.append([base, obj.Placement.multiply(obj.Base.Placement)])
+                    elif hasattr(obj.Base, "Base"):
+                        if obj.Base.Base:
+                            if utils.getType(obj.Base.Base) in supported:
+                                self.sel.append([obj.Base.Base, obj.Placement.multiply(obj.Base.Placement)])
             elif utils.getType(obj) in ["Offset2D", "Array"]:
                 base = None
                 if hasattr(obj, "Source") and obj.Source:
@@ -116,15 +117,14 @@ class Stretch(gui_base_original.Modifier):
         if self.ui and self.sel:
             self.step = 1
             self.refpoint = None
-            self.ui.pointUi("Stretch")
-            self.ui.extUi()
+            self.ui.pointUi(title=translate("draft", self.featureName), icon="Draft_Stretch")
             self.call = self.view.addEventCallback("SoEvent", self.action)
             self.rectracker = trackers.rectangleTracker(dotted=True,
                                                         scolor=(0.0, 0.0, 1.0),
                                                         swidth=2)
             self.nodetracker = []
             self.displacement = None
-            _msg(translate("draft", "Pick first point of selection rectangle"))
+            _toolmsg(translate("draft", "Pick first point of selection rectangle"))
 
     def action(self, arg):
         """Handle the 3D scene events.
@@ -141,7 +141,6 @@ class Stretch(gui_base_original.Modifier):
             if arg["Key"] == "ESCAPE":
                 self.finish()
         elif arg["Type"] == "SoLocation2Event":  # mouse movement detection
-            # ,mobile=True) #,noTracker=(self.step < 3))
             point, ctrlPoint, info = gui_tool_utils.getPoint(self, arg)
             if self.step == 2:
                 self.rectracker.update(point)
@@ -152,7 +151,6 @@ class Stretch(gui_base_original.Modifier):
                     # clicked twice on the same point
                     self.finish()
                 else:
-                    # ,mobile=True) #,noTracker=(self.step < 3))
                     point, ctrlPoint, info = gui_tool_utils.getPoint(self, arg)
                     self.addPoint(point)
 
@@ -160,9 +158,9 @@ class Stretch(gui_base_original.Modifier):
         """Add point to defined selection rectangle."""
         if self.step == 1:
             # first rctangle point
-            _msg(translate("draft", "Pick opposite point "
+            _toolmsg(translate("draft", "Pick opposite point "
                                     "of selection rectangle"))
-            self.ui.setRelative()
+            self.ui.setRelative(-1)
             self.rectracker.setorigin(point)
             self.rectracker.on()
             if self.planetrack:
@@ -170,7 +168,8 @@ class Stretch(gui_base_original.Modifier):
             self.step = 2
         elif self.step == 2:
             # second rectangle point
-            _msg(translate("draft", "Pick start point of displacement"))
+            _toolmsg(translate("draft", "Pick start point of displacement"))
+            self.ui.setRelative(-2)
             self.rectracker.off()
             nodes = []
             self.ops = []
@@ -233,7 +232,7 @@ class Stretch(gui_base_original.Modifier):
             self.step = 3
         elif self.step == 3:
             # first point of displacement line
-            _msg(translate("draft", "Pick end point of displacement"))
+            _toolmsg(translate("draft", "Pick end point of displacement"))
             self.displacement = point
             # print("first point:", point)
             self.node = [point]
@@ -254,14 +253,15 @@ class Stretch(gui_base_original.Modifier):
         point = App.Vector(numx, numy, numz)
         self.addPoint(point)
 
-    def finish(self, closed=False):
+    def finish(self, cont=False):
         """Terminate the operation of the command. and clean up."""
-        if hasattr(self, "rectracker") and self.rectracker:
+        self.end_callbacks(self.call)
+        if self.rectracker:
             self.rectracker.finalize()
-        if hasattr(self, "nodetracker") and self.nodetracker:
+        if self.nodetracker:
             for n in self.nodetracker:
                 n.finalize()
-        super(Stretch, self).finish()
+        super().finish()
 
     def doStretch(self):
         """Do the actual stretching once the points are selected."""
@@ -454,8 +454,10 @@ class Stretch(gui_base_original.Modifier):
                                 else:
                                     pts.append(vts[i].Point.add(self.displacement))
                             pts = str(pts).replace("Vector ", "FreeCAD.Vector")
-                            _cmd = "Draft.makeWire"
-                            _cmd += "(" + pts + ", closed=True)"
+                            _cmd = "Draft.make_wire"
+                            _cmd += "(" + pts + ", closed=True, "
+                            _cmd += "face=" + str(ops[0].MakeFace)
+                            _cmd += ")"
                             _format = "Draft.formatObject"
                             _format += "(w, "
                             _format += _doc + ops[0].Name

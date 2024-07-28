@@ -34,6 +34,7 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 
 import FreeCAD as App
 import FreeCADGui as Gui
+from draftutils import params
 
 
 class ViewProviderWorkingPlaneProxy:
@@ -45,11 +46,11 @@ class ViewProviderWorkingPlaneProxy:
 
         _tip = "The display length of this section plane"
         vobj.addProperty("App::PropertyLength", "DisplaySize",
-                         "Arch", QT_TRANSLATE_NOOP("App::Property", _tip))
+                         "Draft", QT_TRANSLATE_NOOP("App::Property", _tip))
 
         _tip = "The size of the arrows of this section plane"
-        vobj.addProperty("App::PropertyLength","ArrowSize",
-                         "Arch",QT_TRANSLATE_NOOP("App::Property", _tip))
+        vobj.addProperty("App::PropertyLength", "ArrowSize",
+                         "Draft", QT_TRANSLATE_NOOP("App::Property", _tip))
 
         vobj.addProperty("App::PropertyPercent","Transparency","Base","")
 
@@ -70,10 +71,8 @@ class ViewProviderWorkingPlaneProxy:
         vobj.Transparency = 70
         vobj.LineWidth = 1
 
-        param = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Arch")
-        c = param.GetUnsigned("ColorHelpers",674321151)
-        vobj.LineColor = (float((c>>24)&0xFF)/255.0,float((c>>16)&0xFF)/255.0,float((c>>8)&0xFF)/255.0,0.0)
-        
+        vobj.LineColor = params.get_param_arch("ColorHelpers") & 0xFFFFFF00
+
         vobj.Proxy = self
         vobj.RestoreView = True
         vobj.RestoreState = True
@@ -133,6 +132,7 @@ class ViewProviderWorkingPlaneProxy:
         self.drawstyle = coin.SoDrawStyle()
         self.drawstyle.style = coin.SoDrawStyle.LINES
         self.lcoords = coin.SoCoordinate3()
+        import PartGui # Required for "SoBrepEdgeSet" (because a WorkingPlaneProxy is not a Part::FeaturePython object).
         ls = coin.SoType.fromName("SoBrepEdgeSet").createInstance()
         ls.coordIndex.setValues(0,28,[0,1,-1,2,3,4,5,-1,6,7,-1,8,9,10,11,-1,12,13,-1,14,15,16,17,-1,18,19,20,21])
         sep = coin.SoSeparator()
@@ -226,10 +226,10 @@ class ViewProviderWorkingPlaneProxy:
             self.drawstyle.lineWidth = vobj.LineWidth
         return
 
-    def __getstate__(self):
+    def dumps(self):
         return None
 
-    def __setstate__(self,state):
+    def loads(self,state):
         return None
 
 ## @}

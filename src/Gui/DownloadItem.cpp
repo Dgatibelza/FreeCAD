@@ -20,40 +20,35 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
-#include <stdio.h>
-#include <cmath>
+#include <cstdio>
+#include <iostream>
 
 #include <QAuthenticator>
 #include <QContextMenuEvent>
+#include <QDebug>
+#include <QDesktopServices>
+#include <QFileDialog>
 #include <QFileInfo>
+#include <QKeyEvent>
 #include <QMenu>
+#include <QMetaObject>
 #include <QNetworkDiskCache>
 #include <QNetworkRequest>
 #include <QNetworkProxy>
 #include <QSettings>
-#include <QMetaObject>
-#include <QDesktopServices>
-#include <QFileDialog>
-#include <QHeaderView>
-#include <QDebug>
-#include <QKeyEvent>
-#if QT_VERSION >= 0x050000
 #include <QStandardPaths>
-#endif
-#include <QTextDocument>
-
-#include <App/Document.h>
 
 #include "DownloadItem.h"
-#include "DownloadManager.h"
 #include "Application.h"
 #include "Document.h"
-#include "MainWindow.h"
+#include "DownloadManager.h"
 #include "FileDialog.h"
+#include "MainWindow.h"
 #include "ui_DlgAuthorization.h"
 #include "Tools.h"
+#include <App/Document.h>
+
 
 using namespace Gui::Dialog;
 
@@ -65,8 +60,8 @@ EditTableView::EditTableView(QWidget *parent)
 
 void EditTableView::keyPressEvent(QKeyEvent *event)
 {
-    if ((event->key() == Qt::Key_Delete
-        || event->key() == Qt::Key_Backspace)
+    if ((event->matches(QKeySequence::Delete)
+        || event->matches(QKeySequence::Backspace))
         && model()) {
         removeOne();
     } else {
@@ -165,17 +160,13 @@ void AutoSaver::saveIfNecessary()
 NetworkAccessManager::NetworkAccessManager(QObject *parent)
     : QNetworkAccessManager(parent)
 {
-    connect(this, SIGNAL(authenticationRequired(QNetworkReply*, QAuthenticator*)),
-            SLOT(authenticationRequired(QNetworkReply*,QAuthenticator*)));
-    connect(this, SIGNAL(proxyAuthenticationRequired(const QNetworkProxy&, QAuthenticator*)),
-            SLOT(proxyAuthenticationRequired(const QNetworkProxy&, QAuthenticator*)));
+    connect(this, &QNetworkAccessManager::authenticationRequired,
+            this, &NetworkAccessManager::authenticationRequired);
+    connect(this, &QNetworkAccessManager::proxyAuthenticationRequired,
+            this, &NetworkAccessManager::proxyAuthenticationRequired);
 
-    QNetworkDiskCache *diskCache = new QNetworkDiskCache(this);
-#if QT_VERSION >= 0x050000
+    auto diskCache = new QNetworkDiskCache(this);
     QString location = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-#else
-    QString location = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
-#endif
     diskCache->setCacheDirectory(location);
     setCache(diskCache);
 }
@@ -192,11 +183,7 @@ void NetworkAccessManager::authenticationRequired(QNetworkReply *reply, QAuthent
     dialog.adjustSize();
 
     QString introMessage = tr("<qt>Enter username and password for \"%1\" at %2</qt>");
-#if QT_VERSION >= 0x050000
     introMessage = introMessage.arg(QString(reply->url().toString()).toHtmlEscaped(), QString(reply->url().toString()).toHtmlEscaped());
-#else
-    introMessage = introMessage.arg(Qt::escape(reply->url().toString()), Qt::escape(reply->url().toString()));
-#endif
     passwordDialog.siteDescription->setText(introMessage);
     passwordDialog.siteDescription->setWordWrap(true);
 
@@ -218,11 +205,7 @@ void NetworkAccessManager::proxyAuthenticationRequired(const QNetworkProxy &prox
     dialog.adjustSize();
 
     QString introMessage = tr("<qt>Connect to proxy \"%1\" using:</qt>");
-#if QT_VERSION >= 0x050000
     introMessage = introMessage.arg(QString(proxy.hostName()).toHtmlEscaped());
-#else
-    introMessage = introMessage.arg(Qt::escape(proxy.hostName()));
-#endif
     proxyDialog.siteDescription->setText(introMessage);
     proxyDialog.siteDescription->setWordWrap(true);
 
@@ -246,9 +229,9 @@ DownloadItem::DownloadItem(QNetworkReply *reply, bool requestFileName, QWidget *
     downloadInfoLabel->setPalette(p);
     progressBar->setMaximum(0);
     tryAgainButton->hide();
-    connect(stopButton, SIGNAL(clicked()), this, SLOT(stop()));
-    connect(openButton, SIGNAL(clicked()), this, SLOT(open()));
-    connect(tryAgainButton, SIGNAL(clicked()), this, SLOT(tryAgain()));
+    connect(stopButton, &QPushButton::clicked, this, &DownloadItem::stop);
+    connect(openButton, &QPushButton::clicked, this, &DownloadItem::open);
+    connect(tryAgainButton, &QPushButton::clicked, this, &DownloadItem::tryAgain);
 
     init();
 }
@@ -261,15 +244,15 @@ void DownloadItem::init()
     // attach to the m_reply
     m_url = m_reply->url();
     m_reply->setParent(this);
-    connect(m_reply, SIGNAL(readyRead()), this, SLOT(downloadReadyRead()));
-    connect(m_reply, SIGNAL(error(QNetworkReply::NetworkError)),
-            this, SLOT(error(QNetworkReply::NetworkError)));
-    connect(m_reply, SIGNAL(downloadProgress(qint64, qint64)),
-            this, SLOT(downloadProgress(qint64, qint64)));
-    connect(m_reply, SIGNAL(metaDataChanged()),
-            this, SLOT(metaDataChanged()));
-    connect(m_reply, SIGNAL(finished()),
-            this, SLOT(finished()));
+    connect(m_reply, &QNetworkReply::readyRead, this, &DownloadItem::downloadReadyRead);
+#if QT_VERSION < QT_VERSION_CHECK(5,15,0)
+    connect(m_reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &DownloadItem::error);
+#else
+    connect(m_reply, &QNetworkReply::errorOccurred, this, &DownloadItem::error);
+#endif
+    connect(m_reply, &QNetworkReply::downloadProgress, this, &DownloadItem::downloadProgress);
+    connect(m_reply, &QNetworkReply::metaDataChanged, this, &DownloadItem::metaDataChanged);
+    connect(m_reply, &QNetworkReply::finished, this, &DownloadItem::finished);
 
     // reset info
     downloadInfoLabel->clear();
@@ -287,12 +270,8 @@ void DownloadItem::init()
 
 QString DownloadItem::getDownloadDirectory() const
 {
-    QString exe = QString::fromLatin1(App::GetApplication().getExecutableName());
-#if QT_VERSION >= 0x050000
+    QString exe = QString::fromStdString(App::Application::getExecutableName());
     QString path = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-#else
-    QString path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#endif
     QString dirPath = QDir(path).filePath(exe);
     Base::Reference<ParameterGrp> hPath = App::GetApplication().GetUserParameter().GetGroup("BaseApp")
                                ->GetGroup("Preferences")->GetGroup("General");
@@ -301,11 +280,7 @@ QString DownloadItem::getDownloadDirectory() const
         dirPath = QString::fromUtf8(dir.c_str());
     }
 
-#if QT_VERSION >= 0x050000
     if (QFileInfo::exists(dirPath) || QDir().mkpath(dirPath)) {
-#else
-    if (QFileInfo(dirPath).exists() || QDir().mkpath(dirPath)) {
-#endif
         return dirPath;
     }
     else {
@@ -431,13 +406,13 @@ void DownloadItem::tryAgain()
         m_output.remove();
     m_reply = r;
     init();
-    /*emit*/ statusChanged();
+    Q_EMIT statusChanged();
 }
 
 void DownloadItem::contextMenuEvent (QContextMenuEvent * e)
 {
     QMenu menu;
-    QAction* a = menu.addAction(tr("Open containing folder"), this, SLOT(openFolder()));
+    QAction* a = menu.addAction(tr("Open containing folder"), this, &DownloadItem::openFolder);
     a->setEnabled(m_output.exists());
     menu.exec(e->globalPos());
 }
@@ -454,11 +429,11 @@ void DownloadItem::downloadReadyRead()
             downloadInfoLabel->setText(tr("Error opening saved file: %1")
                     .arg(m_output.errorString()));
             stopButton->click();
-            /*emit*/ statusChanged();
+            Q_EMIT statusChanged();
             return;
         }
         downloadInfoLabel->setToolTip(m_url.toString());
-        /*emit*/ statusChanged();
+        Q_EMIT statusChanged();
     }
     if (-1 == m_output.write(m_reply->readAll())) {
         downloadInfoLabel->setText(tr("Error saving: %1")
@@ -521,15 +496,15 @@ void DownloadItem::metaDataChanged()
         if (url != redirectUrl) {
             url = redirectUrl;
 
-            disconnect(m_reply, SIGNAL(readyRead()), this, SLOT(downloadReadyRead()));
-            disconnect(m_reply, SIGNAL(error(QNetworkReply::NetworkError)),
-                       this, SLOT(error(QNetworkReply::NetworkError)));
-            disconnect(m_reply, SIGNAL(downloadProgress(qint64, qint64)),
-                       this, SLOT(downloadProgress(qint64, qint64)));
-            disconnect(m_reply, SIGNAL(metaDataChanged()),
-                       this, SLOT(metaDataChanged()));
-            disconnect(m_reply, SIGNAL(finished()),
-                       this, SLOT(finished()));
+            disconnect(m_reply, &QNetworkReply::readyRead, this, &DownloadItem::downloadReadyRead);
+#if QT_VERSION < QT_VERSION_CHECK(5,15,0)
+            disconnect(m_reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &DownloadItem::error);
+#else
+            disconnect(m_reply, &QNetworkReply::errorOccurred, this, &DownloadItem::error);
+#endif
+            disconnect(m_reply, &QNetworkReply::downloadProgress, this, &DownloadItem::downloadProgress);
+            disconnect(m_reply, &QNetworkReply::metaDataChanged, this, &DownloadItem::metaDataChanged);
+            disconnect(m_reply, &QNetworkReply::finished, this, &DownloadItem::finished);
             m_reply->close();
             m_reply->deleteLater();
 
@@ -554,9 +529,6 @@ void DownloadItem::downloadProgress(qint64 bytesReceived, qint64 bytesTotal)
 
 void DownloadItem::updateInfoLabel()
 {
-    //if (m_reply->error() == QNetworkReply::NoError)
-    //    return;
-
     qint64 bytesTotal = progressBar->maximum();
     bool running = !downloadedSuccessfully();
 
@@ -629,7 +601,7 @@ void DownloadItem::finished()
     stopButton->hide();
     m_output.close();
     updateInfoLabel();
-    /*emit*/ statusChanged();
+    Q_EMIT statusChanged();
 }
 
 #include "moc_DownloadItem.cpp"

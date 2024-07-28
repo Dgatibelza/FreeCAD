@@ -21,21 +21,24 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
 # include <Inventor/nodes/SoAsciiText.h>
 # include <Inventor/nodes/SoCoordinate3.h>
-# include <Inventor/nodes/SoFont.h>
+# include <Inventor/nodes/SoFaceSet.h>
 # include <Inventor/nodes/SoIndexedLineSet.h>
+# include <Inventor/nodes/SoMaterial.h>
+# include <Inventor/nodes/SoPickStyle.h>
 # include <Inventor/nodes/SoSeparator.h>
+# include <Inventor/nodes/SoShapeHints.h>
 # include <Inventor/nodes/SoTranslation.h>
+# include <Inventor/SbColor.h>
 #endif
 
+#include "ViewProviderPlane.h"
 #include "ViewProviderOrigin.h"
 
-#include "ViewProviderPlane.h"
 
 using namespace Gui;
 
@@ -47,8 +50,7 @@ ViewProviderPlane::ViewProviderPlane()
     sPixmap = "Std_Plane";
 }
 
-ViewProviderPlane::~ViewProviderPlane()
-{ }
+ViewProviderPlane::~ViewProviderPlane() = default;
 
 void ViewProviderPlane::attach ( App::DocumentObject *obj ) {
     ViewProviderOriginFeature::attach ( obj );
@@ -64,21 +66,53 @@ void ViewProviderPlane::attach ( App::DocumentObject *obj ) {
 
     SoSeparator *sep = getOriginFeatureRoot ();
 
-    SoCoordinate3 *pCoords = new SoCoordinate3 ();
+    auto pCoords = new SoCoordinate3 ();
     pCoords->point.setNum (4);
     pCoords->point.setValues ( 0, 4, verts );
     sep->addChild ( pCoords );
 
-    SoIndexedLineSet *pLines  = new SoIndexedLineSet ();
-    pLines->ref();
+    auto pLines  = new SoIndexedLineSet ();
     pLines->coordIndex.setNum(6);
     pLines->coordIndex.setValues(0, 6, lines);
     sep->addChild ( pLines );
 
-    SoTranslation *textTranslation = new SoTranslation ();
-    textTranslation->ref ();
+    // add semi transparent face
+    auto faceSeparator = new SoSeparator();
+    sep->addChild(faceSeparator);
+
+    auto material = new SoMaterial();
+    material->transparency.setValue(0.95f);
+    SbColor color;
+    float alpha = 0.0f;
+    color.setPackedValue(ViewProviderOrigin::defaultColor, alpha);
+    material->ambientColor.setValue(color);
+    material->diffuseColor.setValue(color);
+    faceSeparator->addChild(material);
+
+    // disable backface culling and render with two-sided lighting
+    auto shapeHints = new SoShapeHints();
+    shapeHints->vertexOrdering = SoShapeHints::COUNTERCLOCKWISE;
+    shapeHints->shapeType = SoShapeHints::UNKNOWN_SHAPE_TYPE;
+    faceSeparator->addChild(shapeHints);
+
+    // disable picking
+    auto pickStyle = new SoPickStyle();
+    pickStyle->style = SoPickStyle::UNPICKABLE;
+    faceSeparator->addChild(pickStyle);
+
+    auto faceSet = new SoFaceSet();
+    auto vertexProperty = new SoVertexProperty();
+    vertexProperty->vertex.setValues(0, 4, verts);
+    faceSet->vertexProperty.setValue(vertexProperty);
+    faceSeparator->addChild(faceSet);
+
+    auto textTranslation = new SoTranslation ();
     textTranslation->translation.setValue ( SbVec3f ( -size * 49. / 50., size * 9./10., 0 ) );
     sep->addChild ( textTranslation );
+
+    auto ps = new SoPickStyle();
+    ps->style.setValue(SoPickStyle::BOUNDING_BOX);
+    sep->addChild(ps);
 
     sep->addChild ( getLabel () );
 }

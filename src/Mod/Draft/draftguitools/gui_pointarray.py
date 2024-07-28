@@ -25,16 +25,7 @@
 # ***************************************************************************
 """Provides GUI tools to create PointArray objects.
 
-The copies will be created where various points are located.
-
-The points need to be grouped under a compound before using this tool.
-To create this compound, select various points and then use the Draft Upgrade
-tool to create a `Block`, or use a `Part::Compound`.
-You can also create a Sketch, and place explicit points.
-
-Other geometrical objects may be contained inside the compounds but only
-the explicit point and vertex objects will be used when creating
-the point array.
+The copies will be created at the points of a point object.
 """
 ## @package gui_pointarray
 # \ingroup draftguitools
@@ -49,7 +40,7 @@ import Draft_rc
 import draftguitools.gui_base_original as gui_base_original
 
 from draftutils.messages import _err
-from draftutils.translate import _tr
+from draftutils.translate import translate
 
 # The module is used to prevent complaints from code checkers (flake8)
 True if Draft_rc.__name__ else False
@@ -71,28 +62,14 @@ class PointArray(gui_base_original.Modifier):
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _menu = "Point array"
-        _tip = ("Creates copies of the selected object, "
-                "and places the copies at the position of various points.\n"
-                "\n"
-                "The points need to be grouped under a compound of points "
-                "before using this tool.\n"
-                "To create this compound, select various points "
-                "and then use the Part Compound tool,\n"
-                "or use the Draft Upgrade tool to create a 'Block', "
-                "or create a Sketch and add simple points to it.\n"
-                "\n"
-                "Select the base object, and then select the compound "
-                "or the sketch to create the point array.")
 
         return {'Pixmap': 'Draft_PointArray',
-                'MenuText': QT_TRANSLATE_NOOP("Draft_PointArray", _menu),
-                'ToolTip': QT_TRANSLATE_NOOP("Draft_PointArray", _tip)}
+                'MenuText': QT_TRANSLATE_NOOP("Draft_PointArray", "Point array"),
+                'ToolTip': QT_TRANSLATE_NOOP("Draft_PointArray", "Creates copies of the selected base object at the points of a point object.\nFirst select the base object, and then select the point object.")}
 
     def Activated(self, name="Point array"):
         """Execute when the command is called."""
-        self.name = name
-        super(PointArray, self).Activated(name=_tr(self.name))
+        super(PointArray, self).Activated(name=name)
         # This was deactivated because it doesn't work correctly;
         # the selection needs to be made on two objects, but currently
         # it only selects one.
@@ -113,14 +90,9 @@ class PointArray(gui_base_original.Modifier):
 
     def proceed(self):
         """Proceed with the command if one object was selected."""
-        if self.call:
-            self.view.removeEventCallback("SoEvent", self.call)
-
         sel = Gui.Selection.getSelectionEx()
         if len(sel) != 2:
-            _err(_tr("Please select exactly two objects, "
-                     "the base object and the point object, "
-                     "before calling this command."))
+            _err(translate("draft","Please select exactly two objects, the base object and the point object, before calling this command."))
         else:
             base_object = sel[0].Object
             point_object = sel[1].Object
@@ -138,7 +110,7 @@ class PointArray(gui_base_original.Modifier):
             _cmd_list = ["_obj_ = " + _cmd,
                          "Draft.autogroup(_obj_)",
                          "App.ActiveDocument.recompute()"]
-            self.commit(_tr(self.name), _cmd_list)
+            self.commit(translate("draft","Point array"), _cmd_list)
 
         # Commit the transaction and execute the commands
         # through the parent class
@@ -155,12 +127,10 @@ class PointLinkArray(PointArray):
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _tip = ("Like the PointArray tool, but creates a 'Point link array' instead.\n"
-                "A 'Point link array' is more efficient when handling many copies.")
 
         return {'Pixmap': 'Draft_PointLinkArray',
-                'MenuText': QT_TRANSLATE_NOOP("Draft_PointLinkArray", "PointLinkArray"),
-                'ToolTip': QT_TRANSLATE_NOOP("Draft_PointLinkArray", _tip)}
+                'MenuText': QT_TRANSLATE_NOOP("Draft_PointLinkArray", "Point link array"),
+                'ToolTip': QT_TRANSLATE_NOOP("Draft_PointLinkArray", "Like the PointArray tool, but creates a 'Point link array' instead.\nA 'Point link array' is more efficient when handling many copies.")}
 
     def Activated(self):
         """Execute when the command is called."""

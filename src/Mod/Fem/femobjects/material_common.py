@@ -22,9 +22,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__  = "FreeCAD FEM material document object"
+__title__ = "FreeCAD FEM material document object"
 __author__ = "Juergen Riegel, Bernd Hahnebach"
-__url__    = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## @package material_common
 #  \ingroup FEM
@@ -41,7 +41,7 @@ class MaterialCommon(base_fempythonobject.BaseFemPythonObject):
     Type = "Fem::MaterialCommon"
 
     def __init__(self, obj):
-        super(MaterialCommon, self).__init__(obj)
+        super().__init__(obj)
         self.add_properties(obj)
 
     def onDocumentRestored(self, obj):
@@ -51,20 +51,16 @@ class MaterialCommon(base_fempythonobject.BaseFemPythonObject):
         # References
         if not hasattr(obj, "References"):
             obj.addProperty(
-                "App::PropertyLinkSubList",
-                "References",
-                "Material",
-                "List of material shapes"
+                "App::PropertyLinkSubList", "References", "Material", "List of material shapes"
             )
+            obj.setPropertyStatus("References", "LockDynamic")
         # Category
         # attribute Category was added in commit 61fb3d429a
         if not hasattr(obj, "Category"):
             obj.addProperty(
-                "App::PropertyEnumeration",
-                "Category",
-                "Material",
-                "Material type: fluid or solid"
+                "App::PropertyEnumeration", "Category", "Material", "Material type: fluid or solid"
             )
+            obj.setPropertyStatus("Category", "LockDynamic")
             obj.Category = ["Solid", "Fluid"]  # used in TaskPanel
             obj.Category = "Solid"
         """

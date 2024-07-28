@@ -21,9 +21,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__  = "FreeCAD FEM mesh boundary layer task panel for the document object"
+__title__ = "FreeCAD FEM mesh boundary layer task panel for the document object"
 __author__ = "Bernd Hahnebach, Qingfeng Xia"
-__url__    = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## @package task_mesh_boundarylayer
 #  \ingroup FEM
@@ -53,26 +53,25 @@ class _TaskPanel:
         QtCore.QObject.connect(
             self.parameterWidget.bl_number_of_layers,
             QtCore.SIGNAL("valueChanged(int)"),
-            self.bl_number_of_layers_changed
+            self.bl_number_of_layers_changed,
         )
         QtCore.QObject.connect(
             self.parameterWidget.bl_min_thickness,
             QtCore.SIGNAL("valueChanged(Base::Quantity)"),
-            self.bl_min_thickness_changed
+            self.bl_min_thickness_changed,
         )
         # be careful of signal signature for QDoubleSpinbox
         QtCore.QObject.connect(
             self.parameterWidget.bl_growth_rate,
             QtCore.SIGNAL("valueChanged(double)"),
-            self.bl_growth_rate_changed
+            self.bl_growth_rate_changed,
         )
         self.init_parameter_widget()
 
         # geometry selection widget
         # start with Solid in list!
         self.selectionWidget = selection_widgets.GeometryElementsSelection(
-            obj.References,
-            ["Solid", "Face", "Edge", "Vertex"]
+            obj.References, ["Solid", "Face", "Edge", "Vertex"], True, False
         )
 
         # form made from param and selection widget
@@ -91,9 +90,7 @@ class _TaskPanel:
     def recompute_and_set_back_all(self):
         doc = FreeCADGui.getDocument(self.obj.Document)
         doc.Document.recompute()
-        self.selectionWidget.setback_listobj_visibility()
-        if self.selectionWidget.sel_server:
-            FreeCADGui.Selection.removeObserver(self.selectionWidget.sel_server)
+        self.selectionWidget.finish_selection()
         doc.resetEdit()
 
     def init_parameter_widget(self):

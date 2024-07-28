@@ -23,14 +23,15 @@
 #ifndef PARTDESIGNGUI_FeaturePickDialog_H
 #define PARTDESIGNGUI_FeaturePickDialog_H
 
-#include <Gui/TaskView/TaskView.h>
-#include <Gui/Selection.h>
+#include <functional>
+#include <QListWidgetItem>
+
+#include <App/DocumentObject.h>
 #include <Gui/DocumentObserver.h>
 #include <Gui/TaskView/TaskDialog.h>
+#include <Gui/TaskView/TaskView.h>
 #include <Gui/ViewProviderOrigin.h>
-#include <App/DocumentObject.h>
 
-#include <boost/function.hpp>
 
 namespace PartDesignGui {
 
@@ -55,33 +56,36 @@ public:
         afterTip
     };
 
-    TaskFeaturePick(std::vector<App::DocumentObject*> &objects, 
+    TaskFeaturePick(std::vector<App::DocumentObject*> &objects,
                     const std::vector<featureStatus> &status,
-                    QWidget *parent = 0);
-    
-    ~TaskFeaturePick();
+                    bool singleFeatureSelect,
+                    QWidget *parent = nullptr);
+
+    ~TaskFeaturePick() override;
 
     std::vector<App::DocumentObject*> getFeatures();
     std::vector<App::DocumentObject*> buildFeatures();
     void showExternal(bool val);
-    
+    bool isSingleSelectionEnabled() const;
+
     static App::DocumentObject* makeCopy(App::DocumentObject* obj, std::string sub, bool independent);
-    
+
 protected Q_SLOTS:
     void onUpdate(bool);
-    void onSelectionChanged(const Gui::SelectionChanges& msg);
+    void onSelectionChanged(const Gui::SelectionChanges& msg) override;
     void onItemSelectionChanged();
+    void onDoubleClick(QListWidgetItem *item);
 
 protected:
     /** Notifies when the object is about to be removed. */
-    virtual void slotDeletedObject(const Gui::ViewProviderDocumentObject& Obj);
+    void slotDeletedObject(const Gui::ViewProviderDocumentObject& Obj) override;
     /** Notifies on undo */
-    virtual void slotUndoDocument(const Gui::Document& Doc);
+    void slotUndoDocument(const Gui::Document& Doc) override;
     /** Notifies on document deletion */
-    virtual void slotDeleteDocument(const Gui::Document& Doc);
+    void slotDeleteDocument(const Gui::Document& Doc) override;
 
 private:
-    Ui_TaskFeaturePick* ui;
+    std::unique_ptr<Ui_TaskFeaturePick> ui;
     QWidget* proxy;
     std::vector<Gui::ViewProviderOrigin*> origins;
     bool doSelection;
@@ -103,36 +107,38 @@ class TaskDlgFeaturePick : public Gui::TaskView::TaskDialog
 public:
     TaskDlgFeaturePick( std::vector<App::DocumentObject*> &objects,
                         const std::vector<TaskFeaturePick::featureStatus> &status,
-                        boost::function<bool (std::vector<App::DocumentObject*>)> acceptfunc,
-                        boost::function<void (std::vector<App::DocumentObject*>)> workfunc,
-                        boost::function<void (void)> abortfunc = 0 );
-    ~TaskDlgFeaturePick();
+                        std::function<bool (std::vector<App::DocumentObject*>)> acceptfunc,
+                        std::function<void (std::vector<App::DocumentObject*>)> workfunc,
+                        bool singleFeatureSelect,
+                        std::function<void (void)> abortfunc = 0);
+    ~TaskDlgFeaturePick() override;
 
 public:
     /// is called the TaskView when the dialog is opened
-    virtual void open();
+    void open() override;
     /// is called by the framework if an button is clicked which has no accept or reject role
-    virtual void clicked(int);
+    void clicked(int) override;
     /// is called by the framework if the dialog is accepted (Ok)
-    virtual bool accept();
+    bool accept() override;
     /// is called by the framework if the dialog is rejected (Cancel)
-    virtual bool reject();
-    /// is called by the framework if the user presses the help button 
-    virtual bool isAllowedAlterDocument(void) const
+    bool reject() override;
+    /// is called by the framework if the user presses the help button
+    bool isAllowedAlterDocument() const override
     { return false; }
-    
+
     void showExternal(bool val);
 
-    /// returns for Close and Help button 
-    virtual QDialogButtonBox::StandardButtons getStandardButtons(void) const
+    /// returns for Close and Help button
+    QDialogButtonBox::StandardButtons getStandardButtons() const override
     { return QDialogButtonBox::Ok|QDialogButtonBox::Cancel; }
+
 
 protected:
     TaskFeaturePick  *pick;
     bool accepted;
-    boost::function<bool (std::vector<App::DocumentObject*>)>  acceptFunction;
-    boost::function<void (std::vector<App::DocumentObject*>)>  workFunction;
-    boost::function<void (void)> abortFunction;
+    std::function<bool (std::vector<App::DocumentObject*>)>  acceptFunction;
+    std::function<void (std::vector<App::DocumentObject*>)>  workFunction;
+    std::function<void (void)> abortFunction;
 };
 
 }

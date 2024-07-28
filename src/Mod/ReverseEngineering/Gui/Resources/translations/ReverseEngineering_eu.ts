@@ -4,17 +4,17 @@
   <context>
     <name>CmdApproxCylinder</name>
     <message>
-      <location filename="../../Command.cpp" line="211"/>
+      <location filename="../../Command.cpp" line="248"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="212"/>
+      <location filename="../../Command.cpp" line="249"/>
       <source>Cylinder</source>
       <translation>Zilindroa</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="213"/>
+      <location filename="../../Command.cpp" line="250"/>
       <source>Approximate a cylinder</source>
       <translation>Hurbildu zilindro batera</translation>
     </message>
@@ -22,17 +22,17 @@
   <context>
     <name>CmdApproxPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="110"/>
+      <location filename="../../Command.cpp" line="140"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="111"/>
-      <source>Plane...</source>
-      <translation>Plano...</translation>
+      <location filename="../../Command.cpp" line="141"/>
+      <source>Plane</source>
+      <translation>Planoa</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="112"/>
+      <location filename="../../Command.cpp" line="142"/>
       <source>Approximate a plane</source>
       <translation>Hurbildu plano batera</translation>
     </message>
@@ -40,17 +40,17 @@
   <context>
     <name>CmdApproxPolynomial</name>
     <message>
-      <location filename="../../Command.cpp" line="324"/>
+      <location filename="../../Command.cpp" line="364"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="325"/>
+      <location filename="../../Command.cpp" line="365"/>
       <source>Polynomial surface</source>
       <translation>Gainazal polinomiala</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="326"/>
+      <location filename="../../Command.cpp" line="366"/>
       <source>Approximate a polynomial surface</source>
       <translation>Hurbildu gainazal polinomial batera</translation>
     </message>
@@ -58,17 +58,17 @@
   <context>
     <name>CmdApproxSphere</name>
     <message>
-      <location filename="../../Command.cpp" line="277"/>
+      <location filename="../../Command.cpp" line="316"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="278"/>
+      <location filename="../../Command.cpp" line="317"/>
       <source>Sphere</source>
       <translation>Esfera</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="279"/>
+      <location filename="../../Command.cpp" line="318"/>
       <source>Approximate a sphere</source>
       <translation>Hurbildu esfera batera</translation>
     </message>
@@ -76,17 +76,17 @@
   <context>
     <name>CmdApproxSurface</name>
     <message>
-      <location filename="../../Command.cpp" line="74"/>
+      <location filename="../../Command.cpp" line="102"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="75"/>
+      <location filename="../../Command.cpp" line="103"/>
       <source>Approximate B-spline surface...</source>
       <translation>Hurbildu B-spline gainazalera...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="76"/>
+      <location filename="../../Command.cpp" line="104"/>
       <source>Approximate a B-spline surface</source>
       <translation>Hurbildu B-spline gainazal batera</translation>
     </message>
@@ -94,17 +94,17 @@
   <context>
     <name>CmdMeshBoundary</name>
     <message>
-      <location filename="../../Command.cpp" line="490"/>
+      <location filename="../../Command.cpp" line="536"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="491"/>
+      <location filename="../../Command.cpp" line="537"/>
       <source>Wire from mesh boundary...</source>
       <translation>Alanbrea amaraun-mugatik...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="492"/>
+      <location filename="../../Command.cpp" line="538"/>
       <source>Create wire from mesh boundaries</source>
       <translation>Sortu alanbrea amaraun-mugetatik</translation>
     </message>
@@ -112,17 +112,17 @@
   <context>
     <name>CmdPoissonReconstruction</name>
     <message>
-      <location filename="../../Command.cpp" line="556"/>
+      <location filename="../../Command.cpp" line="603"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="557"/>
+      <location filename="../../Command.cpp" line="604"/>
       <source>Poisson...</source>
       <translation>Poisson...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="558"/>
+      <location filename="../../Command.cpp" line="605"/>
       <source>Poisson surface reconstruction</source>
       <translation>Poisson gainazalaren berreraikitzea</translation>
     </message>
@@ -130,74 +130,123 @@
   <context>
     <name>CmdSegmentation</name>
     <message>
-      <location filename="../../Command.cpp" line="379"/>
+      <location filename="../../Command.cpp" line="422"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="380"/>
+      <location filename="../../Command.cpp" line="423"/>
       <source>Mesh segmentation...</source>
       <translation>Amaraun-segmentazioa...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="381"/>
+      <location filename="../../Command.cpp" line="424"/>
       <source>Create mesh segments</source>
-      <translation>Sortu amaraun-segmentuak</translation>
+      <translation>Sortu amaraun segmentuak</translation>
     </message>
   </context>
   <context>
     <name>CmdSegmentationFromComponents</name>
     <message>
-      <location filename="../../Command.cpp" line="440"/>
+      <location filename="../../Command.cpp" line="484"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="441"/>
+      <location filename="../../Command.cpp" line="485"/>
       <source>From components</source>
       <translation>Osagaietatik</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="442"/>
+      <location filename="../../Command.cpp" line="486"/>
       <source>Create mesh segments from components</source>
-      <translation>Sortu amaraun-segmentuak osagaietatik</translation>
+      <translation>Sortu amaraun segmentuak osagaietatik</translation>
     </message>
   </context>
   <context>
     <name>CmdSegmentationManual</name>
     <message>
-      <location filename="../../Command.cpp" line="411"/>
+      <location filename="../../Command.cpp" line="454"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="412"/>
+      <location filename="../../Command.cpp" line="455"/>
       <source>Manual segmentation...</source>
       <translation>Eskuzko segmentazioa...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="413"/>
+      <location filename="../../Command.cpp" line="456"/>
       <source>Create mesh segments manually</source>
-      <translation>Sortu amaraun-segmentuak eskuz</translation>
+      <translation>Sortu amaraun segmentuak eskuz</translation>
     </message>
   </context>
   <context>
     <name>CmdViewTriangulation</name>
     <message>
-      <location filename="../../Command.cpp" line="590"/>
+      <location filename="../../Command.cpp" line="638"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="591"/>
+      <location filename="../../Command.cpp" line="639"/>
       <source>Structured point clouds</source>
       <translation>Puntu egituratuen hodeiak</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="592"/>
-      <location filename="../../Command.cpp" line="593"/>
+      <location filename="../../Command.cpp" line="640"/>
+      <location filename="../../Command.cpp" line="641"/>
       <source>Triangulation of structured point clouds</source>
       <translation>Puntu egituratuen hodeien triangelaketa</translation>
+    </message>
+  </context>
+  <context>
+    <name>Command</name>
+    <message>
+      <location filename="../../Command.cpp" line="226"/>
+      <source>Fit plane</source>
+      <translation>Doitu planoa</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="258"/>
+      <source>Fit cylinder</source>
+      <translation>Doitu zilindroa</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="326"/>
+      <source>Fit sphere</source>
+      <translation>Doitu esfera</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="375"/>
+      <source>Fit polynomial surface</source>
+      <translation>Doitu gainazal polinomiala</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="650"/>
+      <source>View triangulation</source>
+      <translation>Bistaren triangelaketa</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="154"/>
+      <source>Placement</source>
+      <translation>Kokapena</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="231"/>
+      <location filename="../../FitBSplineCurve.cpp" line="139"/>
+      <source>Fit B-spline</source>
+      <translation type="unfinished">Fit B-spline</translation>
+    </message>
+    <message>
+      <location filename="../../Poisson.cpp" line="83"/>
+      <source>Poisson reconstruction</source>
+      <translation>Poissonen berreraikitzea</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.cpp" line="281"/>
+      <source>Segmentation</source>
+      <translation>Segmentazioa</translation>
     </message>
   </context>
   <context>
@@ -246,57 +295,57 @@
     </message>
     <message>
       <location filename="../../FitBSplineSurface.ui" line="218"/>
-      <source>Smoothing</source>
-      <translation>Leuntzea</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="227"/>
-      <source>Total Weight</source>
-      <translation>Pisu osoa</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="256"/>
-      <source>Length of gradient</source>
-      <translation>Gradiente-luzera</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="285"/>
-      <source>Bending energy</source>
-      <translation>Makurdura-energia</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="314"/>
-      <source>Curvature variation</source>
-      <translation>Kurbadura-bariazioa</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="346"/>
       <source>User-defined u/v directions</source>
       <translation>Erabiltzaileak definitutako u/v norabideak</translation>
     </message>
     <message>
-      <location filename="../../FitBSplineSurface.ui" line="359"/>
+      <location filename="../../FitBSplineSurface.ui" line="231"/>
       <source>Create placement</source>
       <translation>Sortu kokapena</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="238"/>
+      <source>Smoothing</source>
+      <translation>Leuntzea</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="247"/>
+      <source>Total Weight</source>
+      <translation>Pisu osoa</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="276"/>
+      <source>Length of gradient</source>
+      <translation>Gradiente-luzera</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="305"/>
+      <source>Bending energy</source>
+      <translation>Makurdura-energia</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="334"/>
+      <source>Curvature variation</source>
+      <translation>Kurbadura-bariazioa</translation>
     </message>
   </context>
   <context>
     <name>ReenGui::FitBSplineSurfaceWidget</name>
     <message>
-      <location filename="../../FitBSplineSurface.cpp" line="207"/>
+      <location filename="../../FitBSplineSurface.cpp" line="165"/>
+      <location filename="../../FitBSplineSurface.cpp" line="238"/>
+      <source>Input error</source>
+      <translation>Sarrera-errorea</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="206"/>
       <source>Wrong selection</source>
       <translation>Hautapen okerra</translation>
     </message>
     <message>
-      <location filename="../../FitBSplineSurface.cpp" line="208"/>
+      <location filename="../../FitBSplineSurface.cpp" line="207"/>
       <source>Please select a single placement object to get local orientation.</source>
       <translation>Hautatu kokapen-objektu bakarra tokiko orientazioa eskuratzeko.</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.cpp" line="167"/>
-      <location filename="../../FitBSplineSurface.cpp" line="235"/>
-      <source>Input error</source>
-      <translation>Sarrera-errorea</translation>
     </message>
   </context>
   <context>
@@ -327,7 +376,7 @@
       <translation>Laginak nodoko</translation>
     </message>
     <message>
-      <location filename="../../Poisson.cpp" line="108"/>
+      <location filename="../../Poisson.cpp" line="90"/>
       <source>Input error</source>
       <translation>Sarrera-errorea</translation>
     </message>
@@ -335,18 +384,24 @@
   <context>
     <name>Reen_ApproxSurface</name>
     <message>
-      <location filename="../../Command.cpp" line="89"/>
-      <location filename="../../Command.cpp" line="569"/>
+      <location filename="../../Command.cpp" line="82"/>
+      <location filename="../../Command.cpp" line="120"/>
+      <location filename="../../Command.cpp" line="618"/>
       <source>Wrong selection</source>
       <translation>Hautapen okerra</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="90"/>
+      <location filename="../../Command.cpp" line="83"/>
+      <source>Please select a point cloud.</source>
+      <translation type="unfinished">Please select a point cloud.</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="121"/>
       <source>Please select a point cloud or mesh.</source>
       <translation>Hautatu puntuen hodei bat edo amaraun bat.</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="570"/>
+      <location filename="../../Command.cpp" line="619"/>
       <source>Please select a single point cloud.</source>
       <translation>Hautatu puntu bakarreko hodeia.</translation>
     </message>
@@ -354,7 +409,7 @@
   <context>
     <name>Reen_ViewTriangulation</name>
     <message>
-      <location filename="../../Command.cpp" line="625"/>
+      <location filename="../../Command.cpp" line="672"/>
       <source>View triangulation failed</source>
       <translation>Bistaren triangelaketak huts egin du</translation>
     </message>
@@ -367,39 +422,39 @@
       <translation>Amaraun-segmentazioa</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="27"/>
-      <source>Create compound</source>
-      <translation>Sortu konposatua</translation>
-    </message>
-    <message>
-      <location filename="../../Segmentation.ui" line="34"/>
+      <location filename="../../Segmentation.ui" line="20"/>
       <source>Smooth mesh</source>
       <translation>Leundu amarauna</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="44"/>
+      <location filename="../../Segmentation.ui" line="37"/>
       <source>Plane</source>
       <translation>Planoa</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="53"/>
+      <location filename="../../Segmentation.ui" line="46"/>
       <source>Curvature tolerance</source>
       <translation>Kurbaduraren tolerantzia</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="70"/>
+      <location filename="../../Segmentation.ui" line="63"/>
       <source>Distance to plane</source>
       <translation>Distantzia planora</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="87"/>
+      <location filename="../../Segmentation.ui" line="80"/>
       <source>Minimum number of faces</source>
       <translation>Aurpegien kopuru minimoa</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="107"/>
+      <location filename="../../Segmentation.ui" line="100"/>
       <source>Create mesh from unused triangles</source>
       <translation>Sortu amarauna erabili gabeko triangeluetatik</translation>
+    </message>
+    <message>
+      <location filename="../../Segmentation.ui" line="107"/>
+      <source>Create compound</source>
+      <translation>Sortu konposatua</translation>
     </message>
   </context>
   <context>
@@ -416,33 +471,33 @@
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="41"/>
-      <source>Components</source>
-      <translation>Osagaiak</translation>
-    </message>
-    <message>
-      <location filename="../../SegmentationManual.ui" line="48"/>
       <source>Region</source>
       <translation>Eskualdea</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="55"/>
-      <source>Select whole component</source>
-      <translation>Hautatu osagai osoa</translation>
+      <location filename="../../SegmentationManual.ui" line="61"/>
+      <source>All</source>
+      <translation>Dena</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="62"/>
-      <source>Pick triangle</source>
-      <translation>Aukeratu triangelua</translation>
+      <location filename="../../SegmentationManual.ui" line="81"/>
+      <source>Components</source>
+      <translation>Osagaiak</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="82"/>
+      <location filename="../../SegmentationManual.ui" line="88"/>
       <source>&lt; faces than</source>
       <translation>baino aurpegi gutxiago</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="89"/>
-      <source>All</source>
-      <translation>Dena</translation>
+      <location filename="../../SegmentationManual.ui" line="98"/>
+      <source>Pick triangle</source>
+      <translation>Aukeratu triangelua</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.ui" line="105"/>
+      <source>Select whole component</source>
+      <translation>Hautatu osagai osoa</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="112"/>
@@ -458,22 +513,22 @@
       <location filename="../../SegmentationManual.ui" line="128"/>
       <location filename="../../SegmentationManual.ui" line="181"/>
       <location filename="../../SegmentationManual.ui" line="234"/>
+      <source>Detect</source>
+      <translation>Detektatu</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.ui" line="135"/>
+      <location filename="../../SegmentationManual.ui" line="188"/>
+      <location filename="../../SegmentationManual.ui" line="241"/>
       <source>Tolerance</source>
       <translation>Tolerantzia</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="148"/>
-      <location filename="../../SegmentationManual.ui" line="201"/>
-      <location filename="../../SegmentationManual.ui" line="254"/>
+      <location filename="../../SegmentationManual.ui" line="155"/>
+      <location filename="../../SegmentationManual.ui" line="208"/>
+      <location filename="../../SegmentationManual.ui" line="261"/>
       <source>Minimum number of faces</source>
       <translation>Aurpegien kopuru minimoa</translation>
-    </message>
-    <message>
-      <location filename="../../SegmentationManual.ui" line="165"/>
-      <location filename="../../SegmentationManual.ui" line="218"/>
-      <location filename="../../SegmentationManual.ui" line="271"/>
-      <source>Detect</source>
-      <translation>Detektatu</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="175"/>
@@ -519,7 +574,7 @@
   <context>
     <name>ReverseEngineeringGui::TaskSegmentationManual</name>
     <message>
-      <location filename="../../SegmentationManual.cpp" line="310"/>
+      <location filename="../../SegmentationManual.cpp" line="352"/>
       <source>Create</source>
       <translation>Sortu</translation>
     </message>
@@ -527,9 +582,143 @@
   <context>
     <name>Workbench</name>
     <message>
-      <location filename="../../Workbench.cpp" line="37"/>
+      <location filename="../../Workbench.cpp" line="34"/>
       <source>Reverse Engineering</source>
       <translation>Alderantzizko ingeniaritza</translation>
+    </message>
+  </context>
+  <context>
+    <name>ReenGui::FitBSplineCurve</name>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="14"/>
+      <source>Fit B-spline surface</source>
+      <translation>Doitu B-spline gainazala</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="20"/>
+      <source>Parameters</source>
+      <translation>Parametroak</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="26"/>
+      <source>Maximum degree</source>
+      <translation type="unfinished">Maximum degree</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="37"/>
+      <source>Chord length</source>
+      <translation type="unfinished">Chord length</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="42"/>
+      <source>Centripetal</source>
+      <translation type="unfinished">Centripetal</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="47"/>
+      <source>Iso-Parametric</source>
+      <translation type="unfinished">Iso-Parametric</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="55"/>
+      <source>Continuity</source>
+      <translation>Jarraitutasuna</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="88"/>
+      <source>Parametrization type</source>
+      <translation type="unfinished">Parametrization type</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="96"/>
+      <source>C0</source>
+      <translation>C0</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="101"/>
+      <source>G1</source>
+      <translation>G1</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="106"/>
+      <source>C1</source>
+      <translation>C1</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="111"/>
+      <source>G2</source>
+      <translation>G2</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="116"/>
+      <source>C2</source>
+      <translation>C2</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="121"/>
+      <source>C3</source>
+      <translation>C3</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="126"/>
+      <source>CN</source>
+      <translation>CN</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="134"/>
+      <source>Minimum degree</source>
+      <translation type="unfinished">Minimum degree</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="141"/>
+      <source>Closed curve</source>
+      <translation type="unfinished">Closed curve</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="151"/>
+      <source>Smoothing</source>
+      <translation>Leuntzea</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="160"/>
+      <source>Torsion</source>
+      <translation type="unfinished">Torsion</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="167"/>
+      <source>Curve length</source>
+      <translation type="unfinished">Curve length</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="174"/>
+      <source>Curvature</source>
+      <translation>Kurbadura</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdApproxCurve</name>
+    <message>
+      <location filename="../../Command.cpp" line="69"/>
+      <source>Reverse Engineering</source>
+      <translation>Alderantzizko ingeniaritza</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="70"/>
+      <source>Approximate B-spline curve...</source>
+      <translation type="unfinished">Approximate B-spline curve...</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="71"/>
+      <source>Approximate a B-spline curve</source>
+      <translation type="unfinished">Approximate a B-spline curve</translation>
+    </message>
+  </context>
+  <context>
+    <name>ReenGui::FitBSplineCurveWidget</name>
+    <message>
+      <location filename="../../FitBSplineCurve.cpp" line="91"/>
+      <source>Input error</source>
+      <translation>Sarrera-errorea</translation>
     </message>
   </context>
 </TS>

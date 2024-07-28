@@ -165,11 +165,17 @@ def findDistance(point, edge, strict=False):
                 return None
 
             if strict and ve2:
+                # Note 1: DraftVecUtils.angle(App.Vector(1, 1, 0)) => -0.7854
+                # Note 2: Angles are in the +pi to -pi range.
                 ang1 = DraftVecUtils.angle(ve1.sub(center))
                 ang2 = DraftVecUtils.angle(ve2.sub(center))
                 angpt = DraftVecUtils.angle(newpoint.sub(center))
-                if ((angpt <= ang2 and angpt >= ang1)
-                        or (angpt <= ang1 and angpt >= ang2)):
+                if ang1 >= ang2: # Arc does not cross the 9 o'clock point.
+                    if ang1 >= angpt and angpt >= ang2:
+                        return dist
+                    else:
+                        return None
+                elif ang1 >= angpt or angpt >= ang2:
                     return dist
                 else:
                     return None
@@ -199,6 +205,9 @@ def findDistance(point, edge, strict=False):
 def get_spline_normal(edge, tol=-1):
     """Find the normal of a BSpline edge."""
 
+    if edge.isNull():
+        return None
+
     if is_straight_line(shape, tol):
         return None
 
@@ -208,6 +217,67 @@ def get_spline_normal(edge, tol=-1):
         return normal
     else:
         return None
+
+
+def get_shape_normal(shape):
+    """Find the normal of a shape or list of points or colinear edges, if possible."""
+
+    # New function based on get_normal() drafted by @Roy_043
+    # in discussion https://forum.freecad.org/viewtopic.php?p=717862#p717862
+    #
+    # The normal would not be affected  by the 3D view direction and flipped as
+    # get_normal would be. Placement of the Shape is taken into account in this
+    # new function instead :
+    # - Normal of a planar shape is usually bi-directional, this function return
+    #   the one 'in the direction' of the shape's placement 'normal' (z-direction).
+    #   As reference, shape.findPlane() favour positive axes, get_normal()
+    #   favour the 'view direction' (obtained by getViewDirection() ).
+    # - Even when the Shape is an edge or colinear edges, its Placement is taken
+    #   into account, and this function return one 'in the direction' of the
+    #   shape's placement 'normal' (z-direction).
+    #   https://forum.freecad.org/viewtopic.php?p=715850#p715850
+    # The normal direction of a Draft wire (co-planar) or arc used to depends on
+    # the way the shape is constructed i.e. by vertexes in clockwise or
+    # anti-clockwise.  This cryptic behaviour no longer matters.
+
+    if shape.isNull():
+        return None
+
+    # Roy_043's remarks on the behavior of Shape.findPlane():
+    # - https://forum.freecad.org/viewtopic.php?p=713993#p713993
+    # Check if the shape is planar
+    # If True: check if the outer wire is closed:
+    #    if True  :   Return a (plane with) normal based on the direction of the outer wire (CW or CCW).
+    #    if False : ? Return a (plane with) normal that points towards positive global axes with a certain priority
+    #                 (probably? Z, Y and then X).
+    # If False: return None.
+    #
+    # Further remarks :
+    # - Tested Sketch with 2 colinear edges return a Plane with Axis
+    # - Tested Sketch with 1 edge return no Plane with no Axis
+
+    shape_rot = shape.Placement.Rotation
+    plane = shape.findPlane()
+
+    if plane is None:
+        if not is_straight_line(shape):
+            return None
+        start_edge = shape.Edges[0]
+        x_vec = start_edge.tangentAt(start_edge.FirstParameter)  # Return vector is in global coordinate
+        local_x_vec = shape_rot.inverted().multVec(x_vec)  #
+        local_rot = App.Rotation(local_x_vec, App.Vector(0, 1, 0), App.Vector(0, 0, 1), "XZY")
+        # see https://blog.freecad.org/2023/01/16/the-rotation-api-in-freecad/ for App.Rotation(vecx, vecy, vecz, string)
+        # discussion - https://forum.freecad.org/viewtopic.php?p=717738#p717738
+        return shape_rot.multiply(local_rot).multVec(App.Vector(0, 0, 1))
+
+    normal = plane.Axis
+    shape_normal = shape_rot.multVec(App.Vector(0, 0, 1))
+    # Now, check the normal direction of the plane (plane.Axis).
+    # The final deduced normal should be 'in the direction' of the z-direction of the shape's placement,
+    # if plane.Axis is in the 'opposite' direction of the Z direction of the shape's placement, reverse it.
+    if normal.getAngle(shape_normal) > math.pi/2:
+        normal = normal.negative()
+    return normal
 
 
 def get_normal(shape, tol=-1):
@@ -230,9 +300,11 @@ def get_normal(shape, tol=-1):
                 return None
 
     # for shapes
-    if is_straight_line(shape, tol):
+    if shape.isNull():
         return None
 
+    if is_straight_line(shape, tol):
+        return None
     else:
         plane = find_plane(shape, tol)
         if plane:
@@ -242,9 +314,11 @@ def get_normal(shape, tol=-1):
 
     # Check the 3D view to flip the normal if the GUI is available
     if App.GuiUp:
-        v_dir = gui_utils.get_3d_view().getViewDirection()
-        if normal.getAngle(v_dir) < 0.78:
-            normal = normal.negative()
+        view = gui_utils.get_3d_view()
+        if view is not None:
+            v_dir = view.getViewDirection()
+            if normal.getAngle(v_dir) < 0.78:
+                normal = normal.negative()
 
     return normal
 
@@ -273,6 +347,7 @@ def is_planar(shape, tol=-1):
             poly = Part.makePolygon(shape)
             if is_straight_line(poly, tol):
                 return True
+
             plane = poly.findPlane(tol)
             if plane:
                 return True
@@ -280,6 +355,9 @@ def is_planar(shape, tol=-1):
                 return False
 
     # for shapes
+    if shape.isNull():
+        return False
+
     # because Part.Shape.findPlane return None for Vertex and straight edges
     if shape.ShapeType == "Vertex":
         return True
@@ -300,6 +378,9 @@ def is_straight_line(shape, tol=-1):
     plane and normal to straight wires creating privileged directions
     and to deal with straight wires with overlapped edges."""
 
+    if shape.isNull():
+        return False
+
     if len(shape.Faces) != 0:
         return False
 
@@ -309,6 +390,8 @@ def is_straight_line(shape, tol=-1):
     if len(shape.Edges) >= 1:
         start_edge = shape.Edges[0]
         dir_start_edge = start_edge.tangentAt(start_edge.FirstParameter)
+        point_start_edge = start_edge.firstVertex().Point
+
         #set tolerance
         if tol <=0:
             err = shape.globalTolerance(tol)
@@ -323,6 +406,25 @@ def is_straight_line(shape, tol=-1):
             # because sin(x) = x + O(x**3), for small angular deflection it's
             # enough use the cross product of directions (or dot with a normal)
             if (abs(edge.Length - first_point.distanceToPoint(last_point)) > err
+
+                # https://forum.freecad.org/viewtopic.php?p=726101#p726101
+                # Shape with parallel edges but not colinear used to return True
+                # by this function, below line added fixes this bug.
+                # Further remark on the below fix :
+                # - get_normal() use this function, may had created problems
+                #   previously but not reported; on the other hand, this fix
+                #   seems have no 'regression' created as get_normal use
+                #   plane.Axis (with 3DView check).  See get_shape_normal()
+                #   which take into account shape's placement
+                # - other functions had been using this also : Keep In View to
+                #    see if there is 'regression' :
+                #
+                # $ grep -rni "is_straight" ./
+                # ./draftfunctions/upgrade.py
+                # ./draftgeoutils/geometry.py
+                # ./draftmake/make_wire.py
+                or first_point.distanceToLine(point_start_edge, dir_start_edge) > err \
+                #
                 or dir_start_edge.cross(dir_edge).Length > err):
                 return False
 
@@ -331,6 +433,9 @@ def is_straight_line(shape, tol=-1):
 
 def are_coplanar(shape_a, shape_b, tol=-1):
     """Return True if exist a plane containing both shapes."""
+
+    if shape_a.isNull() or shape_b.isNull():
+        return False
 
     if not is_planar(shape_a, tol) or not is_planar(shape_b, tol):
         return False
@@ -391,6 +496,9 @@ def get_spline_surface_normal(shape, tol=-1):
     """Check if shape formed by BSpline surfaces is planar and get normal.
     If shape is not planar return None."""
 
+    if shape.isNull():
+        return None
+
     if len(shape.Faces) == 0:
         return None
 
@@ -431,6 +539,9 @@ def find_plane(shape, tol=-1):
     Use this function as a workaround due Part.Shape.findPlane
     fail to find plane on BSpline surfaces."""
 
+    if shape.isNull():
+        return None
+
     if shape.ShapeType == "Vertex":
         return None
 
@@ -465,7 +576,7 @@ def calculatePlacement(shape):
     pos = shape.BoundBox.Center
     norm = get_normal(shape)
     # for backward compatibility with previous getNormal implementation
-    if norm == None:
+    if norm is None:
         norm = App.Vector(0, 0, 1)
     pla = App.Placement()
     pla.Base = pos
@@ -488,6 +599,237 @@ def mirror(point, edge):
         return refl
     else:
         return None
+
+
+def mirror_matrix(mtx, pos, nor):
+    """Return a mirrored copy of a matrix.
+
+    Parameters
+    ----------
+    mtx: Base::Matrix
+        Matrix.
+    pos: Base::Vector3
+        Point on mirror plane.
+    nor: Base::Vector3
+        Normal of mirror plane.
+
+    Returns
+    -------
+    Base::Matrix
+    """
+    # Code by Jolbas:
+    # https://forum.freecad.org/viewtopic.php?p=702793#p702793
+    mtx_copy = App.Matrix(mtx)
+    mtx_copy.move(-pos)
+    mtx_copy.scale(-1)
+    mtx_copy = App.Rotation(nor, 180) * mtx_copy
+    mtx_copy.move(pos)
+    return mtx_copy
+
+
+def uv_vectors_from_face(face, vec_z=App.Vector(0, 0, 1), tol=-1):
+    """Return the u and v vectors of a planar face.
+
+    It is up to the calling function to ensure the face is planar.
+
+    If the u vector matches +/-vec_z, or the v vector matches -vec_z, the
+    vectors are rotated to ensure the v vector matches +vec_z.
+
+    Parameters
+    ----------
+    face: Part.Face
+        Face.
+    vec_z: Base::Vector3, optional
+        Defaults to Vector(0, 0, 1).
+        Z axis vector used for reference.
+        Is replaced by Vector(0, 0, 1) if it matches the +/-normal of the face.
+    tol: float, optional
+        Defaults to -1.
+        Internal tolerance. 1e-7 is used if tol <=0.
+
+    Returns
+    -------
+    tuple
+        U and v vector (Base::Vector3).
+    """
+    err = 1e-7 if tol <= 0 else tol
+    if not vec_z.isEqual(App.Vector(0, 0, 1), err):
+        nor = face.normalAt(0, 0)
+        if vec_z.isEqual(nor, err) or vec_z.isEqual(nor.negative(), err):
+            vec_z = App.Vector(0, 0, 1)
+    vec_u, vec_v = face.tangentAt(0, 0)
+    if face.Orientation == "Reversed":
+        vec_u, vec_v = vec_v, vec_u
+    if vec_v.isEqual(vec_z.negative(), err):
+        vec_u, vec_v = vec_u.negative(), vec_v.negative()
+    elif vec_u.isEqual(vec_z, err):
+        vec_u, vec_v = vec_v.negative(), vec_u
+    elif vec_u.isEqual(vec_z.negative(), err):
+        vec_u, vec_v = vec_v, vec_u.negative()
+    return vec_u, vec_v
+
+
+def placement_from_face(face, vec_z=App.Vector(0, 0, 1), rotated=False, tol=-1):
+    """Return a placement from the center of gravity, and the u and v vectors of a planar face.
+
+    It is up to the calling function to ensure the face is planar.
+
+    Parameters
+    ----------
+    face: Part.Face
+        Face.
+    vec_z: Base::Vector3, optional
+        Defaults to Vector(0, 0, 1).
+        Z axis vector used for reference.
+        Is replaced by Vector(0, 0, 1) if it matches the +/-normal of the face.
+    rotated: bool, optional
+        Defaults to `False`.
+        If `False` the v vector of the face defines the Y axis of the placement.
+        If `True` the -v vector of the face defines the Z axis of the placement
+        (used by Arch_Window).
+        The u vector defines the X axis in both cases.
+    tol: float, optional
+        Defaults to -1.
+        Internal tolerance. 1e-7 is used if tol <=0.
+
+    Returns
+    -------
+    Base::Placement
+
+    See also
+    --------
+    DraftGeomUtils.uv_vectors_from_face
+    """
+    pt_pos = face.CenterOfGravity
+    vec_u, vec_v = uv_vectors_from_face(face, vec_z, tol)
+    if rotated:
+        return App.Placement(pt_pos, App.Rotation(vec_u, App.Vector(), vec_v.negative(), "XZY"))
+    else:
+        return App.Placement(pt_pos, App.Rotation(vec_u, vec_v, App.Vector(), "XYZ"))
+
+
+def placement_from_points(pt_pos, pt_x, pt_y, as_vectors=False, tol=-1):
+    """Return a placement from 3 points defining an origin, an X axis and a Y axis.
+
+    If the vectors calculated from the arguments are too short or parallel,
+    the returned placement will have a default rotation.
+
+    Parameters
+    ----------
+    pt_pos: Base::Vector3
+        Origin (Base of Placement).
+    pt_x: Base::Vector3
+        Point on positive X axis. Or X axis vector if as_vectors is `True`.
+    pt_y: Base::Vector3
+        Point on positive Y axis. Or Y axis vector if as_vectors is `True`.
+    as_vectors: bool, optional
+        Defaults to `False`.
+        If `True` treat pt_x and pt_y as axis vectors.
+    tol: float, optional
+        Defaults to -1.
+        Internal tolerance. 1e-7 is used if tol <=0.
+
+    Returns
+    -------
+    Base::Placement
+
+    See also
+    --------
+    DraftGeomUtils.getRotation
+    DraftVecUtils.getRotation
+    """
+    err = 1e-7 if tol <= 0 else tol
+    if as_vectors is False:
+        vec_u = pt_x - pt_pos
+        vec_v = pt_y - pt_pos
+    else:
+        vec_u = App.Vector(pt_x)
+        vec_v = App.Vector(pt_y)
+
+    if vec_u.Length < err or vec_v.Length < err:
+        rot = App.Rotation()
+    else:
+        vec_u.normalize()
+        vec_v.normalize()
+        if vec_u.isEqual(vec_v, err) or vec_u.isEqual(vec_v.negative(), err):
+            rot = App.Rotation()
+        else:
+            rot = App.Rotation(vec_u, vec_v, App.Vector(), "XYZ")
+
+    return App.Placement(pt_pos, rot)
+
+
+# Code separated from WorkingPlane.py (offsetToPoint function).
+# Note that the return value of this function has the opposite sign.
+def distance_to_plane(point, base, normal):
+    """Return the signed distance from a plane to a point.
+
+    The distance is positive if the point lies on the +normal side of the plane.
+
+    Parameters
+    ----------
+    point: Base::Vector3
+        Point to project.
+    base: Base::Vector3
+        Point on plane.
+    normal: Base::Vector3
+        Normal of plane.
+
+    Returns
+    -------
+    float
+    """
+    return (point - base).dot(normal)
+
+
+# Code separated from WorkingPlane.py (projectPoint function).
+# See: https://github.com/FreeCAD/FreeCAD/pull/5307
+def project_point_on_plane(point, base, normal, direction=None, force_projection=False, tol=-1):
+    """Project a point onto a plane.
+
+    Parameters
+    ----------
+    point: Base::Vector3
+        Point to project.
+    base: Base::Vector3
+        Point on plane.
+    normal: Base::Vector3
+        Normal of plane.
+    direction: Base::Vector3, optional
+        Defaults to `None` in which case the normal is used.
+        Direction of projection.
+    force_projection: Bool, optional
+        Defaults to `False`.
+        If `True` forces the projection if the deviation between the direction
+        and the normal is less than tol from the orthogonality. The direction
+        of projection is then modified to a tol deviation between the direction
+        and the orthogonal.
+    tol: float, optional
+        Defaults to -1.
+        Internal tolerance. 1e-7 is used if tol <=0.
+
+    Returns
+    -------
+    Base::Vector3 or `None`
+    """
+    err = 1e-7 if tol <= 0 else tol
+    normal = App.Vector(normal).normalize()
+    if direction is None:
+        direction = normal
+    else:
+        direction = App.Vector(direction).normalize()
+
+    cos = direction.dot(normal)
+    delta_ax_proj = (point - base).dot(normal)
+    # check the only conflicting case: direction orthogonal to normal
+    if abs(cos) < err:
+        if force_projection:
+            cos = math.copysign(err, delta_ax_proj)
+            direction = normal.cross(direction).cross(normal) - cos * normal
+        else:
+            return None
+
+    return point - delta_ax_proj / cos * direction
 
 
 #compatibility layer

@@ -25,26 +25,31 @@
 
 #include <Gui/ExpressionCompleter.h>
 #include <QWidget>
-#include <QModelIndex>
 
-namespace SpreadsheetGui {
 
-class LineEdit : public Gui::ExpressionLineEdit
+namespace SpreadsheetGui
+{
+
+class LineEdit: public Gui::ExpressionLineEdit
 {
     Q_OBJECT
 public:
-    explicit LineEdit(QWidget *parent = 0);
+    explicit LineEdit(QWidget* parent = nullptr);
 
-    bool event(QEvent *event);
-    void setIndex(QModelIndex _current);
-    QModelIndex next() const;
+    bool event(QEvent* event) override;
+
+Q_SIGNALS:
+    void finishedWithKey(int key, Qt::KeyboardModifiers modifiers);
 
 private:
-    QModelIndex current;
-    int deltaCol;
-    int deltaRow;
+    bool eventFilter(QObject* object, QEvent* event) override;
+
+
+private:
+    int lastKeyPressed;
+    Qt::KeyboardModifiers lastModifiers;
 };
 
-}
+}  // namespace SpreadsheetGui
 
-#endif // LINEEDIT_H
+#endif  // LINEEDIT_H

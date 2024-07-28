@@ -38,17 +38,17 @@ of the objects or the 3D view.
 # @{
 import math
 import os
-import six
 
 import FreeCAD as App
-import draftutils.utils as utils
-
-from draftutils.messages import _msg, _wrn, _err
-from draftutils.translate import _tr, translate
+from draftutils import params
+from draftutils import utils
+from draftutils.messages import _err, _wrn
+from draftutils.translate import translate
 
 if App.GuiUp:
     import FreeCADGui as Gui
     from pivy import coin
+    from PySide import QtCore
     from PySide import QtGui
     # from PySide import QtSvg  # for load_texture
 
@@ -59,24 +59,23 @@ def get_3d_view():
     Returns
     -------
     Gui::View3DInventor
-        Return the current `ActiveView` in the active document,
-        or the first `Gui::View3DInventor` view found.
-
-        Return `None` if the graphical interface is not available.
+        The Active 3D View or `None`.
     """
-    if App.GuiUp:
-        if Gui.ActiveDocument:
-            v = Gui.ActiveDocument.ActiveView
-            if "View3DInventor" in str(type(v)):
-                return v
+    if not App.GuiUp:
+        return None
 
-            # print("Debug: Draft: Warning, not working in active view")
-            v = Gui.ActiveDocument.mdiViewsOfType("Gui::View3DInventor")
-            if v:
-                return v[0]
+    # FIXME The following two imports were added as part of PR4926
+    # Also see discussion https://forum.freecadweb.org/viewtopic.php?f=3&t=60251
+    import FreeCADGui as Gui
+    from pivy import coin
 
-    _wrn(_tr("No graphical interface"))
-    return None
+    mw = Gui.getMainWindow()
+    view = mw.getActiveWindow()
+    if view is None:
+        return None
+    if not hasattr(view, "getSceneGraph"):
+        return None
+    return view
 
 
 get3DView = get_3d_view
@@ -112,33 +111,54 @@ def autogroup(obj):
     if Gui.draftToolBar.isConstructionMode():
         return
 
+    # check first for objects that do autogroup themselves
+    # at the moment only Arch_BuildingPart, which is an App::GeometryPython
+    for par in App.ActiveDocument.findObjects(Type="App::GeometryPython"):
+        if hasattr(par.Proxy,"autogroup"):
+            if par.Proxy.autogroup(par,obj):
+                return
+
     # autogroup code
+    active_group = None
     if Gui.draftToolBar.autogroup is not None:
         active_group = App.ActiveDocument.getObject(Gui.draftToolBar.autogroup)
         if active_group:
-            found = False
-            for o in active_group.Group:
-                if o.Name == obj.Name:
-                    found = True
-            if not found:
-                gr = active_group.Group
+            gr = active_group.Group
+            if not obj in gr:
                 gr.append(obj)
                 active_group.Group = gr
 
-    else:
+    if Gui.ActiveDocument.ActiveView.getActiveObject("NativeIFC") is not None:
+        # NativeIFC handling
+        try:
+            import ifc_tools
+            parent = Gui.ActiveDocument.ActiveView.getActiveObject("NativeIFC")
+            if parent != active_group:
+                ifc_tools.aggregate(obj, parent)
+        except:
+            pass
 
-        if Gui.ActiveDocument.ActiveView.getActiveObject("Arch"):
-            # add object to active Arch Container
-            Gui.ActiveDocument.ActiveView.getActiveObject("Arch").addObject(obj)
+    elif Gui.ActiveDocument.ActiveView.getActiveObject("Arch") is not None:
+        # add object to active Arch Container
+        active_arch_obj = Gui.ActiveDocument.ActiveView.getActiveObject("Arch")
+        if active_arch_obj != active_group:
+            if obj in active_arch_obj.InListRecursive:
+                # do not autogroup if obj points to active_arch_obj to prevent cyclic references
+                return
+            active_arch_obj.addObject(obj)
 
-        elif Gui.ActiveDocument.ActiveView.getActiveObject("part", False) is not None:
-            # add object to active part and change it's placement accordingly
-            # so object does not jump to different position, works with App::Link
-            # if not scaled. Modified accordingly to realthunder suggestions
-            p, parent, sub = Gui.ActiveDocument.ActiveView.getActiveObject("part", False)
+    elif Gui.ActiveDocument.ActiveView.getActiveObject("part") is not None:
+        # add object to active part and change it's placement accordingly
+        # so object does not jump to different position, works with App::Link
+        # if not scaled. Modified accordingly to realthunder suggestions
+        active_part, parent, sub = Gui.ActiveDocument.ActiveView.getActiveObject("part", False)
+        if active_part != active_group:
+            if obj in active_part.InListRecursive:
+                # do not autogroup if obj points to active_part to prevent cyclic references
+                return
             matrix = parent.getSubObject(sub, retType=4)
-            if matrix.hasScale() == 1:
-                err = translate("Draft",
+            if matrix.hasScale() == App.ScaleType.Uniform:
+                err = translate("draft",
                                 "Unable to insert new object into "
                                 "a scaled part")
                 App.Console.PrintMessage(err)
@@ -162,7 +182,8 @@ def autogroup(obj):
             elif hasattr(obj,"Placement"):
                 # every object that have a placement is processed here
                 obj.Placement = App.Placement(inverse_placement.multiply(obj.Placement))
-            p.addObject(obj)
+
+            active_part.addObject(obj)
 
 
 def dim_symbol(symbol=None, invert=False):
@@ -172,11 +193,11 @@ def dim_symbol(symbol=None, invert=False):
     ----------
     symbol: int, optional
         It defaults to `None`, in which it gets the value from the parameter
-        database, `get_param("dimsymbol", 0)`.
+        database, `get_param("dimsymbol")`.
 
         A numerical value defines different markers
          * 0, `SoSphere`
-         * 1, `SoMarkerSet` with a circle
+         * 1, `SoSeparator` with a `SoLineSet`, a circle (in fact a 24 sided polygon)
          * 2, `SoSeparator` with a `soCone`
          * 3, `SoSeparator` with a `SoFaceSet`
          * 4, `SoSeparator` with a `SoLineSet`, calling `dim_dash`
@@ -191,12 +212,11 @@ def dim_symbol(symbol=None, invert=False):
     Returns
     -------
     Coin.SoNode
-        A `Coin.SoSphere`, or `Coin.SoMarkerSet` (circle),
-        or `Coin.SoSeparator` (cone, face, line)
+        A `Coin.SoSphere`, or `Coin.SoSeparator` (circle, cone, face, line)
         that will be used as a dimension symbol.
     """
     if symbol is None:
-        symbol = utils.get_param("dimsymbol", 0)
+        symbol = params.get_param("dimsymbol")
 
     if symbol == 0:
         # marker = coin.SoMarkerSet()
@@ -208,10 +228,14 @@ def dim_symbol(symbol=None, invert=False):
         marker = coin.SoSphere()
         return marker
     elif symbol == 1:
-        marker = coin.SoMarkerSet()
-        # Should be the same as
-        # marker.markerIndex = 10
-        marker.markerIndex = Gui.getMarkerIndex("circle", 9)
+        marker = coin.SoSeparator()
+        v = coin.SoVertexProperty()
+        for i in range(25):
+            ang = math.radians(i * 15)
+            v.vertex.set1Value(i, (math.sin(ang), math.cos(ang), 0))
+        p = coin.SoLineSet()
+        p.vertexProperty = v
+        marker.addChild(p)
         return marker
     elif symbol == 2:
         marker = coin.SoSeparator()
@@ -229,17 +253,21 @@ def dim_symbol(symbol=None, invert=False):
         return marker
     elif symbol == 3:
         marker = coin.SoSeparator()
+        # hints are required otherwise only the bottom of the face is colored
+        h = coin.SoShapeHints()
+        h.vertexOrdering = h.COUNTERCLOCKWISE
         c = coin.SoCoordinate3()
         c.point.setValues([(-1, -2, 0), (0, 2, 0),
                            (1, 2, 0), (0, -2, 0)])
         f = coin.SoFaceSet()
+        marker.addChild(h)
         marker.addChild(c)
         marker.addChild(f)
         return marker
     elif symbol == 4:
-        return dimDash((-1.5, -1.5, 0), (1.5, 1.5, 0))
+        return dim_dash((-1.5, -1.5, 0), (1.5, 1.5, 0))
     else:
-        _wrn(_tr("Symbol not implemented. Use a default symbol."))
+        _wrn(translate("draft", "Symbol not implemented. Using a default symbol."))
         return coin.SoSphere()
 
 
@@ -305,106 +333,220 @@ def remove_hidden(objectslist):
         if obj.ViewObject:
             if not obj.ViewObject.isVisible():
                 newlist.remove(obj)
-                _msg(_tr("Visibility off; removed from list: ") + obj.Label)
     return newlist
 
 
 removeHidden = remove_hidden
 
 
-def format_object(target, origin=None):
-    """Apply visual properties from the Draft toolbar or another object.
+def get_diffuse_color(objs):
+    """Get a (cumulative) diffuse color from one or more objects.
 
-    This function only works if the graphical interface is available
-    as the visual properties are attributes of the view provider
-    (`obj.ViewObject`).
+    If all tuples in the result are identical a list with a single tuple is
+    returned. In theory all faces of an object can be set to the same diffuse
+    color that is different from its shape color, but that seems rare. The
+    function does not take that into account.
+
+    Parameters
+    ----------
+    objs: a single object or an iterable with objects.
+
+    Returns
+    -------
+    list of tuples
+        The list will be empty if no valid object is found.
+    """
+    def _get_color(obj):
+        if hasattr(obj, "ColoredElements"):
+            if hasattr(obj, "Count") or hasattr(obj, "ElementCount"):
+                # Link and Link array.
+                if hasattr(obj, "Count"):
+                    count = obj.Count
+                    base = obj.Base
+                else:
+                    count = obj.ElementCount if obj.ElementCount > 0 else 1
+                    base = obj.LinkedObject
+                if base is None:
+                    return []
+                cols = _get_color(base) * count
+                if obj.ColoredElements is None:
+                    return cols
+                face_num = len(base.Shape.Faces)
+                for elm, overide in zip(obj.ColoredElements[1], obj.ViewObject.OverrideColorList):
+                    if "Face" in elm: # Examples: "Face3" and "1.Face6". Int before "." is zero-based, other int is 1-based.
+                        if "." in elm:
+                            elm0, elm1 = elm.split(".")
+                            i = (int(elm0) * face_num) + int(elm1[4:]) - 1
+                            cols[i] = overide
+                        else:
+                            i = int(elm[4:]) - 1
+                            for j in range(count):
+                                cols[(j * face_num) + i] = overide
+                return cols
+            elif hasattr(obj, "ElementList"):
+                # LinkGroup
+                cols = []
+                for sub in obj.ElementList:
+                    sub_cols = _get_color(sub)
+                    if obj.ColoredElements is None:
+                        cols += sub_cols
+                    else:
+                        for elm, overide in zip(obj.ColoredElements[1], obj.ViewObject.OverrideColorList):
+                            if sub.Name + ".Face" in elm:
+                                i = int(elm[(len(sub.Name) + 5):]) - 1
+                                sub_cols[i] = overide
+                        cols += sub_cols
+                return cols
+            else:
+                return []
+        elif hasattr(obj.ViewObject, "DiffuseColor"):
+            if len(obj.ViewObject.DiffuseColor) == len(obj.Shape.Faces):
+                return obj.ViewObject.DiffuseColor
+            else:
+                col = obj.ViewObject.ShapeColor
+                col = (col[0], col[1], col[2], obj.ViewObject.Transparency / 100.0)
+                return [col] * len(obj.Shape.Faces)
+        elif obj.hasExtension("App::GeoFeatureGroupExtension"):
+            cols = []
+            for sub in obj.Group:
+                cols += _get_color(sub)
+            return cols
+        else:
+            return []
+
+    if not isinstance(objs, list):
+        # Quick check to avoid processing a single object:
+        obj = objs
+        if not hasattr(obj, "ColoredElements") \
+                and hasattr(obj.ViewObject, "DiffuseColor") \
+                and (len(obj.ViewObject.DiffuseColor) == 1 \
+                        or len(obj.ViewObject.DiffuseColor) == len(obj.Shape.Faces)):
+            return obj.ViewObject.DiffuseColor
+        # Create a list for further processing:
+        objs = [objs]
+
+    colors = []
+    for obj in objs:
+        colors += _get_color(obj)
+
+    if len(colors) > 1:
+        first = colors[0]
+        for next in colors[1:]:
+            if next != first:
+                break
+        else:
+            colors = [first]
+    return colors
+
+
+def apply_current_style(objs):
+    """Apply the current style to one or more objects.
+
+    Parameters
+    ----------
+    objs: a single object or an iterable with objects.
+    """
+    if not isinstance(objs, list):
+        objs = [objs]
+    anno_style = utils.get_default_annotation_style()
+    shape_style = utils.get_default_shape_style()
+    for obj in objs:
+        if not hasattr(obj, 'ViewObject'):
+            continue
+        vobj = obj.ViewObject
+        props = vobj.PropertiesList
+        style = anno_style if ("FontName" in props) else shape_style
+        for prop in props:
+            if prop in style:
+                if style[prop][0] == "index":
+                    if style[prop][2] in vobj.getEnumerationsOfProperty(prop):
+                        setattr(vobj, prop, style[prop][2])
+                elif style[prop][0] == "color":
+                    setattr(vobj, prop, style[prop][1] & 0xFFFFFF00)
+                else:
+                    setattr(vobj, prop, style[prop][1])
+
+
+def format_object(target, origin=None):
+    """Apply visual properties to an object.
+
+    This function only works if the graphical interface is available.
+
+    If origin is `None` and target is not an annotation, the DefaultDrawStyle
+    and DefaultDisplayMode preferences are applied. Else, the properties of
+    origin are applied to target.
+
+    If construction mode is active target is then placed in the construction
+    group and the `constr` color is applied to its applicable color properties:
+    TextColor, PointColor, LineColor, and ShapeColor.
 
     Parameters
     ----------
     target: App::DocumentObject
-        Any type of scripted object.
-
-        This object will adopt the applicable visual properties,
-        `FontSize`, `TextColor`, `LineWidth`, `PointColor`, `LineColor`,
-        and `ShapeColor`, defined in the Draft toolbar
-        (`Gui.draftToolBar`) or will adopt
-        the properties from the `origin` object.
-
-        The `target` is also placed in the construction group
-        if the construction mode in the Draft toolbar is active.
 
     origin: App::DocumentObject, optional
-        It defaults to `None`.
-        If it exists, it will provide the visual properties to assign
-        to `target`, with the exception of `BoundingBox`, `Proxy`,
-        `RootNode` and `Visibility`.
+        Defaults to `None`.
+        If construction mode is not active, its visual properties are assigned
+        to `target`, with the exception of `BoundingBox`, `Proxy`, `RootNode`
+        and `Visibility`.
     """
     if not target:
         return
-    obrep = target.ViewObject
-    if not obrep:
+    if not App.GuiUp:
         return
-    ui = None
-    if App.GuiUp:
-        if hasattr(Gui, "draftToolBar"):
-            ui = Gui.draftToolBar
-    if ui:
+    if not hasattr(Gui, "draftToolBar"):
+        return
+    if not hasattr(target, 'ViewObject'):
+        return
+    obrep = target.ViewObject
+    obprops = obrep.PropertiesList
+    if origin and hasattr(origin, 'ViewObject'):
+        matchrep = origin.ViewObject
+        for p in matchrep.PropertiesList:
+            if p not in ("DisplayMode", "BoundingBox",
+                         "Proxy", "RootNode", "Visibility"):
+                if p in obprops:
+                    if not obrep.getEditorMode(p):
+                        if hasattr(getattr(matchrep, p), "Value"):
+                            val = getattr(matchrep, p).Value
+                        else:
+                            val = getattr(matchrep, p)
+                        try:
+                            setattr(obrep, p, val)
+                        except Exception:
+                            pass
+        if matchrep.DisplayMode in obrep.listDisplayModes():
+            obrep.DisplayMode = matchrep.DisplayMode
+        if hasattr(obrep, "DiffuseColor"):
+            difcol = get_diffuse_color(origin)
+            if difcol:
+                obrep.DiffuseColor = difcol
+    elif "FontName" not in obprops:
+        # Apply 2 Draft style preferences, other style preferences are applied by Core.
+        if "DrawStyle" in obprops:
+            obrep.DrawStyle = utils.DRAW_STYLES[params.get_param("DefaultDrawStyle")]
+        if "DisplayMode" in obprops:
+            dm = utils.DISPLAY_MODES[params.get_param("DefaultDisplayMode")]
+            if dm in obrep.listDisplayModes():
+                obrep.DisplayMode = dm
+    if Gui.draftToolBar.isConstructionMode():
         doc = App.ActiveDocument
-        if ui.isConstructionMode():
-            lcol = fcol = ui.getDefaultColor("constr")
-            tcol = lcol
-            fcol = lcol
-            grp = doc.getObject("Draft_Construction")
-            if not grp:
-                grp = doc.addObject("App::DocumentObjectGroup", "Draft_Construction")
-                grp.Label = utils.get_param("constructiongroupname", "Construction")
-            grp.addObject(target)
-            if hasattr(obrep, "Transparency"):
-                obrep.Transparency = 80
-        else:
-            lcol = ui.getDefaultColor("line")
-            tcol = ui.getDefaultColor("text")
-            fcol = ui.getDefaultColor("face")
-        lcol = (float(lcol[0]), float(lcol[1]), float(lcol[2]), 0.0)
-        tcol = (float(tcol[0]), float(tcol[1]), float(tcol[2]), 0.0)
-        fcol = (float(fcol[0]), float(fcol[1]), float(fcol[2]), 0.0)
-        lw = utils.getParam("linewidth",2)
-        fs = utils.getParam("textheight",0.20)
-        if not origin or not hasattr(origin, 'ViewObject'):
-            if "FontSize" in obrep.PropertiesList:
-                obrep.FontSize = fs
-            if "TextSize" in obrep.PropertiesList:
-                obrep.TextSize = fs
-            if "TextColor" in obrep.PropertiesList:
-                obrep.TextColor = tcol
-            if "LineWidth" in obrep.PropertiesList:
-                obrep.LineWidth = lw
-            if "PointColor" in obrep.PropertiesList:
-                obrep.PointColor = lcol
-            if "LineColor" in obrep.PropertiesList:
-                obrep.LineColor = lcol
-            if "ShapeColor" in obrep.PropertiesList:
-                obrep.ShapeColor = fcol
-        else:
-            matchrep = origin.ViewObject
-            for p in matchrep.PropertiesList:
-                if p not in ("DisplayMode", "BoundingBox",
-                             "Proxy", "RootNode", "Visibility"):
-                    if p in obrep.PropertiesList:
-                        if not obrep.getEditorMode(p):
-                            if hasattr(getattr(matchrep, p), "Value"):
-                                val = getattr(matchrep, p).Value
-                            else:
-                                val = getattr(matchrep, p)
-                            try:
-                                setattr(obrep, p, val)
-                            except Exception:
-                                pass
-            if matchrep.DisplayMode in obrep.listDisplayModes():
-                obrep.DisplayMode = matchrep.DisplayMode
-            if (hasattr(matchrep, "DiffuseColor")
-                    and hasattr(obrep, "DiffuseColor")):
-                obrep.DiffuseColor = matchrep.DiffuseColor
+        col = params.get_param("constructioncolor") & 0xFFFFFF00
+        grp = doc.getObject("Draft_Construction")
+        if not grp:
+            grp = doc.addObject("App::DocumentObjectGroup", "Draft_Construction")
+            grp.Label = params.get_param("constructiongroupname")
+        grp.addObject(target)
+        if "TextColor" in obprops:
+            obrep.TextColor = col
+        if "PointColor" in obprops:
+            obrep.PointColor = col
+        if "LineColor" in obprops:
+            obrep.LineColor = col
+        if "ShapeColor" in obprops:
+            obrep.ShapeColor = col
+        if hasattr(obrep, "Transparency"):
+            obrep.Transparency = 80
 
 
 formatObject = format_object
@@ -570,13 +712,13 @@ def load_texture(filename, size=None, gui=App.GuiUp):
             p = QtGui.QImage(filename)
 
             if p.isNull():
-                _wrn("load_texture: " + _tr("image is Null"))
+                _wrn("load_texture: " + translate("draft", "image is Null"))
 
                 if not os.path.exists(filename):
                     raise FileNotFoundError(-1,
-                                            _tr("filename does not exist "
-                                                "on the system or "
-                                                "on the resource file"),
+                                            translate("draft", "filename does not exist "
+                                                               "on the system or "
+                                                               "in the resource file"),
                                             filename)
 
             # This is buggy so it was de-activated.
@@ -596,66 +738,38 @@ def load_texture(filename, size=None, gui=App.GuiUp):
             # else:
             #    p = QtGui.QImage(filename)
             size = coin.SbVec2s(p.width(), p.height())
-            buffersize = p.byteCount()
+            buffersize = p.sizeInBytes()
             width = size[0]
             height = size[1]
-            numcomponents = int(float(buffersize) / (width * height))
+            numcomponents = int(buffersize / (width * height))
 
             img = coin.SoSFImage()
-            byteList = []
-            # isPy2 = sys.version_info.major < 3
-            isPy2 = six.PY2
+            byteList = bytearray()
 
             # The SoSFImage needs to be filled with bytes.
             # The pixel information is converted into a Qt color, gray,
             # red, green, blue, or transparency (alpha),
             # depending on the input image.
-            #
-            # If Python 2 is used, the color is turned into a character,
-            # which is of type 'byte', and added to the byte list.
-            # If Python 3 is used, characters are unicode strings,
-            # so they need to be encoded into 'latin-1'
-            # to produce the correct bytes for the list.
             for y in range(height):
                 # line = width*numcomponents*(height-(y));
                 for x in range(width):
-                    rgb = p.pixel(x, y)
-                    if numcomponents == 1 or numcomponents == 2:
-                        gray = chr(QtGui.qGray(rgb))
-                        if isPy2:
-                            byteList.append(gray)
-                        else:
-                            byteList.append(gray.encode('latin-1'))
+                    rgba = p.pixel(x, y)
+                    if numcomponents <= 2:
+                        byteList.append(QtGui.qGray(rgba))
 
                         if numcomponents == 2:
-                            alpha = chr(QtGui.qAlpha(rgb))
-                            if isPy2:
-                                byteList.append(alpha)
-                            else:
-                                byteList.append(alpha.encode('latin-1'))
-                    elif numcomponents == 3 or numcomponents == 4:
-                        red = chr(QtGui.qRed(rgb))
-                        green = chr(QtGui.qGreen(rgb))
-                        blue = chr(QtGui.qBlue(rgb))
+                            byteList.append(QtGui.qAlpha(rgba))
 
-                        if isPy2:
-                            byteList.append(red)
-                            byteList.append(green)
-                            byteList.append(blue)
-                        else:
-                            byteList.append(red.encode('latin-1'))
-                            byteList.append(green.encode('latin-1'))
-                            byteList.append(blue.encode('latin-1'))
+                    elif numcomponents <= 4:
+                        byteList.append(QtGui.qRed(rgba))
+                        byteList.append(QtGui.qGreen(rgba))
+                        byteList.append(QtGui.qBlue(rgba))
 
                         if numcomponents == 4:
-                            alpha = chr(QtGui.qAlpha(rgb))
-                            if isPy2:
-                                byteList.append(alpha)
-                            else:
-                                byteList.append(alpha.encode('latin-1'))
+                            byteList.append(QtGui.qAlpha(rgba))
                     # line += numcomponents
 
-            _bytes = b"".join(byteList)
+            _bytes = bytes(byteList)
             img.setValue(size, numcomponents, _bytes)
         except FileNotFoundError as exc:
             _wrn("load_texture: {0}, {1}".format(exc.strerror,
@@ -663,7 +777,7 @@ def load_texture(filename, size=None, gui=App.GuiUp):
             return None
         except Exception as exc:
             _wrn(str(exc))
-            _wrn("load_texture: " + _tr("unable to load texture"))
+            _wrn("load_texture: " + translate("draft", "unable to load texture"))
             return None
         else:
             return img
@@ -711,11 +825,10 @@ def get_bbox(obj, debug=False):
         If there is a problem it will return `None`.
     """
     _name = "get_bbox"
-    utils.print_header(_name, "Bounding box", debug=debug)
 
     found, doc = utils.find_doc(App.activeDocument())
     if not found:
-        _err(_tr("No active document. Aborting."))
+        _err(translate("draft", "No active document. Aborting."))
         return None
 
     if isinstance(obj, str):
@@ -723,17 +836,13 @@ def get_bbox(obj, debug=False):
 
     found, obj = utils.find_object(obj, doc)
     if not found:
-        _msg("obj: {}".format(obj_str))
-        _err(_tr("Wrong input: object not in document."))
+        _err(translate("draft", "Wrong input: object {} not in document.").format(obj_str))
         return None
-
-    if debug:
-        _msg("obj: {}".format(obj.Label))
 
     if (not hasattr(obj, "ViewObject")
             or not obj.ViewObject
             or not hasattr(obj.ViewObject, "RootNode")):
-        _err(_tr("Does not have 'ViewObject.RootNode'."))
+        _err(translate("draft", "Does not have 'ViewObject.RootNode'."))
 
     # For Draft Dimensions
     # node = obj.ViewObject.Proxy.node
@@ -751,5 +860,23 @@ def get_bbox(obj, debug=False):
     xmax, ymax, zmax = bb.getMax().getValue()
 
     return App.BoundBox(xmin, ymin, zmin, xmax, ymax, zmax)
+
+
+# Code by Chris Hennes (chennes).
+# See https://forum.freecadweb.org/viewtopic.php?p=656362#p656362.
+# Used to fix https://github.com/FreeCAD/FreeCAD/issues/10469.
+def end_all_events():
+    class DelayEnder:
+        def __init__(self):
+            self.delay_is_done = False
+        def stop(self):
+            self.delay_is_done = True
+    ender = DelayEnder()
+    timer = QtCore.QTimer()
+    timer.timeout.connect(ender.stop)
+    timer.setSingleShot(True)
+    timer.start(100)  # 100ms (50ms is too short) timer guarantees the loop below runs at least that long
+    while not ender.delay_is_done:
+        QtCore.QCoreApplication.processEvents(QtCore.QEventLoop.AllEvents)
 
 ## @}

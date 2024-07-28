@@ -11,6 +11,14 @@ set(Sketcher_Scripts
     Profiles.py
 )
 
+set(Sketcher_TestScripts
+    SketcherTests/__init__.py
+    SketcherTests/TestSketchFillet.py
+    SketcherTests/TestSketcherSolver.py
+    SketcherTests/TestSketchExpression.py
+    SketcherTests/TestSketchValidateCoincidents.py
+)
+
 if(BUILD_GUI)
     list (APPEND Sketcher_Scripts
           InitGui.py
@@ -25,7 +33,7 @@ set(Sketcher_Profiles
 )
 
 add_custom_target(SketcherScripts ALL
-    SOURCES ${Sketcher_Scripts} ${Sketcher_Profiles}
+    SOURCES ${Sketcher_Scripts} ${Sketcher_Profiles} ${Sketcher_TestScripts}
 )
 
 fc_target_copy_resource(SketcherScripts
@@ -33,6 +41,7 @@ fc_target_copy_resource(SketcherScripts
     ${CMAKE_BINARY_DIR}/Mod/Sketcher
     ${Sketcher_Scripts}
     ${Sketcher_Profiles}
+    ${Sketcher_TestScripts}
 )
 
 INSTALL(
@@ -48,3 +57,10 @@ INSTALL(
     DESTINATION
         Mod/Sketcher/ProfileLib
 )
+
+INSTALL(
+    FILES
+        ${Sketcher_TestScripts}
+    DESTINATION
+        Mod/Sketcher/SketcherTests
+       )

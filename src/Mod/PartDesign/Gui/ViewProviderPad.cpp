@@ -24,35 +24,26 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-# include <QAction>
 # include <QMenu>
 #endif
 
 #include "TaskPadParameters.h"
-
 #include "ViewProviderPad.h"
 
 using namespace PartDesignGui;
 
-PROPERTY_SOURCE(PartDesignGui::ViewProviderPad,PartDesignGui::ViewProviderSketchBased)
+PROPERTY_SOURCE(PartDesignGui::ViewProviderPad, PartDesignGui::ViewProviderExtrude)
 
 ViewProviderPad::ViewProviderPad()
 {
-    sPixmap = "Tree_PartDesign_Pad.svg";
+    sPixmap = "PartDesign_Pad.svg";
 }
 
-ViewProviderPad::~ViewProviderPad()
-{
-}
+ViewProviderPad::~ViewProviderPad() = default;
 
 void ViewProviderPad::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
 {
-    // Note: This methode couldn't be unified with others because menu entry string
-    //       should present united in sources for proper translation and shouldn't be 
-    //       constructed on runtime.
-    QAction* act;
-    act = menu->addAction(QObject::tr("Edit pad"), receiver, member);
-    act->setData(QVariant((int)ViewProvider::Default));
+    addDefaultAction(menu, QObject::tr("Edit pad"));
     PartDesignGui::ViewProviderSketchBased::setupContextMenu(menu, receiver, member);
 }
 

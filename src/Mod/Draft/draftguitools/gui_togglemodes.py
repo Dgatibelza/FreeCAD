@@ -40,7 +40,7 @@ import Draft_rc
 import draftguitools.gui_base as gui_base
 
 from draftutils.messages import _msg
-from draftutils.translate import _tr
+from draftutils.translate import translate
 
 # The module is used to prevent complaints from code checkers (flake8)
 True if Draft_rc.__name__ else False
@@ -70,7 +70,7 @@ class BaseMode(gui_base.GuiCommandSimplest):
         if hasattr(Gui, "draftToolBar"):
             _ui = Gui.draftToolBar
         else:
-            _msg(_tr("No active Draft Toolbar."))
+            _msg(translate("draft","No active Draft Toolbar."))
             return
 
         if _ui is not None:
@@ -90,23 +90,15 @@ class ToggleConstructionMode(BaseMode):
 
     def __init__(self):
         super(ToggleConstructionMode,
-              self).__init__(name=_tr("Construction mode"))
+              self).__init__(name=translate("draft","Construction mode"))
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _menu = "Toggle construction mode"
-        _tip = ("Toggles the Construction mode.\n"
-                "When this is active, the following objects created "
-                "will be included in the construction group, "
-                "and will be drawn with the specified color "
-                "and properties.")
 
         d = {'Pixmap': 'Draft_Construction',
-             'MenuText': QT_TRANSLATE_NOOP("Draft_ToggleConstructionMode",
-                                           _menu),
+             'MenuText': QT_TRANSLATE_NOOP("Draft_ToggleConstructionMode","Toggle construction mode"),
              'Accel': "C, M",
-             'ToolTip': QT_TRANSLATE_NOOP("Draft_ToggleConstructionMode",
-                                          _tip)}
+             'ToolTip': QT_TRANSLATE_NOOP("Draft_ToggleConstructionMode","Toggles the Construction mode.\nWhen this is active, the following objects created will be included in the construction group, and will be drawn with the specified color and properties.")}
         return d
 
     def Activated(self):
@@ -119,44 +111,6 @@ class ToggleConstructionMode(BaseMode):
 
 
 Gui.addCommand('Draft_ToggleConstructionMode', ToggleConstructionMode())
-
-
-class ToggleContinueMode(BaseMode):
-    """GuiCommand for the Draft_ToggleContinueMode tool.
-
-    When continue mode is active, any drawing tool that is terminated
-    will automatically start again. This can be used to draw several
-    objects one after the other in succession.
-    """
-
-    def __init__(self):
-        super(ToggleContinueMode, self).__init__(name=_tr("Continue mode"))
-
-    def GetResources(self):
-        """Set icon, menu and tooltip."""
-        _menu = "Toggle continue mode"
-        _tip = ("Toggles the Continue mode.\n"
-                "When this is active, any drawing tool that is terminated "
-                "will automatically start again.\n"
-                "This can be used to draw several objects "
-                "one after the other in succession.")
-
-        d = {'Pixmap': 'Draft_Continue',
-             'MenuText': QT_TRANSLATE_NOOP("Draft_ToggleContinueMode",
-                                           _menu),
-             'ToolTip': QT_TRANSLATE_NOOP("Draft_ToggleContinueMode",
-                                          _tip)}
-        return d
-
-    def Activated(self):
-        """Execute when the command is called.
-
-        It calls the `toggleContinue()` method of the `DraftToolbar` class.
-        """
-        super(ToggleContinueMode, self).Activated(mode="continue")
-
-
-Gui.addCommand('Draft_ToggleContinueMode', ToggleContinueMode())
 
 
 class ToggleDisplayMode(gui_base.GuiCommandNeedsSelection):
@@ -172,24 +126,15 @@ class ToggleDisplayMode(gui_base.GuiCommandNeedsSelection):
 
     def __init__(self):
         super(ToggleDisplayMode,
-              self).__init__(name=_tr("Toggle display mode"))
+              self).__init__(name=translate("draft","Toggle display mode"))
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _menu = "Toggle normal/wireframe display"
-        _tip = ("Switches the display mode of selected objects "
-                "from flatlines to wireframe and back.\n"
-                "This is helpful to quickly visualize objects "
-                "that are hidden by other objects.\n"
-                "This is intended to be used with closed shapes "
-                "and solids, and doesn't affect open wires.")
 
         d = {'Pixmap': 'Draft_SwitchMode',
              'Accel': "Shift+Space",
-             'MenuText': QT_TRANSLATE_NOOP("Draft_ToggleDisplayMode",
-                                           _menu),
-             'ToolTip': QT_TRANSLATE_NOOP("Draft_ToggleDisplayMode",
-                                          _tip)}
+             'MenuText': QT_TRANSLATE_NOOP("Draft_ToggleDisplayMode","Toggle normal/wireframe display"),
+             'ToolTip': QT_TRANSLATE_NOOP("Draft_ToggleDisplayMode","Switches the display mode of selected objects from flatlines to wireframe and back.\nThis is helpful to quickly visualize objects that are hidden by other objects.\nThis is intended to be used with closed shapes and solids, and doesn't affect open wires.")}
         return d
 
     def Activated(self):

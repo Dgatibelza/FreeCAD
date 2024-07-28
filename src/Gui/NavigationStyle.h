@@ -26,20 +26,24 @@
 
 #include <Inventor/C/basic.h>
 #include <Inventor/SbBox2s.h>
+#include <Inventor/SbPlane.h>
+#include <Inventor/SbRotation.h>
+#include <Inventor/SbSphere.h>
+#include <Inventor/SbTime.h>
 #include <Inventor/SbVec2f.h>
 #include <Inventor/SbVec2s.h>
 #include <Inventor/SbVec3f.h>
-#include <Inventor/SbPlane.h>
-#include <Inventor/SbRotation.h>
-#include <Inventor/SbTime.h>
 #include <Inventor/events/SoEvents.h>
-#include <QCursor>
+
 #include <QEvent>
 #include <Base/BaseClass.h>
 #include <Gui/Namespace.h>
+#include <FCGlobal.h>
+#include <memory>
 
 // forward declarations
 class SoEvent;
+class SoMouseWheelEvent;
 class SoMotion3Event;
 class SoQtViewer;
 class SoCamera;
@@ -49,7 +53,9 @@ class SbSphereSheetProjector;
 namespace Gui {
 
 class View3DInventorViewer;
+class NavigationAnimator;
 class AbstractMouseSelection;
+class NavigationAnimation;
 
 /**
  * @author Werner Mayer
@@ -57,8 +63,8 @@ class AbstractMouseSelection;
 class GuiExport NavigationStyleEvent : public QEvent
 {
 public:
-    NavigationStyleEvent(const Base::Type& s);
-    ~NavigationStyleEvent();
+    explicit NavigationStyleEvent(const Base::Type& s);
+    ~NavigationStyleEvent() override;
     const Base::Type& style() const;
 private:
     Base::Type t;
@@ -70,7 +76,7 @@ private:
  */
 class GuiExport NavigationStyle : public Base::BaseClass
 {
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
     enum ViewerMode {
@@ -96,14 +102,11 @@ public:
 
     enum OrbitStyle {
         Turntable,
-        Trackball
+        Trackball,
+        FreeTurntable
     };
 
-#if QT_VERSION < 0x050000
-    enum RotationCenterMode {
-#else
     enum class RotationCenterMode {
-#endif
         WindowCenter       = 0, /**< The center of the window */
         ScenePointAtCursor = 1, /**< Find the point in the scene at the cursor position. If there is no point then the focal plane is used */
         FocalPointAtCursor = 2, /**< Find the point on the focal plane at the cursor position. */
@@ -113,17 +116,20 @@ public:
 
 public:
     NavigationStyle();
-    virtual ~NavigationStyle();
+    ~NavigationStyle() override;
+    NavigationStyle(const NavigationStyle&) = delete;
 
     NavigationStyle& operator = (const NavigationStyle& ns);
     void setViewer(View3DInventorViewer*);
 
     void setAnimationEnabled(const SbBool enable);
-    SbBool isAnimationEnabled(void) const;
-
-    void startAnimating(const SbVec3f& axis, float velocity);
-    void stopAnimating(void);
-    SbBool isAnimating(void) const;
+    void setSpinningAnimationEnabled(const SbBool enable);
+    SbBool isAnimationEnabled() const;
+    SbBool isSpinningAnimationEnabled() const;
+    SbBool isAnimating() const;
+    SbBool isSpinning() const;
+    void startAnimating(const std::shared_ptr<NavigationAnimation>& animation, bool wait = false) const;
+    void stopAnimating() const;
 
     void setSensitivity(float);
     float getSensitivity() const;
@@ -143,11 +149,13 @@ public:
     void setRotationCenter(const SbVec3f& cnt);
     SbVec3f getFocalPoint() const;
 
-    void updateAnimation();
-    void redraw();
+    SoCamera* getCamera() const;
+    void setCameraOrientation(const SbRotation& orientation, SbBool moveToCenter = false);
+    void translateCamera(const SbVec3f& translation);
+    void findBoundingSphere();
+    void reorientCamera(SoCamera* camera, const SbRotation& rotation);
+    void reorientCamera(SoCamera* camera, const SbRotation& rotation, const SbVec3f& rotationCenter);
 
-    void setCameraOrientation(const SbRotation& rot, SbBool moveTocenter=false);
-    void lookAtPoint(const SbVec3f&);
     void boxZoom(const SbBox2s& box);
     virtual void viewAll();
 
@@ -155,44 +163,49 @@ public:
     int getViewingMode() const;
     virtual SbBool processEvent(const SoEvent * const ev);
     virtual SbBool processMotionEvent(const SoMotion3Event * const ev);
+    virtual SbBool processKeyboardEvent(const SoKeyboardEvent * const event);
+    virtual SbBool processClickEvent(const SoMouseButtonEvent * const event);
+    virtual SbBool processWheelEvent(const SoMouseWheelEvent * const event);
 
     void setPopupMenuEnabled(const SbBool on);
-    SbBool isPopupMenuEnabled(void) const;
+    SbBool isPopupMenuEnabled() const;
 
     void startSelection(AbstractMouseSelection*);
     void startSelection(SelectionMode = Lasso);
+    void abortSelection();
     void stopSelection();
     SbBool isSelecting() const;
-    const std::vector<SbVec2s>& getPolygon(SelectionRole* role=0) const;
+    const std::vector<SbVec2s>& getPolygon(SelectionRole* role=nullptr) const;
 
     void setOrbitStyle(OrbitStyle style);
     OrbitStyle getOrbitStyle() const;
+
+    SbBool isViewing() const;
+    void setViewing(SbBool);
+
+    SbVec3f getRotationCenter(SbBool&) const;
 
 protected:
     void initialize();
     void finalize();
 
-    void interactiveCountInc(void);
-    void interactiveCountDec(void);
-    int getInteractiveCount(void) const;
+    void interactiveCountInc();
+    void interactiveCountDec();
+    int getInteractiveCount() const;
 
-    SbBool isViewing(void) const;
-    void setViewing(SbBool);
-    SbBool isSeekMode(void) const;
+    SbBool isSeekMode() const;
     void setSeekMode(SbBool enable);
     SbBool seekToPoint(const SbVec2s screenpos);
     void seekToPoint(const SbVec3f& scenepos);
-    SbBool lookAtPoint(const SbVec2s screenpos);
-    SbVec3f getRotationCenter(SbBool*) const;
+    void lookAtPoint(const SbVec2s screenpos);
+    void lookAtPoint(const SbVec3f& position);
 
-    void reorientCamera(SoCamera * camera, const SbRotation & rot);
     void panCamera(SoCamera * camera,
                    float vpaspect,
                    const SbPlane & panplane,
                    const SbVec2f & previous,
                    const SbVec2f & current);
-    void pan(SoCamera* camera);
-    void panToCenter(const SbPlane & pplane, const SbVec2f & currpos);
+    void setupPanningPlane(const SoCamera* camera);
     int getDelta() const;
     void zoom(SoCamera * camera, float diffvalue);
     void zoomByCursor(const SbVec2f & thispos, const SbVec2f & prevpos);
@@ -213,9 +226,10 @@ protected:
     void syncWithEvent(const SoEvent * const ev);
     virtual void openPopupMenu(const SbVec2s& position);
 
-    void clearLog(void);
+    void clearLog();
     void addToLog(const SbVec2s pos, const SbTime time);
 
+    void syncModifierKeys(const SoEvent * const ev);
 
 protected:
     struct { // tracking mouse movement in a log
@@ -225,13 +239,15 @@ protected:
         SbTime * time;
     } log;
 
-    View3DInventorViewer* viewer;
+    View3DInventorViewer* viewer{nullptr};
+    NavigationAnimator* animator;
+    SbBool animationEnabled;
     ViewerMode currentmode;
+    SoMouseButtonEvent mouseDownConsumedEvent;
     SbVec2f lastmouseposition;
     SbVec2s globalPos;
     SbVec2s localPos;
     SbPlane panningplane;
-    SbTime prevRedrawTime;
     SbTime centerTime;
     SbBool lockrecenter;
     SbBool menuenabled;
@@ -240,27 +256,35 @@ protected:
     SbBool invertZoom;
     SbBool zoomAtCursor;
     float zoomStep;
+    SbBool hasDragged;
+    SbBool hasPanned;
+    SbBool hasZoomed;
 
     /** @name Mouse model */
     //@{
-    AbstractMouseSelection* mouseSelection;
+    AbstractMouseSelection* mouseSelection{nullptr};
     std::vector<SbVec2s> pcPolygon;
     SelectionRole selectedRole;
     //@}
 
     /** @name Spinning data */
     //@{
-    SbBool spinanimatingallowed;
+    SbBool spinningAnimationEnabled;
     int spinsamplecounter;
     SbRotation spinincrement;
-    SbRotation spinRotation;
     SbSphereSheetProjector * spinprojector;
     //@}
 
 private:
-    NavigationStyle(const NavigationStyle&);
-    struct NavigationStyleP* pimpl;
-    friend struct NavigationStyleP;
+    friend class NavigationAnimator;
+
+    SbVec3f rotationCenter;
+    SbBool rotationCenterFound;
+    NavigationStyle::RotationCenterModes rotationCenterMode;
+    float sensitivity;
+    SbBool resetcursorpos;
+
+    SbSphere boundingSphere;
 };
 
 /** Sub-classes of this class appear in the preference dialog where users can
@@ -273,106 +297,100 @@ private:
  * @author Werner Mayer
  */
 class GuiExport UserNavigationStyle : public NavigationStyle {
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
-    UserNavigationStyle(){}
-    ~UserNavigationStyle(){}
+    UserNavigationStyle() = default;
+    ~UserNavigationStyle() override = default;
     virtual const char* mouseButtons(ViewerMode) = 0;
     virtual std::string userFriendlyName() const;
     static std::map<Base::Type, std::string> getUserFriendlyNames();
 };
 
 class GuiExport InventorNavigationStyle : public UserNavigationStyle {
-    typedef UserNavigationStyle inherited;
+    using inherited = UserNavigationStyle;
 
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
     InventorNavigationStyle();
-    ~InventorNavigationStyle();
-    const char* mouseButtons(ViewerMode);
-    virtual std::string userFriendlyName() const;
+    ~InventorNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
+    std::string userFriendlyName() const override;
 
 protected:
-    SbBool processSoEvent(const SoEvent * const ev);
-
-private:
-    SoMouseButtonEvent mouseDownConsumedEvent;
+    SbBool processSoEvent(const SoEvent * const ev) override;
 };
 
 class GuiExport CADNavigationStyle : public UserNavigationStyle {
-    typedef UserNavigationStyle inherited;
+    using inherited = UserNavigationStyle;
 
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
     CADNavigationStyle();
-    ~CADNavigationStyle();
-    const char* mouseButtons(ViewerMode);
+    ~CADNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
 
 protected:
-    SbBool processSoEvent(const SoEvent * const ev);
+    SbBool processSoEvent(const SoEvent * const ev) override;
 
 private:
-    SbBool lockButton1;
-    SoMouseButtonEvent mouseDownConsumedEvent;
+    SbBool lockButton1{false};
 };
 
 class GuiExport RevitNavigationStyle : public UserNavigationStyle {
-    typedef UserNavigationStyle inherited;
+    using inherited = UserNavigationStyle;
 
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
     RevitNavigationStyle();
-    ~RevitNavigationStyle();
-    const char* mouseButtons(ViewerMode);
+    ~RevitNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
 
 protected:
-    SbBool processSoEvent(const SoEvent * const ev);
+    SbBool processSoEvent(const SoEvent * const ev) override;
 
 private:
-    SbBool lockButton1;
-    SoMouseButtonEvent mouseDownConsumedEvent;
+    SbBool lockButton1{false};
 };
 
 class GuiExport BlenderNavigationStyle : public UserNavigationStyle {
-    typedef UserNavigationStyle inherited;
+    using inherited = UserNavigationStyle;
 
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
     BlenderNavigationStyle();
-    ~BlenderNavigationStyle();
-    const char* mouseButtons(ViewerMode);
+    ~BlenderNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
 
 protected:
-    SbBool processSoEvent(const SoEvent * const ev);
+    SbBool processSoEvent(const SoEvent * const ev) override;
 
 private:
-    SbBool lockButton1;
-    SoMouseButtonEvent mouseDownConsumedEvent;
+    SbBool lockButton1{false};
 };
 
 class GuiExport MayaGestureNavigationStyle : public UserNavigationStyle {
-    typedef UserNavigationStyle inherited;
+    using inherited = UserNavigationStyle;
 
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
     MayaGestureNavigationStyle();
-    ~MayaGestureNavigationStyle();
-    const char* mouseButtons(ViewerMode);
+    ~MayaGestureNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
 
 protected:
-    SbBool processSoEvent(const SoEvent * const ev);
+    SbBool processSoEvent(const SoEvent * const ev) override;
 
     SbVec2s mousedownPos;//the position where some mouse button was pressed (local pixel coordinates).
     short mouseMoveThreshold;//setting. Minimum move required to consider it a move (in pixels).
     bool mouseMoveThresholdBroken;//a flag that the move threshold was surpassed since last mousedown.
     int mousedownConsumedCount;//a flag for remembering that a mousedown of button1/button2 was consumed.
-    SoMouseButtonEvent mousedownConsumedEvent[5];//the event that was consumed and is to be refired. 2 should be enough, but just for a case of the maximum 5 buttons...
+    SoMouseButtonEvent mousedownConsumedEvents[5];//the event that was consumed and is to be refired. 2 should be enough, but just for a case of the maximum 5 buttons...
     bool testMoveThreshold(const SbVec2s currentPos) const;
 
     bool thisClickIsComplex;//a flag that becomes set when a complex clicking pattern is detected (i.e., two or more mouse buttons were down at the same time).
@@ -380,37 +398,59 @@ protected:
 };
 
 class GuiExport TouchpadNavigationStyle : public UserNavigationStyle {
-    typedef UserNavigationStyle inherited;
+    using inherited = UserNavigationStyle;
 
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
     TouchpadNavigationStyle();
-    ~TouchpadNavigationStyle();
-    const char* mouseButtons(ViewerMode);
+    ~TouchpadNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
 
 protected:
-    SbBool processSoEvent(const SoEvent * const ev);
-
-private:
-    SoMouseButtonEvent mouseDownConsumedEvent;
+    SbBool processSoEvent(const SoEvent * const ev) override;
 };
 
 class GuiExport OpenCascadeNavigationStyle : public UserNavigationStyle {
-    typedef UserNavigationStyle inherited;
+    using inherited = UserNavigationStyle;
 
-    TYPESYSTEM_HEADER();
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
 
 public:
     OpenCascadeNavigationStyle();
-    ~OpenCascadeNavigationStyle();
-    const char* mouseButtons(ViewerMode);
+    ~OpenCascadeNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
 
 protected:
-    SbBool processSoEvent(const SoEvent * const ev);
+    SbBool processSoEvent(const SoEvent * const ev) override;
+};
 
-private:
-    SoMouseButtonEvent mouseDownConsumedEvent;
+class GuiExport OpenSCADNavigationStyle : public UserNavigationStyle {
+    using inherited = UserNavigationStyle;
+
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
+
+public:
+    OpenSCADNavigationStyle();
+    ~OpenSCADNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
+
+protected:
+    SbBool processSoEvent(const SoEvent * const ev) override;
+};
+
+class GuiExport TinkerCADNavigationStyle : public UserNavigationStyle {
+    using inherited = UserNavigationStyle;
+
+    TYPESYSTEM_HEADER_WITH_OVERRIDE();
+
+public:
+    TinkerCADNavigationStyle();
+    ~TinkerCADNavigationStyle() override;
+    const char* mouseButtons(ViewerMode) override;
+
+protected:
+    SbBool processSoEvent(const SoEvent * const ev) override;
 };
 
 } // namespace Gui

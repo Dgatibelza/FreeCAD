@@ -20,51 +20,30 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-# include <QAction>
 # include <QMenu>
 # include <QMessageBox>
-# include <Inventor/nodes/SoSeparator.h>
-# include <Inventor/nodes/SoSwitch.h>
-# include <Inventor/nodes/SoCoordinate3.h>
-# include <Inventor/nodes/SoNormal.h>
-# include <Inventor/nodes/SoMaterial.h>
-# include <Inventor/nodes/SoPickStyle.h>
-# include <Bnd_Box.hxx>
-# include <BRepBndLib.hxx>
-# include <BRepMesh_IncrementalMesh.hxx>
-# include <TopExp_Explorer.hxx>
-# include <TopoDS.hxx>
 #endif
+
+#include <Gui/BitmapFactory.h>
+#include <Gui/Command.h>
+#include <Gui/Control.h>
+#include <Gui/TaskView/TaskDialog.h>
+#include <Mod/PartDesign/App/FeaturePrimitive.h>
 
 #include "ViewProviderPrimitive.h"
 #include "TaskPrimitiveParameters.h"
-#include "Mod/Part/Gui/SoBrepFaceSet.h"
-#include <Mod/PartDesign/App/FeaturePrimitive.h>
-#include <Gui/TaskView/TaskDialog.h>
-#include <Gui/Control.h>
-#include <Gui/Command.h>
-#include <Gui/Application.h>
-#include <Gui/BitmapFactory.h>
-#include <Base/Console.h>
-
 
 
 using namespace PartDesignGui;
 
 PROPERTY_SOURCE(PartDesignGui::ViewProviderPrimitive,PartDesignGui::ViewProvider)
 
-ViewProviderPrimitive::ViewProviderPrimitive()
-{
-}
+ViewProviderPrimitive::ViewProviderPrimitive() = default;
 
-ViewProviderPrimitive::~ViewProviderPrimitive()
-{
-
-}
+ViewProviderPrimitive::~ViewProviderPrimitive() = default;
 
 void ViewProviderPrimitive::attach(App::DocumentObject* obj) {
     ViewProviderAddSub::attach(obj);
@@ -72,9 +51,7 @@ void ViewProviderPrimitive::attach(App::DocumentObject* obj) {
 
 void ViewProviderPrimitive::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
 {
-    QAction* act;
-    act = menu->addAction(QObject::tr("Edit primitive"), receiver, member);
-    act->setData(QVariant((int)ViewProvider::Default));
+    addDefaultAction(menu, QObject::tr("Edit primitive"));
     PartDesignGui::ViewProvider::setupContextMenu(menu, receiver, member);
 }
 
@@ -135,14 +112,14 @@ void ViewProviderPrimitive::updateData(const App::Property* p) {
     PartDesignGui::ViewProviderAddSub::updateData(p);
 }
 
-QIcon ViewProviderPrimitive::getIcon(void) const {
+QIcon ViewProviderPrimitive::getIcon() const {
 
     QString str = QString::fromLatin1("PartDesign_");
     auto* prim = static_cast<PartDesign::FeaturePrimitive*>(getObject());
     if(prim->getAddSubType() == PartDesign::FeatureAddSub::Additive)
-        str += QString::fromLatin1("Additive_");
+        str += QString::fromLatin1("Additive");
     else
-        str += QString::fromLatin1("Subtractive_");
+        str += QString::fromLatin1("Subtractive");
 
     switch(prim->getPrimitiveType()) {
     case PartDesign::FeaturePrimitive::Box:
@@ -172,5 +149,5 @@ QIcon ViewProviderPrimitive::getIcon(void) const {
     }
 
     str += QString::fromLatin1(".svg");
-    return PartDesignGui::ViewProvider::mergeOverlayIcons(Gui::BitmapFactory().pixmap(str.toStdString().c_str()));
+    return PartDesignGui::ViewProvider::mergeGreyableOverlayIcons(Gui::BitmapFactory().pixmap(str.toStdString().c_str()));
 }

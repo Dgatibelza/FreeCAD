@@ -20,28 +20,14 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
-# include <cfloat>
-# include "InventorAll.h"
-# include <QAction>
-# include <QActionGroup>
 # include <QApplication>
-# include <QByteArray>
-# include <QCursor>
-# include <QList>
-# include <QMenu>
-# include <QMetaObject>
-# include <QRegExp>
 #endif
 
-#include <App/Application.h>
 #include "NavigationStyle.h"
 #include "View3DInventorViewer.h"
-#include "Application.h"
-#include "MenuManager.h"
-#include "MouseSelection.h"
+
 
 using namespace Gui;
 
@@ -51,13 +37,9 @@ using namespace Gui;
 
 TYPESYSTEM_SOURCE(Gui::TouchpadNavigationStyle, Gui::UserNavigationStyle)
 
-TouchpadNavigationStyle::TouchpadNavigationStyle()
-{
-}
+TouchpadNavigationStyle::TouchpadNavigationStyle() = default;
 
-TouchpadNavigationStyle::~TouchpadNavigationStyle()
-{
-}
+TouchpadNavigationStyle::~TouchpadNavigationStyle() = default;
 
 const char* TouchpadNavigationStyle::mouseButtons(ViewerMode mode)
 {
@@ -80,7 +62,9 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
     // Events when in "ready-to-seek" mode are ignored, except those
     // which influence the seek mode itself -- these are handled further
     // up the inheritance hierarchy.
-    if (this->isSeekMode()) { return inherited::processSoEvent(ev); }
+    if (this->isSeekMode()) {
+        return inherited::processSoEvent(ev);
+    }
     // Switch off viewing mode (Bug #0000911)
     if (!this->isSeekMode() && !this->isAnimating() && this->isViewing())
         this->setViewing(false); // by default disable viewing mode to render the scene
@@ -88,12 +72,10 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
     const SoType type(ev->getTypeId());
 
     const SbViewportRegion & vp = viewer->getSoRenderManager()->getViewportRegion();
-    const SbVec2s size(vp.getViewportSizePixels());
-    const SbVec2f prevnormalized = this->lastmouseposition;
     const SbVec2s pos(ev->getPosition());
-    const SbVec2f posn((float) pos[0] / (float) std::max((int)(size[0] - 1), 1),
-                       (float) pos[1] / (float) std::max((int)(size[1] - 1), 1));
+    const SbVec2f posn = normalizePixelPos(pos);
 
+    const SbVec2f prevnormalized = this->lastmouseposition;
     this->lastmouseposition = posn;
 
     // Set to true if any event processing happened. Note that it is not
@@ -107,15 +89,7 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
 
     // Mismatches in state of the modifier keys happens if the user
     // presses or releases them outside the viewer window.
-    if (this->ctrldown != ev->wasCtrlDown()) {
-        this->ctrldown = ev->wasCtrlDown();
-    }
-    if (this->shiftdown != ev->wasShiftDown()) {
-        this->shiftdown = ev->wasShiftDown();
-    }
-    if (this->altdown != ev->wasAltDown()) {
-        this->altdown = ev->wasAltDown();
-    }
+    syncModifierKeys(ev);
 
     // give the nodes in the foreground root the chance to handle events (e.g color bar)
     if (!viewer->isEditing()) {
@@ -126,50 +100,13 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
 
     // Keyboard handling
     if (type.isDerivedFrom(SoKeyboardEvent::getClassTypeId())) {
-        const SoKeyboardEvent * const event = (const SoKeyboardEvent *) ev;
-        const SbBool press = event->getState() == SoButtonEvent::DOWN ? true : false;
-        switch (event->getKey()) {
-        case SoKeyboardEvent::LEFT_CONTROL:
-        case SoKeyboardEvent::RIGHT_CONTROL:
-            this->ctrldown = press;
-            break;
-        case SoKeyboardEvent::LEFT_SHIFT:
-        case SoKeyboardEvent::RIGHT_SHIFT:
-            this->shiftdown = press;
-            break;
-        case SoKeyboardEvent::LEFT_ALT:
-        case SoKeyboardEvent::RIGHT_ALT:
-            this->altdown = press;
-            break;
-        case SoKeyboardEvent::H:
-            processed = true;
-            viewer->saveHomePosition();
-            break;
-        case SoKeyboardEvent::S:
-        case SoKeyboardEvent::HOME:
-        case SoKeyboardEvent::LEFT_ARROW:
-        case SoKeyboardEvent::UP_ARROW:
-        case SoKeyboardEvent::RIGHT_ARROW:
-        case SoKeyboardEvent::DOWN_ARROW:
-            if (!this->isViewing())
-                this->setViewing(true);
-            break;
-        case SoKeyboardEvent::PAGE_UP:
-            doZoom(viewer->getSoRenderManager()->getCamera(), getDelta(), posn);
-            processed = true;
-            break;
-        case SoKeyboardEvent::PAGE_DOWN:
-            doZoom(viewer->getSoRenderManager()->getCamera(), -getDelta(), posn);
-            processed = true;
-            break;
-        default:
-            break;
-        }
+        const auto event = static_cast<const SoKeyboardEvent *>(ev);
+        processed = processKeyboardEvent(event);
     }
 
     // Mouse Button / Spaceball Button handling
     if (type.isDerivedFrom(SoMouseButtonEvent::getClassTypeId())) {
-        const SoMouseButtonEvent * const event = (const SoMouseButtonEvent *) ev;
+        const auto event = (const SoMouseButtonEvent *) ev;
         const int button = event->getButton();
         const SbBool press = event->getState() == SoButtonEvent::DOWN ? true : false;
 
@@ -193,46 +130,25 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
             else if (viewer->isEditing() && (this->currentmode == NavigationStyle::SPINNING)) {
                 processed = true;
             }
-            // issue #0002433: avoid to swallow the UP event if down the
-            // scene graph somewhere a dialog gets opened
-            else if (press) {
-                SbTime tmp = (ev->getTime() - mouseDownConsumedEvent.getTime());
-                float dci = (float)QApplication::doubleClickInterval()/1000.0f;
-                // a double-click?
-                if (tmp.getValue() < dci) {
-                    mouseDownConsumedEvent = *event;
-                    mouseDownConsumedEvent.setTime(ev->getTime());
-                    processed = true;
-                }
-                else {
-                    mouseDownConsumedEvent.setTime(ev->getTime());
-                    // 'ANY' is used to mark that we don't know yet if it will
-                    // be a double-click event.
-                    mouseDownConsumedEvent.setButton(SoMouseButtonEvent::ANY);
-                }
-            }
-            else if (!press) {
-                if (mouseDownConsumedEvent.getButton() == SoMouseButtonEvent::BUTTON1) {
-                    // now handle the postponed event
-                    inherited::processSoEvent(&mouseDownConsumedEvent);
-                    mouseDownConsumedEvent.setButton(SoMouseButtonEvent::ANY);
-                }
+            else {
+                processed = processClickEvent(event);
             }
             break;
         case SoMouseButtonEvent::BUTTON2:
             // If we are in edit mode then simply ignore the RMB events
             // to pass the event to the base class.
             this->lockrecenter = true;
-            if (!viewer->isEditing()) {
-                // If we are in zoom or pan mode ignore RMB events otherwise
-                // the canvas doesn't get any release events
+
+            // Don't show the context menu after dragging, panning or zooming
+            if (!press && (hasDragged || hasPanned || hasZoomed)) {
+                processed = true;
+            }
+            else if (!press && !viewer->isEditing()) {
                 if (this->currentmode != NavigationStyle::ZOOMING &&
                     this->currentmode != NavigationStyle::PANNING &&
                     this->currentmode != NavigationStyle::DRAGGING) {
                     if (this->isPopupMenuEnabled()) {
-                        if (!press) { // release right mouse button
-                            this->openPopupMenu(event->getPosition());
-                        }
+                        this->openPopupMenu(event->getPosition());
                     }
                 }
             }
@@ -254,7 +170,7 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
     // Mouse Movement handling
     if (type.isDerivedFrom(SoLocation2Event::getClassTypeId())) {
         this->lockrecenter = true;
-        const SoLocation2Event * const event = (const SoLocation2Event *) ev;
+        const auto event = (const SoLocation2Event *) ev;
         if (this->currentmode == NavigationStyle::ZOOMING) {
             this->zoomByCursor(posn, prevnormalized);
             processed = true;
@@ -274,7 +190,7 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
 
     // Spaceball & Joystick handling
     if (type.isDerivedFrom(SoMotion3Event::getClassTypeId())) {
-        const SoMotion3Event * const event = static_cast<const SoMotion3Event *>(ev);
+        const auto event = static_cast<const SoMotion3Event *>(ev);
         if (event)
             this->processMotionEvent(event);
         processed = true;
@@ -338,6 +254,17 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
         break;
     }
 
+    // Process when selection button is pressed together with other buttons that could trigger different actions.
+    if (this->button1down && (this->button2down || this->button3down || this->altdown)) {
+        processed = true;
+    }
+
+    // Prevent interrupting rubber-band selection in sketcher
+    if (viewer->isEditing() && curmode == NavigationStyle::SELECTION && newmode != NavigationStyle::IDLE) {
+        newmode = NavigationStyle::SELECTION;
+        processed = false;
+    }
+
     if (newmode != curmode) {
         this->setViewingMode(newmode);
     }
@@ -346,8 +273,5 @@ SbBool TouchpadNavigationStyle::processSoEvent(const SoEvent * const ev)
     // hierarchy.
     if (!processed)
         processed = inherited::processSoEvent(ev);
-    else
-        return true;
-
     return processed;
 }

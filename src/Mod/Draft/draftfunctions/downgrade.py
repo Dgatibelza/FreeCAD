@@ -25,18 +25,18 @@
 See also the `upgrade` function.
 """
 ## @package downgrade
-# \ingroup draftfuctions
+# \ingroup draftfunctions
 # \brief Provides functions to downgrade objects by different methods.
 
-## \addtogroup draftfuctions
+## \addtogroup draftfunctions
 # @{
 import FreeCAD as App
-import draftutils.utils as utils
-import draftutils.gui_utils as gui_utils
-import draftfunctions.cut as cut
-
+from draftfunctions import cut
+from draftutils import utils
+from draftutils import params
+from draftutils import gui_utils
 from draftutils.messages import _msg
-from draftutils.translate import _tr
+from draftutils.translate import translate
 
 
 def downgrade(objects, delete=False, force=None):
@@ -72,10 +72,9 @@ def downgrade(objects, delete=False, force=None):
 
     See Also
     --------
-    ugrade
+    upgrade
     """
     _name = "downgrade"
-    utils.print_header(_name, "Downgrade objects")
 
     if not isinstance(objects, list):
         objects = [objects]
@@ -88,15 +87,12 @@ def downgrade(objects, delete=False, force=None):
     def explode(obj):
         """Explode a Draft block."""
         pl = obj.Placement
-        newobj = []
         for o in obj.Components:
-            o.Placement = o.Placement.multiply(pl)
+            o.Placement = pl.multiply(o.Placement)
             if App.GuiUp:
                 o.ViewObject.Visibility = True
-        if newobj:
-            delete_list(obj)
-            return newobj
-        return None
+        delete_list.append(obj)
+        return True
 
     def cut2(objects):
         """Cut first object from the last one."""
@@ -122,9 +118,8 @@ def downgrade(objects, delete=False, force=None):
     def splitFaces(objects):
         """Split faces contained in objects into new objects."""
         result = False
-        params = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
-        preserveFaceColor = params.GetBool("preserveFaceColor")  # True
-        preserveFaceNames = params.GetBool("preserveFaceNames")  # True
+        preserveFaceColor = params.get_param("preserveFaceColor")
+        preserveFaceNames = params.get_param("preserveFaceNames")
         for o in objects:
             if App.GuiUp and preserveFaceColor and o.ViewObject:
                 voDColors = o.ViewObject.DiffuseColor
@@ -196,6 +191,24 @@ def downgrade(objects, delete=False, force=None):
                 result = True
         return result
 
+    def delete_object(obj):
+        if obj.FullName == "?": # Already deleted.
+            return
+        # special case: obj is a body or belongs to a body:
+        if obj.TypeId == "PartDesign::Body":
+            obj.removeObjectsFromDocument()
+        if hasattr(obj, "_Body") and obj._Body is not None:
+            obj = obj._Body
+            obj.removeObjectsFromDocument()
+        else:
+            for parent in obj.InList:
+                if parent.TypeId == "PartDesign::Body" \
+                        and obj in parent.Group:
+                    obj = parent
+                    obj.removeObjectsFromDocument()
+                    break
+        doc.removeObject(obj.Name)
+
     # analyzing objects
     faces = []
     edges = []
@@ -227,7 +240,7 @@ def downgrade(objects, delete=False, force=None):
             shapify = utils.shapify
             result = eval(force)(objects)
         else:
-            _msg(_tr("Upgrade: Unknown force method:") + " " + force)
+            _msg(translate("draft","Upgrade: Unknown force method:") + " " + force)
             result = None
     else:
         # applying transformation automatically
@@ -235,23 +248,25 @@ def downgrade(objects, delete=False, force=None):
         if len(objects) == 1 and utils.get_type(objects[0]) == "Block":
             result = explode(objects[0])
             if result:
-                _msg(_tr("Found 1 block: exploding it"))
+                _msg(translate("draft","Found 1 block: exploding it"))
 
         # we have one multi-solids compound object: extract its solids
-        elif (len(objects) == 1 and hasattr(objects[0], 'Shape')
-              and len(solids) > 1):
+        elif len(objects) == 1 \
+                and hasattr(objects[0], "Shape") \
+                and len(solids) > 1:
             result = splitCompounds(objects)
             # print(result)
             if result:
-                _msg(_tr("Found 1 multi-solids compound: exploding it"))
+                _msg(translate("draft","Found 1 multi-solids compound: exploding it"))
 
         # special case, we have one parametric object: we "de-parametrize" it
-        elif (len(objects) == 1 and hasattr(objects[0], 'Shape')
-              and hasattr(objects[0], 'Base')):
+        elif len(objects) == 1 \
+                and hasattr(objects[0], "Shape") \
+                and hasattr(objects[0], "Base") \
+                and not objects[0].isDerivedFrom("PartDesign::Feature"):
             result = utils.shapify(objects[0])
             if result:
-                _msg(_tr("Found 1 parametric object: "
-                         "breaking its dependencies"))
+                _msg(translate("draft","Found 1 parametric object: breaking its dependencies"))
                 add_list.append(result)
                 # delete_list.append(objects[0])
 
@@ -259,43 +274,40 @@ def downgrade(objects, delete=False, force=None):
         elif len(objects) == 2:
             result = cut2(objects)
             if result:
-                _msg(_tr("Found 2 objects: subtracting them"))
+                _msg(translate("draft","Found 2 objects: subtracting them"))
 
         elif len(faces) > 1:
             # one object with several faces: split it
             if len(objects) == 1:
                 result = splitFaces(objects)
                 if result:
-                    _msg(_tr("Found several faces: splitting them"))
+                    _msg(translate("draft","Found several faces: splitting them"))
             # several objects: remove all the faces from the first one
             else:
                 result = subtr(objects)
                 if result:
-                    _msg(_tr("Found several objects: "
-                             "subtracting them from the first one"))
+                    _msg(translate("draft","Found several objects: subtracting them from the first one"))
+
         # only one face: we extract its wires
         elif len(faces) > 0:
             result = getWire(objects[0])
             if result:
-                _msg(_tr("Found 1 face: extracting its wires"))
+                _msg(translate("draft","Found 1 face: extracting its wires"))
 
         # no faces: split wire into single edges
         elif not onlyedges:
             result = splitWires(objects)
             if result:
-                _msg(_tr("Found only wires: extracting their edges"))
+                _msg(translate("draft","Found only wires: extracting their edges"))
 
         # no result has been obtained
         if not result:
-            _msg(_tr("No more downgrade possible"))
+            _msg(translate("draft","No more downgrade possible"))
 
     if delete:
-        names = []
         for o in delete_list:
-            names.append(o.Name)
+            delete_object(o)
         delete_list = []
-        for n in names:
-            doc.removeObject(n)
 
     gui_utils.select(add_list)
     return add_list, delete_list

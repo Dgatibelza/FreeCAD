@@ -20,13 +20,12 @@
  *                                                                         *
  ***************************************************************************/
 
-
-
 #ifndef GUIAPPLICATIONNATIVEEVENTAWARE_H
 #define GUIAPPLICATIONNATIVEEVENTAWARE_H
 
 #include <QApplication>
 #include <vector>
+
 
 class QMainWindow;
 
@@ -40,7 +39,7 @@ namespace Gui
         Q_OBJECT
     public:
         GUIApplicationNativeEventAware(int &argc, char *argv[]);
-        ~GUIApplicationNativeEventAware();
+        ~GUIApplicationNativeEventAware() override;
         void initSpaceball(QMainWindow *window);
         bool isSpaceballPresent() const {return spaceballPresent;}
         void setSpaceballPresent(bool present) {spaceballPresent = present;}
@@ -53,9 +52,6 @@ namespace Gui
         float convertPrefToSensitivity(int value);
       #if defined(_USE_3DCONNEXION_SDK) || defined(SPNAV_FOUND)
         GuiNativeEvent *nativeEvent;
-      #endif
-      #if defined(SPNAV_FOUND) && defined(SPNAV_USE_X11) && QT_VERSION < 0x050000
-        bool x11EventFilter(XEvent *event) override final;
       #endif
     }; // end class GUIApplicationNativeEventAware
 } // end namespace Gui

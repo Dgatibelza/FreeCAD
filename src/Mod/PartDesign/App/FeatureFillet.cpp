@@ -25,18 +25,13 @@
 #ifndef _PreComp_
 # include <BRepAlgo.hxx>
 # include <BRepFilletAPI_MakeFillet.hxx>
-# include <TopExp_Explorer.hxx>
 # include <TopoDS.hxx>
 # include <TopoDS_Edge.hxx>
 # include <TopTools_ListOfShape.hxx>
-# include <TopTools_IndexedMapOfShape.hxx>
-# include <TopExp.hxx>
-# include <BRep_Tool.hxx>
 # include <ShapeFix_Shape.hxx>
 # include <ShapeFix_ShapeTolerance.hxx>
 #endif
 
-#include <Base/Console.h>
 #include <Base/Exception.h>
 #include <Base/Reader.h>
 #include <Mod/Part/App/TopoShape.h>
@@ -53,9 +48,12 @@ const App::PropertyQuantityConstraint::Constraints floatRadius = {0.0,FLT_MAX,0.
 
 Fillet::Fillet()
 {
-    ADD_PROPERTY(Radius,(1.0));
+    ADD_PROPERTY_TYPE(Radius, (1.0), "Fillet", App::Prop_None, "Fillet radius.");
     Radius.setUnit(Base::Unit::Length);
     Radius.setConstraints(&floatRadius);
+    ADD_PROPERTY_TYPE(UseAllEdges, (false), "Fillet", App::Prop_None,
+      "Fillet all edges if true, else use only those edges in Base property.\n"
+      "If true, then this overrides any edge changes made to the Base property or in the dialog.\n");
 }
 
 short Fillet::mustExecute() const
@@ -65,26 +63,106 @@ short Fillet::mustExecute() const
     return DressUp::mustExecute();
 }
 
-App::DocumentObjectExecReturn *Fillet::execute(void)
+App::DocumentObjectExecReturn *Fillet::execute()
 {
+#ifdef FC_USE_TNP_FIX
+    Part::TopoShape baseShape;
+    try {
+        baseShape = getBaseTopoShape();
+    }
+    catch (Base::Exception& e) {
+        return new App::DocumentObjectExecReturn(e.what());
+    }
+    baseShape.setTransform(Base::Matrix4D());
+
+    auto edges = UseAllEdges.getValue() ? baseShape.getSubTopoShapes(TopAbs_EDGE)
+                                        : getContinuousEdges(baseShape);
+    if (edges.empty()) {
+        return new App::DocumentObjectExecReturn(
+            QT_TRANSLATE_NOOP("Exception", "Fillet not possible on selected shapes"));
+    }
+
+    double radius = Radius.getValue();
+
+    if (radius <= 0) {
+        return new App::DocumentObjectExecReturn(
+            QT_TRANSLATE_NOOP("Exception", "Fillet radius must be greater than zero"));
+    }
+
+    this->positionByBaseFeature();
+
+    try {
+        TopoShape shape(0);  //,getDocument()->getStringHasher());
+        shape.makeElementFillet(baseShape, edges, Radius.getValue(), Radius.getValue());
+        if (shape.isNull()) {
+            return new App::DocumentObjectExecReturn(
+                QT_TRANSLATE_NOOP("Exception", "Resulting shape is null"));
+        }
+
+        TopTools_ListOfShape aLarg;
+        aLarg.Append(baseShape.getShape());
+        bool failed = false;
+        if (!BRepAlgo::IsValid(aLarg, shape.getShape(), Standard_False, Standard_False)) {
+            ShapeFix_ShapeTolerance aSFT;
+            aSFT.LimitTolerance(shape.getShape(),
+                                Precision::Confusion(),
+                                Precision::Confusion(),
+                                TopAbs_SHAPE);
+        }
+
+        if (!failed) {
+            shape = refineShapeIfActive(shape);
+            shape = getSolid(shape);
+        }
+        if (!isSingleSolidRuleSatisfied(shape.getShape())) {
+            return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Result has multiple solids: that is not currently supported."));
+        }
+        this->Shape.setValue(shape);
+
+        if (failed) {
+            return new App::DocumentObjectExecReturn("Resulting shape is invalid");
+        }
+        return App::DocumentObject::StdReturn;
+    }
+    catch (Standard_Failure& e) {
+        return new App::DocumentObjectExecReturn(e.GetMessageString());
+    }
+
+#else
     Part::TopoShape TopShape;
     try {
-        TopShape = getBaseShape();
-    } catch (Base::Exception& e) {
+        TopShape = getBaseTopoShape();
+    }
+    catch (Base::Exception& e) {
         return new App::DocumentObjectExecReturn(e.what());
     }
     std::vector<std::string> SubNames = std::vector<std::string>(Base.getSubValues());
-    getContiniusEdges(TopShape, SubNames);
 
-    if (SubNames.size() == 0)
-        return new App::DocumentObjectExecReturn("Fillet not possible on selected shapes");
-    
+    if (UseAllEdges.getValue()){
+        SubNames.clear();
+        std::string edgeTypeName = Part::TopoShape::shapeName(TopAbs_EDGE); //"Edge"
+        int count = TopShape.countSubElements(edgeTypeName.c_str());
+        for (int ii = 0; ii < count; ii++){
+            std::ostringstream edgeName;
+            edgeName << edgeTypeName << ii+1;
+            SubNames.push_back(edgeName.str());
+        }
+    }
+
+    getContinuousEdges(TopShape, SubNames);
+
     double radius = Radius.getValue();
-    
+
     if(radius <= 0)
-        return new App::DocumentObjectExecReturn("Fillet radius must be greater than zero");
+        return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Fillet radius must be greater than zero"));
 
     this->positionByBaseFeature();
+
+    //If no element is selected, then we use a copy of previous feature.
+    if (SubNames.empty()) {
+        this->Shape.setValue(TopShape);
+        return App::DocumentObject::StdReturn;
+    }
 
     // create an untransformed copy of the base shape
     Part::TopoShape baseShape(TopShape);
@@ -92,18 +170,18 @@ App::DocumentObjectExecReturn *Fillet::execute(void)
     try {
         BRepFilletAPI_MakeFillet mkFillet(baseShape.getShape());
 
-        for (std::vector<std::string>::const_iterator it=SubNames.begin(); it != SubNames.end(); ++it) {
-            TopoDS_Edge edge = TopoDS::Edge(baseShape.getSubShape(it->c_str()));
+        for (const auto & it : SubNames) {
+            TopoDS_Edge edge = TopoDS::Edge(baseShape.getSubShape(it.c_str()));
             mkFillet.Add(radius, edge);
         }
 
         mkFillet.Build();
         if (!mkFillet.IsDone())
-            return new App::DocumentObjectExecReturn("Failed to create fillet");
+            return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Failed to create fillet"));
 
         TopoDS_Shape shape = mkFillet.Shape();
         if (shape.IsNull())
-            return new App::DocumentObjectExecReturn("Resulting shape is null");
+            return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Resulting shape is null"));
 
         TopTools_ListOfShape aLarg;
         aLarg.Append(baseShape.getShape());
@@ -114,55 +192,38 @@ App::DocumentObjectExecReturn *Fillet::execute(void)
             aSfs->Perform();
             shape = aSfs->Shape();
             if (!BRepAlgo::IsValid(aLarg, shape, Standard_False, Standard_False)) {
-                return new App::DocumentObjectExecReturn("Resulting shape is invalid");
+                return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Resulting shape is invalid"));
             }
         }
 
-        int solidCount = countSolids(shape);
-        if (solidCount > 1) {
-            return new App::DocumentObjectExecReturn("Fillet: Result has multiple solids. This is not supported at this time.");
+        if (!isSingleSolidRuleSatisfied(shape)) {
+            return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Result has multiple solids: that is not currently supported."));
         }
 
+        shape = refineShapeIfActive(shape);
         this->Shape.setValue(getSolid(shape));
         return App::DocumentObject::StdReturn;
     }
     catch (Standard_Failure& e) {
         return new App::DocumentObjectExecReturn(e.GetMessageString());
     }
+#endif
 }
 
 void Fillet::Restore(Base::XMLReader &reader)
 {
-    reader.readElement("Properties");
-    int Cnt = reader.getAttributeAsInteger("Count");
+    DressUp::Restore(reader);
+}
 
-    for (int i=0 ;i<Cnt ;i++) {
-        reader.readElement("Property");
-        const char* PropName = reader.getAttribute("name");
-        const char* TypeName = reader.getAttribute("type");
-        App::Property* prop = getPropertyByName(PropName);
-
-        try {
-            if (prop && strcmp(prop->getTypeId().getName(), TypeName) == 0) {
-                prop->Restore(reader);
-            }
-            else if (prop && strcmp(TypeName,"App::PropertyFloatConstraint") == 0 &&
-                     strcmp(prop->getTypeId().getName(), "App::PropertyQuantityConstraint") == 0) {
-                App::PropertyFloatConstraint p;
-                p.Restore(reader);
-                static_cast<App::PropertyQuantityConstraint*>(prop)->setValue(p.getValue());
-            }
-        }
-        catch (const Base::XMLParseException&) {
-            throw; // re-throw
-        }
-        catch (const Base::Exception &e) {
-            Base::Console().Error("%s\n", e.what());
-        }
-        catch (const std::exception &e) {
-            Base::Console().Error("%s\n", e.what());
-        }
-        reader.readEndElement("Property");
+void Fillet::handleChangedPropertyType(Base::XMLReader &reader, const char * TypeName, App::Property * prop)
+{
+    if (prop && strcmp(TypeName,"App::PropertyFloatConstraint") == 0 &&
+        strcmp(prop->getTypeId().getName(), "App::PropertyQuantityConstraint") == 0) {
+        App::PropertyFloatConstraint p;
+        p.Restore(reader);
+        static_cast<App::PropertyQuantityConstraint*>(prop)->setValue(p.getValue());
     }
-    reader.readEndElement("Properties");
+    else {
+        DressUp::handleChangedPropertyType(reader, TypeName, prop);
+    }
 }

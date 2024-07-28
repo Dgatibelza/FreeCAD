@@ -4,17 +4,17 @@
 <context>
     <name>CmdMeshPartCrossSections</name>
     <message>
-        <location filename="../../Command.cpp" line="276"/>
+        <location filename="../../Command.cpp" line="281"/>
         <source>MeshPart</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="277"/>
+        <location filename="../../Command.cpp" line="282"/>
         <source>Cross-sections...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="278"/>
+        <location filename="../../Command.cpp" line="283"/>
         <source>Cross-sections</source>
         <translation type="unfinished"></translation>
     </message>
@@ -22,17 +22,17 @@
 <context>
     <name>CmdMeshPartCurveOnMesh</name>
     <message>
-        <location filename="../../Command.cpp" line="312"/>
+        <location filename="../../Command.cpp" line="317"/>
         <source>Mesh</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="313"/>
+        <location filename="../../Command.cpp" line="318"/>
         <source>Curve on mesh...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="314"/>
+        <location filename="../../Command.cpp" line="319"/>
         <source>Creates an approximated curve on top of a mesh.
 This command only works with a &apos;mesh&apos; object.</source>
         <translation type="unfinished"></translation>
@@ -41,17 +41,17 @@ This command only works with a &apos;mesh&apos; object.</source>
 <context>
     <name>CmdMeshPartMesher</name>
     <message>
-        <location filename="../../Command.cpp" line="59"/>
+        <location filename="../../Command.cpp" line="58"/>
         <source>Mesh</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="60"/>
+        <location filename="../../Command.cpp" line="59"/>
         <source>Create mesh from shape...</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="61"/>
+        <location filename="../../Command.cpp" line="60"/>
         <source>Tessellate shape</source>
         <translation type="unfinished"></translation>
     </message>
@@ -77,19 +77,32 @@ This command only works with a &apos;mesh&apos; object.</source>
 <context>
     <name>CmdMeshPartTrimByPlane</name>
     <message>
-        <location filename="../../Command.cpp" line="84"/>
+        <location filename="../../Command.cpp" line="83"/>
         <source>Mesh</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="85"/>
+        <location filename="../../Command.cpp" line="84"/>
         <source>Trim mesh with a plane</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../Command.cpp" line="85"/>
         <location filename="../../Command.cpp" line="86"/>
-        <location filename="../../Command.cpp" line="87"/>
         <source>Trims a mesh with a plane</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>Command</name>
+    <message>
+        <location filename="../../Command.cpp" line="134"/>
+        <source>Trim with plane</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Command.cpp" line="217"/>
+        <source>Section with plane</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -156,7 +169,7 @@ This command only works with a &apos;mesh&apos; object.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CrossSections.cpp" line="345"/>
+        <location filename="../../CrossSections.cpp" line="384"/>
         <source>Failure</source>
         <translation type="unfinished"></translation>
     </message>
@@ -164,32 +177,32 @@ This command only works with a &apos;mesh&apos; object.</source>
 <context>
     <name>MeshPartGui::CurveOnMeshHandler</name>
     <message>
-        <location filename="../../CurveOnMesh.cpp" line="364"/>
+        <location filename="../../CurveOnMesh.cpp" line="362"/>
         <source>Create</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CurveOnMesh.cpp" line="366"/>
+        <location filename="../../CurveOnMesh.cpp" line="364"/>
         <source>Close wire</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CurveOnMesh.cpp" line="368"/>
+        <location filename="../../CurveOnMesh.cpp" line="366"/>
         <source>Clear</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CurveOnMesh.cpp" line="369"/>
+        <location filename="../../CurveOnMesh.cpp" line="367"/>
         <source>Cancel</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CurveOnMesh.cpp" line="615"/>
+        <location filename="../../CurveOnMesh.cpp" line="624"/>
         <source>Wrong mesh picked</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../CurveOnMesh.cpp" line="655"/>
+        <location filename="../../CurveOnMesh.cpp" line="663"/>
         <source>No point was picked</source>
         <translation type="unfinished"></translation>
     </message>
@@ -244,7 +257,7 @@ This command only works with a &apos;mesh&apos; object, not a regular face or su
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../TaskCurveOnMesh.ui" line="129"/>
+        <location filename="../../TaskCurveOnMesh.ui" line="136"/>
         <source>Maximum curve degree</source>
         <translation type="unfinished"></translation>
     </message>
@@ -272,23 +285,13 @@ This command only works with a &apos;mesh&apos; object, not a regular face or su
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Tessellation.ui" line="145"/>
-        <source>Mefisto</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Tessellation.ui" line="206"/>
-        <source>Netgen</source>
+        <location filename="../../Tessellation.ui" line="33"/>
+        <source>Use the standard mesher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../Tessellation.ui" line="41"/>
         <source>Surface deviation:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../../Tessellation.ui" line="33"/>
-        <source>Use the standard mesher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -340,6 +343,11 @@ this feature (e.g. the format OBJ).</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <location filename="../../Tessellation.ui" line="145"/>
+        <source>Mefisto</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <location filename="../../Tessellation.ui" line="148"/>
         <source>Use the Mefisto mesher</source>
         <translation type="unfinished"></translation>
@@ -358,6 +366,11 @@ The smallest value is 0.</source>
     <message>
         <location filename="../../Tessellation.ui" line="183"/>
         <source>Estimate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Tessellation.ui" line="206"/>
+        <source>Netgen</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -465,17 +478,29 @@ A value in the range of 0.2-10.</source>
     </message>
     <message>
         <location filename="../../Tessellation.cpp" line="62"/>
-        <source>gmsh</source>
+        <source>Gmsh</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Tessellation.cpp" line="226"/>
-        <location filename="../../Tessellation.cpp" line="232"/>
+        <location filename="../../Tessellation.cpp" line="237"/>
+        <location filename="../../Tessellation.cpp" line="243"/>
         <source>No active document</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Tessellation.cpp" line="247"/>
+        <location filename="../../Tessellation.cpp" line="273"/>
+        <source>You have selected a body without tip.
+Either set the tip of the body or select a different shape, please.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Tessellation.cpp" line="279"/>
+        <source>You have selected a shape without faces.
+Select a different shape, please.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../Tessellation.cpp" line="283"/>
         <source>Select a shape for meshing, first.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -483,12 +508,12 @@ A value in the range of 0.2-10.</source>
 <context>
     <name>MeshPart_Section</name>
     <message>
-        <location filename="../../Command.cpp" line="205"/>
+        <location filename="../../Command.cpp" line="206"/>
         <source>Select plane</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="206"/>
+        <location filename="../../Command.cpp" line="207"/>
         <source>Please select a plane at which you section the mesh.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -496,12 +521,12 @@ A value in the range of 0.2-10.</source>
 <context>
     <name>MeshPart_TrimByPlane</name>
     <message>
-        <location filename="../../Command.cpp" line="96"/>
+        <location filename="../../Command.cpp" line="95"/>
         <source>Select plane</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="97"/>
+        <location filename="../../Command.cpp" line="96"/>
         <source>Please select a plane at which you trim the mesh.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -516,17 +541,17 @@ A value in the range of 0.2-10.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="105"/>
+        <location filename="../../Command.cpp" line="106"/>
         <source>Below</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="106"/>
+        <location filename="../../Command.cpp" line="108"/>
         <source>Above</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../../Command.cpp" line="107"/>
+        <location filename="../../Command.cpp" line="110"/>
         <source>Split</source>
         <translation type="unfinished"></translation>
     </message>
@@ -536,6 +561,32 @@ A value in the range of 0.2-10.</source>
     <message>
         <location filename="../../Workbench.cpp" line="36"/>
         <source>MeshPart</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MeshPart_CreateFlatMesh</name>
+    <message>
+        <location filename="../../MeshFlatteningCommand.py" line="49"/>
+        <source>Unwrap mesh</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MeshFlatteningCommand.py" line="52"/>
+        <source>Find a flat representation of a mesh.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MeshPart_CreateFlatFace</name>
+    <message>
+        <location filename="../../MeshFlatteningCommand.py" line="88"/>
+        <source>Unwrap face</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../MeshFlatteningCommand.py" line="91"/>
+        <source>Find a flat representation of a face.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

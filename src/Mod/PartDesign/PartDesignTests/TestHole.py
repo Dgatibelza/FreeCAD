@@ -38,7 +38,7 @@ class TestHole(unittest.TestCase):
         self.Body.addObject(self.Box)
         self.Doc.recompute()
         self.HoleSketch = self.Doc.addObject('Sketcher::SketchObject', 'SketchHole')
-        self.HoleSketch.Support = (self.Doc.XY_Plane, [''])
+        self.HoleSketch.AttachmentSupport = (self.Doc.XY_Plane, [''])
         self.HoleSketch.MapMode = 'FlatFace'
         self.HoleSketch.MapReversed = True
         self.Body.addObject(self.HoleSketch)
@@ -86,6 +86,7 @@ class TestHole(unittest.TestCase):
         self.Hole.DepthType = 0
         self.Hole.DrillPoint = 1
         self.Hole.Tapered = 0
+        self.Hole.DrillForDepth = 1
         self.Doc.recompute()
         self.assertEqual(len(self.Hole.Shape.Faces), 8)
 

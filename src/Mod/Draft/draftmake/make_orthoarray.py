@@ -31,8 +31,8 @@ import FreeCAD as App
 import draftutils.utils as utils
 import draftmake.make_array as make_array
 
-from draftutils.messages import _msg, _wrn, _err
-from draftutils.translate import _tr
+from draftutils.messages import _wrn, _err
+from draftutils.translate import translate
 
 
 def _make_ortho_array(base_object,
@@ -57,7 +57,6 @@ def _make_ortho_array(base_object,
     This should be handled by the subfunctions that use this one.
     """
     _name = "_make_ortho_array"
-    utils.print_header(_name, _tr("Internal orthogonal array"), debug=False)
 
     new_obj = make_array.make_array(base_object,
                                     arg1=v_x, arg2=v_y, arg3=v_z,
@@ -68,11 +67,6 @@ def _make_ortho_array(base_object,
 
 def _are_vectors(v_x, v_y, v_z=None, name="Unknown"):
     """Check that the vectors are numbers."""
-    _msg("v_x: {}".format(v_x))
-    _msg("v_y: {}".format(v_y))
-    if v_z:
-        _msg("v_z: {}".format(v_z))
-
     try:
         if v_z:
             utils.type_check([(v_x, (int, float, App.Vector)),
@@ -84,30 +78,24 @@ def _are_vectors(v_x, v_y, v_z=None, name="Unknown"):
                               (v_y, (int, float, App.Vector))],
                              name=name)
     except TypeError:
-        _err(_tr("Wrong input: must be a number or vector."))
+        _err(translate("draft","Wrong input: must be a number or vector."))
         return False, v_x, v_y, v_z
 
-    _text = "Input: single value expanded to vector."
     if not isinstance(v_x, App.Vector):
         v_x = App.Vector(v_x, 0, 0)
-        _wrn(_tr(_text))
+        _wrn(translate("draft","Input: single value expanded to vector."))
     if not isinstance(v_y, App.Vector):
         v_y = App.Vector(0, v_y, 0)
-        _wrn(_tr(_text))
+        _wrn(translate("draft","Input: single value expanded to vector."))
     if v_z and not isinstance(v_z, App.Vector):
         v_z = App.Vector(0, 0, v_z)
-        _wrn(_tr(_text))
+        _wrn(translate("draft","Input: single value expanded to vector."))
 
     return True, v_x, v_y, v_z
 
 
 def _are_integers(n_x, n_y, n_z=None, name="Unknown"):
     """Check that the numbers are integers, with minimum value of 1."""
-    _msg("n_x: {}".format(n_x))
-    _msg("n_y: {}".format(n_y))
-    if n_z:
-        _msg("n_z: {}".format(n_z))
-
     try:
         if n_z:
             utils.type_check([(n_x, int),
@@ -117,19 +105,17 @@ def _are_integers(n_x, n_y, n_z=None, name="Unknown"):
             utils.type_check([(n_x, int),
                               (n_y, int)], name=name)
     except TypeError:
-        _err(_tr("Wrong input: must be an integer number."))
+        _err(translate("draft","Wrong input: must be an integer number."))
         return False, n_x, n_y, n_z
 
-    _text = ("Input: number of elements must be at least 1. "
-             "It is set to 1.")
     if n_x < 1:
-        _wrn(_tr(_text))
+        _wrn(translate("draft","Input: number of elements must be at least 1. It is set to 1."))
         n_x = 1
     if n_y < 1:
-        _wrn(_tr(_text))
+        _wrn(translate("draft","Input: number of elements must be at least 1. It is set to 1."))
         n_y = 1
     if n_z and n_z < 1:
-        _wrn(_tr(_text))
+        _wrn(translate("draft","Input: number of elements must be at least 1. It is set to 1."))
         n_z = 1
 
     return True, n_x, n_y, n_z
@@ -137,11 +123,6 @@ def _are_integers(n_x, n_y, n_z=None, name="Unknown"):
 
 def _are_numbers(d_x, d_y, d_z=None, name="Unknown"):
     """Check that the numbers are numbers."""
-    _msg("d_x: {}".format(d_x))
-    _msg("d_y: {}".format(d_y))
-    if d_z:
-        _msg("d_z: {}".format(d_z))
-
     try:
         if d_z:
             utils.type_check([(d_x, (int, float)),
@@ -151,7 +132,7 @@ def _are_numbers(d_x, d_y, d_z=None, name="Unknown"):
             utils.type_check([(d_x, (int, float)),
                               (d_y, (int, float))], name=name)
     except TypeError:
-        _err(_tr("Wrong input: must be a number."))
+        _err(translate("draft","Wrong input: must be a number."))
         return False, d_x, d_y, d_z
 
     return True, d_x, d_y, d_z
@@ -159,20 +140,11 @@ def _are_numbers(d_x, d_y, d_z=None, name="Unknown"):
 
 def _find_object_in_doc(base_object, doc=None):
     """Check that a document is available and the object exists."""
-    FOUND = True
-    if isinstance(base_object, str):
-        base_object_str = base_object
-
-    found, base_object = utils.find_object(base_object,
-                                           doc=doc)
+    found, base_object = utils.find_object(base_object, doc=doc)
     if not found:
-        _msg("base_object: {}".format(base_object_str))
-        _err(_tr("Wrong input: object not in document."))
-        return not FOUND, base_object
+        _err(translate("draft","Wrong input: base_object not in document."))
 
-    _msg("base_object: {}".format(base_object.Label))
-
-    return FOUND, base_object
+    return found, base_object
 
 
 def make_ortho_array(base_object,
@@ -275,7 +247,6 @@ def make_ortho_array(base_object,
     make_circular_array, make_path_array, make_point_array
     """
     _name = "make_ortho_array"
-    utils.print_header(_name, _tr("Orthogonal array"))
 
     found, base_object = _find_object_in_doc(base_object,
                                              doc=App.activeDocument())
@@ -291,7 +262,6 @@ def make_ortho_array(base_object,
         return None
 
     use_link = bool(use_link)
-    _msg("use_link: {}".format(use_link))
 
     new_obj = _make_ortho_array(base_object,
                                 v_x=v_x, v_y=v_y, v_z=v_z,
@@ -350,7 +320,6 @@ def make_ortho_array2d(base_object,
     make_circular_array, make_path_array, make_point_array
     """
     _name = "make_ortho_array2d"
-    utils.print_header(_name, _tr("Orthogonal array 2D"))
 
     found, base_object = _find_object_in_doc(base_object,
                                              doc=App.activeDocument())
@@ -366,7 +335,6 @@ def make_ortho_array2d(base_object,
         return None
 
     use_link = bool(use_link)
-    _msg("use_link: {}".format(use_link))
 
     new_obj = _make_ortho_array(base_object,
                                 v_x=v_x, v_y=v_y,
@@ -424,7 +392,6 @@ def make_rect_array(base_object,
     make_circular_array, make_path_array, make_point_array
     """
     _name = "make_rect_array"
-    utils.print_header(_name, _tr("Rectangular array"))
 
     found, base_object = _find_object_in_doc(base_object,
                                              doc=App.activeDocument())
@@ -440,7 +407,6 @@ def make_rect_array(base_object,
         return None
 
     use_link = bool(use_link)
-    _msg("use_link: {}".format(use_link))
 
     new_obj = _make_ortho_array(base_object,
                                 v_x=App.Vector(d_x, 0, 0),
@@ -501,7 +467,6 @@ def make_rect_array2d(base_object,
     make_circular_array, make_path_array, make_point_array
     """
     _name = "make_rect_array2d"
-    utils.print_header(_name, _tr("Rectangular array 2D"))
 
     found, base_object = _find_object_in_doc(base_object,
                                              doc=App.activeDocument())
@@ -517,7 +482,6 @@ def make_rect_array2d(base_object,
         return None
 
     use_link = bool(use_link)
-    _msg("use_link: {}".format(use_link))
 
     new_obj = _make_ortho_array(base_object,
                                 v_x=App.Vector(d_x, 0, 0),

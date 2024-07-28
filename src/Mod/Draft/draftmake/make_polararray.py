@@ -31,8 +31,8 @@ import FreeCAD as App
 import draftutils.utils as utils
 import draftmake.make_array as make_array
 
-from draftutils.messages import _msg, _err
-from draftutils.translate import _tr
+from draftutils.messages import _err
+from draftutils.translate import translate
 
 
 def make_polar_array(base_object,
@@ -91,44 +91,31 @@ def make_polar_array(base_object,
     make_ortho_array, make_circular_array, make_path_array, make_point_array
     """
     _name = "make_polar_array"
-    utils.print_header(_name, _tr("Polar array"))
 
-    if isinstance(base_object, str):
-        base_object_str = base_object
-
-    found, base_object = utils.find_object(base_object,
-                                           doc=App.activeDocument())
+    found, base_object = utils.find_object(base_object, doc=App.activeDocument())
     if not found:
-        _msg("base_object: {}".format(base_object_str))
-        _err(_tr("Wrong input: object not in document."))
+        _err(translate("draft","Wrong input: base_object not in document."))
         return None
 
-    _msg("base_object: {}".format(base_object.Label))
-
-    _msg("number: {}".format(number))
     try:
         utils.type_check([(number, int)], name=_name)
     except TypeError:
-        _err(_tr("Wrong input: must be an integer number."))
+        _err(translate("draft","Wrong input: must be an integer number."))
         return None
 
-    _msg("angle: {}".format(angle))
     try:
         utils.type_check([(angle, (int, float))], name=_name)
     except TypeError:
-        _err(_tr("Wrong input: must be a number."))
+        _err(translate("draft","Wrong input: must be a number."))
         return None
 
-    _msg("center: {}".format(center))
     try:
         utils.type_check([(center, App.Vector)], name=_name)
     except TypeError:
-        _err(_tr("Wrong input: must be a vector."))
+        _err(translate("draft","Wrong input: must be a vector."))
         return None
 
     use_link = bool(use_link)
-    _msg("use_link: {}".format(use_link))
-
     new_obj = make_array.make_array(base_object,
                                     arg1=center, arg2=angle, arg3=number,
                                     use_link=use_link)

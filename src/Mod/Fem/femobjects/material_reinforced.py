@@ -21,9 +21,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__  = "FreeCAD FEM reinforced material"
+__title__ = "FreeCAD FEM reinforced material"
 __author__ = "Bernd Hahnebach"
-__url__    = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## @package material_reinforced
 #  \ingroup FEM
@@ -40,28 +40,22 @@ class MaterialReinforced(base_fempythonobject.BaseFemPythonObject):
     Type = "Fem::MaterialReinforced"
 
     def __init__(self, obj):
-        super(MaterialReinforced, self).__init__(obj)
+        super().__init__(obj)
 
         obj.addProperty(
-            "App::PropertyLinkSubList",
-            "References",
-            "Material",
-            "List of material shapes"
+            "App::PropertyLinkSubList", "References", "Material", "List of material shapes"
         )
+        obj.setPropertyStatus("References", "LockDynamic")
 
         obj.addProperty(
-            "App::PropertyMap",
-            "Reinforcement",
-            "Composites",
-            "Reinforcement material properties"
+            "App::PropertyMap", "Reinforcement", "Composites", "Reinforcement material properties"
         )
+        obj.setPropertyStatus("Reinforcement", "LockDynamic")
 
         obj.addProperty(
-            "App::PropertyEnumeration",
-            "Category",
-            "Material",
-            "Matrix material properties"
+            "App::PropertyEnumeration", "Category", "Material", "Matrix material properties"
         )
+        obj.setPropertyStatus("Category", "LockDynamic")
 
         obj.Category = ["Solid"]
         obj.Category = "Solid"

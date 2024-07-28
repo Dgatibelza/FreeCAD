@@ -23,21 +23,15 @@
 
 #include "PreCompiled.h"
 
-#ifndef _PreComp_
-# include <boost_bind_bind.hpp>
-#endif
-
-#include "DocumentObjectGroup.h"
-#include "DocumentObjectGroupPy.h"
-#include "GroupExtensionPy.h"
-#include "Document.h"
-#include "FeaturePythonPyImp.h"
-#include "GeoFeatureGroupExtension.h"
-#include <Base/Console.h>
 #include <Base/Tools.h>
 
+#include "Document.h"
+#include "GeoFeatureGroupExtension.h"
+#include "GroupExtensionPy.h"
+
+
 using namespace App;
-namespace bp = boost::placeholders;
+namespace sp = std::placeholders;
 
 EXTENSION_PROPERTY_SOURCE(App::GroupExtension, App::DocumentObjectExtension)
 
@@ -52,15 +46,13 @@ GroupExtension::GroupExtension()
 {
     initExtensionType(GroupExtension::getExtensionClassTypeId());
     
-    EXTENSION_ADD_PROPERTY_TYPE(Group,(0),"Base",(App::PropertyType)(Prop_None),"List of referenced objects");
+    EXTENSION_ADD_PROPERTY_TYPE(Group,(nullptr),"Base",(App::PropertyType)(Prop_None),"List of referenced objects");
 
     EXTENSION_ADD_PROPERTY_TYPE(_GroupTouched, (false), "Base", 
             PropertyType(Prop_Hidden|Prop_Transient),0);
 }
 
-GroupExtension::~GroupExtension()
-{
-}
+GroupExtension::~GroupExtension() = default;
 
 DocumentObject* GroupExtension::addObject(const char* sType, const char* pObjectName)
 {
@@ -154,7 +146,6 @@ std::vector< DocumentObject* > GroupExtension::removeObjects(std::vector< Docume
 
 void GroupExtension::removeObjectsFromDocument()
 {
-#if 1
     while (Group.getSize() > 0) {
         // Remove the objects step by step because it can happen
         // that an object is part of several groups and thus a
@@ -162,21 +153,12 @@ void GroupExtension::removeObjectsFromDocument()
         const std::vector<DocumentObject*> & grp = Group.getValues();
         removeObjectFromDocument(grp.front());
     }
-#else
-    const std::vector<DocumentObject*> & grp = Group.getValues();
-    // Use set so iterate on each linked object exactly one time (in case of multiple links to the same document)
-    std::set<DocumentObject*> grpSet (grp.begin(), grp.end());
-
-    for (std::set<DocumentObject*>::iterator it = grpSet.begin(); it != grpSet.end(); ++it) {
-        removeObjectFromDocument(*it);
-    }
-#endif
 }
 
 void GroupExtension::removeObjectFromDocument(DocumentObject* obj)
 {
     // check that object is not invalid
-    if (!obj || !obj->getNameInDocument())
+    if (!obj || !obj->isAttachedToDocument())
         return;
 
     // remove all children
@@ -195,39 +177,46 @@ DocumentObject *GroupExtension::getObject(const char *Name) const
     DocumentObject* obj = getExtendedObject()->getDocument()->getObject(Name);
     if (obj && hasObject(obj))
         return obj;
-    return 0;
+    return nullptr;
 }
 
 bool GroupExtension::hasObject(const DocumentObject* obj, bool recursive) const
 {
-
-    if(obj == getExtendedObject())
+    if (obj == getExtendedObject()) {
         return false;
-
-    const std::vector<DocumentObject*>& grp = Group.getValues();
-    for (auto child : grp) {
-
-        if(!child)
-            continue;
-
-        if (child == obj) {
-            return true;
-        } else if (child == getExtendedObject()) {
-            Base::RuntimeError("Cyclic dependencies detected: Search cannot be performed");
-        } else if ( recursive && child->hasExtension(GroupExtension::getExtensionClassTypeId()) ) {
-
-            App::GroupExtension *subGroup = static_cast<App::GroupExtension *> (
-                                    child->getExtension(GroupExtension::getExtensionClassTypeId()));
-            std::vector<const GroupExtension*> history;
-            history.push_back(this);
-
-            if (subGroup->recursiveHasObject (obj, subGroup, history)) {
-                return true;
-            }
-        }
     }
 
-    return false;
+    try {
+        const std::vector<DocumentObject*>& grp = Group.getValues();
+        for (auto child : grp) {
+
+            if (!child)
+                continue;
+
+            if (child == obj) {
+                return true;
+            }
+            else if (child == getExtendedObject()) {
+                throw Base::RuntimeError("Cyclic dependencies detected: Search cannot be performed");
+            }
+            else if ( recursive && child->hasExtension(GroupExtension::getExtensionClassTypeId()) ) {
+                App::GroupExtension *subGroup = static_cast<App::GroupExtension *> (
+                                        child->getExtension(GroupExtension::getExtensionClassTypeId()));
+                std::vector<const GroupExtension*> history;
+                history.push_back(this);
+
+                if (subGroup->recursiveHasObject (obj, subGroup, history)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+    catch (const Base::RuntimeError& e) {
+        e.ReportException();
+        return false;
+    }
 }
 
 bool GroupExtension::recursiveHasObject(const DocumentObject* obj, const GroupExtension* group, 
@@ -253,8 +242,9 @@ bool GroupExtension::recursiveHasObject(const DocumentObject* obj, const GroupEx
 
             auto ext = child->getExtensionByType<GroupExtension>();
             
-            if(std::find(history.begin(), history.end(), ext) != history.end())
-                Base::RuntimeError("Cyclic dependencies detected: Search cannot be performed");
+            if (std::find(history.begin(), history.end(), ext) != history.end()) {
+                throw Base::RuntimeError("Cyclic dependencies detected: Search cannot be performed");
+            }
 
             if (recursiveHasObject(obj, ext, history)) {
                 return true;
@@ -278,9 +268,9 @@ std::vector<DocumentObject*> GroupExtension::getObjectsOfType(const Base::Type& 
 {
     std::vector<DocumentObject*> type;
     const std::vector<DocumentObject*>& grp = Group.getValues();
-    for (std::vector<DocumentObject*>::const_iterator it = grp.begin(); it != grp.end(); ++it) {
-        if ( (*it)->getTypeId().isDerivedFrom(typeId))
-            type.push_back(*it);
+    for (auto it : grp) {
+        if (it->getTypeId().isDerivedFrom(typeId))
+            type.push_back(it);
     }
 
     return type;
@@ -290,8 +280,8 @@ int GroupExtension::countObjectsOfType(const Base::Type& typeId) const
 {
     int type=0;
     const std::vector<DocumentObject*>& grp = Group.getValues();
-    for (std::vector<DocumentObject*>::const_iterator it = grp.begin(); it != grp.end(); ++it) {
-        if ( (*it)->getTypeId().isDerivedFrom(typeId))
+    for (auto it : grp) {
+        if ( it->getTypeId().isDerivedFrom(typeId))
             type++;
     }
 
@@ -313,7 +303,7 @@ DocumentObject* GroupExtension::getGroupOfObject(const DocumentObject* obj)
     return nullptr;
 }
 
-PyObject* GroupExtension::getExtensionPyObject(void) {
+PyObject* GroupExtension::getExtensionPyObject() {
 
     if (ExtensionPythonObject.is(Py::_None())){
         // ref counter is set to 1
@@ -361,9 +351,11 @@ void GroupExtension::extensionOnChanged(const Property* p) {
     if(p == &Group) {
         _Conns.clear();
         for(auto obj : Group.getValue()) {
-            if(obj && obj->getNameInDocument()) {
-                _Conns[obj] = obj->signalChanged.connect(boost::bind(
-                            &GroupExtension::slotChildChanged,this,bp::_1, bp::_2));
+            if(obj && obj->isAttachedToDocument()) {
+                //NOLINTBEGIN
+                _Conns[obj] = obj->signalChanged.connect(std::bind(
+                            &GroupExtension::slotChildChanged,this,sp::_1, sp::_2));
+                //NOLINTEND
             }
         }
     }
@@ -389,7 +381,7 @@ bool GroupExtension::extensionGetSubObject(DocumentObject *&ret, const char *sub
     if(!dot)
         return false;
     if(subname[0]!='$')
-        ret = Group.find(std::string(subname,dot));
+        ret = Group.findUsingMap(std::string(subname,dot));
     else{
         std::string name = std::string(subname+1,dot);
         for(auto child : Group.getValues()) {
@@ -406,13 +398,13 @@ bool GroupExtension::extensionGetSubObject(DocumentObject *&ret, const char *sub
 
 bool GroupExtension::extensionGetSubObjects(std::vector<std::string> &ret, int) const {
     for(auto obj : Group.getValues()) {
-        if(obj && obj->getNameInDocument())
+        if(obj && obj->isAttachedToDocument())
             ret.push_back(std::string(obj->getNameInDocument())+'.');
     }
     return true;
 }
 
-App::DocumentObjectExecReturn *GroupExtension::extensionExecute(void) {
+App::DocumentObjectExecReturn *GroupExtension::extensionExecute() {
     // This touch property is for propagating changes to upper group
     _GroupTouched.touch();
     return inherited::extensionExecute();
@@ -429,7 +421,7 @@ void GroupExtension::getAllChildren(std::vector<App::DocumentObject*> &res,
         std::set<App::DocumentObject*> &rset) const
 {
     for(auto obj : Group.getValues()) {
-        if(!obj || !obj->getNameInDocument())
+        if(!obj || !obj->isAttachedToDocument())
             continue;
         if(!rset.insert(obj).second)
             continue;

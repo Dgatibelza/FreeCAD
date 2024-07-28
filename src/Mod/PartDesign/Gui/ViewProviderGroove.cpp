@@ -24,12 +24,10 @@
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-# include <QAction>
 # include <QMenu>
 #endif
 
 #include "TaskRevolutionParameters.h"
-
 #include "ViewProviderGroove.h"
 
 using namespace PartDesignGui;
@@ -41,15 +39,11 @@ ViewProviderGroove::ViewProviderGroove()
     sPixmap = "PartDesign_Groove.svg";
 }
 
-ViewProviderGroove::~ViewProviderGroove()
-{
-}
+ViewProviderGroove::~ViewProviderGroove() = default;
 
 void ViewProviderGroove::setupContextMenu(QMenu* menu, QObject* receiver, const char* member)
 {
-    QAction* act;
-    act = menu->addAction(QObject::tr("Edit groove"), receiver, member);
-    act->setData(QVariant((int)ViewProvider::Default));
+    addDefaultAction(menu, QObject::tr("Edit groove"));
     PartDesignGui::ViewProviderSketchBased::setupContextMenu(menu, receiver, member);
 }
 

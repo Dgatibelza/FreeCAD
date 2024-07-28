@@ -28,7 +28,7 @@
 __title__ = "FreeCAD Draft Edit Tool"
 __author__ = ("Yorik van Havre, Werner Mayer, Martin Burbaum, Ken Cline, "
               "Dmitry Chigrin, Carlo Pavan")
-__url__ = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## \addtogroup draftguitools
 # @{
@@ -49,17 +49,19 @@ class SketcherSketchObjectGuiTools(GuiTools):
         0 : startpoint
         1 : endpoint
         """
+        import Part
         editpoints = []
-        if obj.GeometryCount == 1:
+        if (obj.ConstraintCount == 0
+                and obj.GeometryCount == 1
+                and type(obj.Geometry[0]) == Part.LineSegment):
             editpoints.append(obj.getPoint(0,1))
             editpoints.append(obj.getPoint(0,2))
             return editpoints
         else:
             _wrn = translate("draft", "Sketch is too complex to edit: "
-                                    "it is suggested to use sketcher default editor")
+                                    "it is suggested to use the default Sketcher editor")
             App.Console.PrintWarning(_wrn + "\n")
             return None
-
 
     def update_object_from_edit_points(self, obj, node_idx, v, alt_edit_mode=0):
         """Move a single line sketch vertex a certain displacement.
@@ -69,17 +71,12 @@ class SketcherSketchObjectGuiTools(GuiTools):
         0 : startpoint
         1 : endpoint
         """
+        line = obj.Geometry[0]
         if node_idx == 0:
-            obj.movePoint(0, 1, v)
+            line.StartPoint = v
         elif node_idx == 1:
-            obj.movePoint(0, 2, v)
+            line.EndPoint = v
+        obj.Geometry = [line]
         obj.recompute()
-
-    def get_edit_point_context_menu(self, obj, node_idx):
-        pass
-    
-    def evaluate_context_menu_action(self, edit_command, obj, node_idx, action):
-        pass
-
 
 ## @}

@@ -23,12 +23,10 @@
 #ifndef SOMOUSEWHEELEVENT_H_FC
 #define SOMOUSEWHEELEVENT_H_FC
 
-//#ifndef GuiExport
-//#define GuiExport
-//#endif
 
 #include <Inventor/events/SoEvent.h>
 #include <Inventor/events/SoSubEvent.h>
+#include <FCGlobal.h>
 
 /**
  * @brief The SoMouseWheelEvent class is a temporary replacement for
@@ -47,7 +45,7 @@ public: //methods
     /// smaller values come from high-resolution devices like touchpads
     int getDelta() const {return delta;}
     void setDelta(int delta) {this->delta = delta;}
-    ~SoMouseWheelEvent(){}
+    ~SoMouseWheelEvent() override = default;
 
 private: //data
     int delta;

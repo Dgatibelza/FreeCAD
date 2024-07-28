@@ -33,10 +33,10 @@ import draftutils.gui_utils as gui_utils
 
 
 def make_copy(obj, force=None, reparent=False, simple_copy=False):
-    """makeCopy(object, [force], [reparent])
-    
+    """make_copy(object, [force], [reparent], [simple_copy])
+
     Make an exact copy of an object and return it.
-    
+
     Parameters
     ----------
     obj :
@@ -49,7 +49,7 @@ def make_copy(obj, force=None, reparent=False, simple_copy=False):
         Group the new object in the same group of the old one.
 
     simple_copy :
-        Create a simple copy of the object (a new non parametric 
+        Create a simple copy of the object (a new non parametric
         Part::Feature with the same Shape as the given object).
     """
     if not App.ActiveDocument:
@@ -59,12 +59,18 @@ def make_copy(obj, force=None, reparent=False, simple_copy=False):
     newobj = None
 
     if simple_copy and hasattr(obj, 'Shape'):
+        # this was the old implementation that is actually not used by default
         _name = utils.get_real_name(obj.Name)
         newobj = App.ActiveDocument.addObject("Part::Feature", _name)
         newobj.Shape = obj.Shape
         gui_utils.format_object(newobj, obj)
     elif not simple_copy:
-        newobj = App.ActiveDocument.copyObject(obj)
+        # this is the new implementation using doc.copyObject API
+        if obj.hasExtension("App::OriginGroupExtension"):
+            # always copy with dependencies when copying App::Part and PartDesign::Body
+            newobj = App.ActiveDocument.copyObject(obj, True)
+        else:
+            newobj = App.ActiveDocument.copyObject(obj)
 
     if not newobj:
         return None

@@ -23,26 +23,20 @@
 
 #include "PreCompiled.h"
 #ifndef _PreComp_
-# include <BRepAlgoAPI_Fuse.hxx>
-# include <BRepAlgoAPI_Cut.hxx>
 # include <BRepAlgoAPI_Common.hxx>
-# include <gp_Trsf.hxx>
-# include <gp_Pnt.hxx>
-# include <gp_Dir.hxx>
-# include <gp_Vec.hxx>
-# include <gp_Ax1.hxx>
+# include <BRepAlgoAPI_Cut.hxx>
+# include <BRepAlgoAPI_Fuse.hxx>
 # include <Standard_Failure.hxx>
 #endif
 
-#include "Body.h"
-#include "FeatureBoolean.h"
-
-#include <Base/Console.h>
-#include <Base/Exception.h>
-#include <Base/Parameter.h>
 #include <App/Application.h>
-#include <App/Document.h>
+#include <App/DocumentObject.h>
+#include <Base/Parameter.h>
 #include <Mod/Part/App/modelRefine.h>
+
+#include "FeatureBoolean.h"
+#include "Body.h"
+
 
 using namespace PartDesign;
 
@@ -50,7 +44,7 @@ namespace PartDesign {
 
 PROPERTY_SOURCE_WITH_EXTENSIONS(PartDesign::Boolean, PartDesign::Feature)
 
-const char* Boolean::TypeEnums[]= {"Fuse","Cut","Common",NULL};
+const char* Boolean::TypeEnums[]= {"Fuse","Cut","Common",nullptr};
 
 Boolean::Boolean()
 {
@@ -60,9 +54,11 @@ Boolean::Boolean()
     ADD_PROPERTY_TYPE(Refine,(0),"Part Design",(App::PropertyType)(App::Prop_None),"Refine shape (clean up redundant edges) after adding/subtracting");
     Base::Reference<ParameterGrp> hGrp = App::GetApplication().GetUserParameter()
         .GetGroup("BaseApp")->GetGroup("Preferences")->GetGroup("Mod/PartDesign");
-    this->Refine.setValue(hGrp->GetBool("RefineModel", false));
+    this->Refine.setValue(hGrp->GetBool("RefineModel", true));
+    ADD_PROPERTY_TYPE(UsePlacement,(0),"Part Design",(App::PropertyType)(App::Prop_None),"Apply the placement of the second ( tool ) object");
+    this->UsePlacement.setValue(false);
 
-    initExtension(this);
+    App::GeoFeatureGroupExtension::initExtension(this);
 }
 
 short Boolean::mustExecute() const
@@ -72,16 +68,16 @@ short Boolean::mustExecute() const
     return PartDesign::Feature::mustExecute();
 }
 
-App::DocumentObjectExecReturn *Boolean::execute(void)
+App::DocumentObjectExecReturn *Boolean::execute()
 {
     // Get the operation type
     std::string type = Type.getValueAsString();
-   
+
     // Check the parameters
     const Part::Feature* baseFeature = this->getBaseObject(/* silent = */ true);
 
     if (!baseFeature && type == "Cut") {
-        return new App::DocumentObjectExecReturn("Cannot do boolean cut without BaseFeature");
+        return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Cannot do boolean cut without BaseFeature"));
     }
 
     std::vector<App::DocumentObject*> tools = Group.getValues();
@@ -95,56 +91,60 @@ App::DocumentObjectExecReturn *Boolean::execute(void)
     else {
         auto feature = tools.back();
         if(!feature->isDerivedFrom(Part::Feature::getClassTypeId()))
-            return new App::DocumentObjectExecReturn("Cannot do boolean with anything but Part::Feature and its derivatives");
-        
+            return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Cannot do boolean with anything but Part::Feature and its derivatives"));
+
         baseTopShape = static_cast<Part::Feature*>(feature)->Shape.getShape();
         tools.pop_back();
     }
-        
+
     if (baseTopShape.getShape().IsNull())
-        return new App::DocumentObjectExecReturn("Cannot do boolean operation with invalid base shape");
+        return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Cannot do boolean operation with invalid base shape"));
 
     //get the body this boolean feature belongs to
     Part::BodyBase* baseBody = Part::BodyBase::findBodyOf(this);
 
     if(!baseBody)
-         return new App::DocumentObjectExecReturn("Cannot do boolean on feature which is not in a body");
+         return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Cannot do boolean on feature which is not in a body"));
 
     TopoDS_Shape result = baseTopShape.getShape();
 
+    Base::Placement  bodyPlacement = baseBody->globalPlacement().inverse();
     for (auto tool : tools)
     {
         if(!tool->isDerivedFrom(Part::Feature::getClassTypeId()))
-            return new App::DocumentObjectExecReturn("Cannot do boolean with anything but Part::Feature and its derivatives");
+            return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Cannot do boolean with anything but Part::Feature and its derivatives"));
 
-        TopoDS_Shape shape = static_cast<Part::Feature*>(tool)->Shape.getValue();
+        Part::TopoShape toolShape = static_cast<Part::Feature*>(tool)->Shape.getShape();
+        if ( UsePlacement.getValue() )
+            toolShape.setPlacement(bodyPlacement * toolShape.getPlacement());
+        TopoDS_Shape shape = toolShape.getShape();
         TopoDS_Shape boolOp;
 
         // Must not pass null shapes to the boolean operations
         if (result.IsNull())
-            return new App::DocumentObjectExecReturn("Base shape is null");
+            return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Base shape is null"));
 
         if (shape.IsNull())
-            return new App::DocumentObjectExecReturn("Tool shape is null");
+            return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Tool shape is null"));
 
         if (type == "Fuse") {
             BRepAlgoAPI_Fuse mkFuse(result, shape);
             if (!mkFuse.IsDone())
-                return new App::DocumentObjectExecReturn("Fusion of tools failed");
+                return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Fusion of tools failed"));
             // we have to get the solids (fuse sometimes creates compounds)
             boolOp = this->getSolid(mkFuse.Shape());
             // lets check if the result is a solid
             if (boolOp.IsNull())
-                return new App::DocumentObjectExecReturn("Resulting shape is not a solid");
+                return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Resulting shape is not a solid"));
         } else if (type == "Cut") {
             BRepAlgoAPI_Cut mkCut(result, shape);
             if (!mkCut.IsDone())
-                return new App::DocumentObjectExecReturn("Cut out failed");
+                return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Cut out failed"));
             boolOp = mkCut.Shape();
         } else if (type == "Common") {
             BRepAlgoAPI_Common mkCommon(result, shape);
             if (!mkCommon.IsDone())
-                return new App::DocumentObjectExecReturn("Common operation failed");
+                return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Common operation failed"));
             boolOp = mkCommon.Shape();
         }
 
@@ -153,9 +153,8 @@ App::DocumentObjectExecReturn *Boolean::execute(void)
 
     result = refineShapeIfActive(result);
 
-    int solidCount = countSolids(result);
-    if (solidCount > 1) {
-        return new App::DocumentObjectExecReturn("Boolean: Result has multiple solids. This is not supported at this time.");
+    if (!isSingleSolidRuleSatisfied(result)) {
+        return new App::DocumentObjectExecReturn(QT_TRANSLATE_NOOP("Exception", "Result has multiple solids: that is not currently supported."));
     }
 
     this->Shape.setValue(getSolid(result));
@@ -163,7 +162,7 @@ App::DocumentObjectExecReturn *Boolean::execute(void)
 }
 
 void Boolean::onChanged(const App::Property* prop) {
-    
+
     if(strcmp(prop->getName(), "Group") == 0)
         touch();
 

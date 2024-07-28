@@ -26,6 +26,7 @@
 #include <QMessageBox>
 #endif
 
+#include <App/DocumentObserver.h>
 #include <Gui/Application.h>
 #include <Gui/CommandT.h>
 #include <Gui/MainWindow.h>
@@ -44,9 +45,10 @@ using namespace Gui;
  *********************************************************************/
 
 TaskFeatureParameters::TaskFeatureParameters(PartDesignGui::ViewProvider *vp, QWidget *parent,
-                                                     const std::string& pixmapname, const QString& parname)
-    : TaskBox(Gui::BitmapFactory().pixmap(pixmapname.c_str()),parname,true, parent),
-      vp(vp), blockUpdate(false)
+                                             const std::string& pixmapname, const QString& parname)
+    : TaskBox(Gui::BitmapFactory().pixmap(pixmapname.c_str()), parname, true, parent)
+    , vp(vp)
+    , blockUpdate(false)
 {
     Gui::Document* doc = vp->getDocument();
     this->attachDocument(doc);
@@ -54,8 +56,9 @@ TaskFeatureParameters::TaskFeatureParameters(PartDesignGui::ViewProvider *vp, QW
 
 void TaskFeatureParameters::slotDeletedObject(const Gui::ViewProviderDocumentObject& Obj)
 {
-    if (this->vp == &Obj)
+    if (this->vp == &Obj) {
         this->vp = nullptr;
+    }
 }
 
 void TaskFeatureParameters::onUpdateView(bool on)
@@ -67,9 +70,9 @@ void TaskFeatureParameters::onUpdateView(bool on)
 void TaskFeatureParameters::recomputeFeature()
 {
     if (!blockUpdate) {
-        App::DocumentObject* obj = vp->getObject ();
+        App::DocumentObject* obj = getObject();
         assert (obj);
-        obj->getDocument()->recomputeFeature ( obj );
+        obj->getDocument()->recomputeFeature (obj);
     }
 }
 
@@ -77,18 +80,16 @@ void TaskFeatureParameters::recomputeFeature()
  *                            Task Dialog                            *
  *********************************************************************/
 TaskDlgFeatureParameters::TaskDlgFeatureParameters(PartDesignGui::ViewProvider *vp)
-    : TaskDialog(),vp(vp)
+    : vp(vp)
 {
     assert(vp);
 }
 
-TaskDlgFeatureParameters::~TaskDlgFeatureParameters()
+TaskDlgFeatureParameters::~TaskDlgFeatureParameters() = default;
+
+bool TaskDlgFeatureParameters::accept()
 {
-
-}
-
-bool TaskDlgFeatureParameters::accept() {
-    App::DocumentObject* feature = vp->getObject();
+    App::DocumentObject* feature = getObject();
 
     try {
         // Iterate over parameter dialogs and apply all parameters from them
@@ -96,20 +97,20 @@ bool TaskDlgFeatureParameters::accept() {
             TaskFeatureParameters *param = qobject_cast<TaskFeatureParameters *> (wgt);
             if(!param)
                 continue;
-            
+
             param->saveHistory ();
             param->apply ();
         }
         // Make sure the feature is what we are expecting
         // Should be fine but you never know...
-        if ( !feature->getTypeId().isDerivedFrom(PartDesign::Feature::getClassTypeId()) ) {
+        if ( !feature->isDerivedFrom<PartDesign::Feature>() ) {
             throw Base::TypeError("Bad object processed in the feature dialog.");
         }
 
         Gui::cmdAppDocument(feature, "recompute()");
 
         if (!feature->isValid()) {
-            throw Base::RuntimeError(vp->getObject()->getStatusString());
+            throw Base::RuntimeError(getObject()->getStatusString());
         }
 
         App::DocumentObject* previous = static_cast<PartDesign::Feature*>(feature)->getBaseObject(/* silent = */ true );
@@ -128,11 +129,7 @@ bool TaskDlgFeatureParameters::accept() {
         Gui::Command::commitCommand();
     } catch (const Base::Exception& e) {
         // Generally the only thing that should fail is feature->isValid() others should be fine
-#if (QT_VERSION >= 0x050000)
         QString errorText = QApplication::translate(feature->getTypeId().getName(), e.what());
-#else
-        QString errorText = QApplication::translate(feature->getTypeId().getName(), e.what(), 0, QApplication::UnicodeUTF8);
-#endif
         QMessageBox::warning(Gui::getMainWindow(), tr("Input error"), errorText);
         return false;
     }
@@ -142,7 +139,9 @@ bool TaskDlgFeatureParameters::accept() {
 
 bool TaskDlgFeatureParameters::reject()
 {
-    PartDesign::Feature* feature = static_cast<PartDesign::Feature*>(vp->getObject());
+    auto feature = getObject<PartDesign::Feature>();
+    App::DocumentObjectWeakPtrT weakptr(feature);
+    App::Document* document = feature->getDocument();
 
     PartDesign::Body* body = PartDesign::Body::findBodyOf(feature);
 
@@ -159,23 +158,26 @@ bool TaskDlgFeatureParameters::reject()
             param->detachSelection();
     }
 
-    // roll back the done things
+    // roll back the done things which may delete the feature
     Gui::Command::abortCommand();
-    Gui::Command::doCommand(Gui::Command::Gui,"Gui.activeDocument().resetEdit()");
 
     // if abort command deleted the object make the previous feature visible again
-    if (!Gui::Application::Instance->getViewProvider(feature)) {
+    if (weakptr.expired()) {
         // Make the tip or the previous feature visible again with preference to the previous one
         // TODO: ViewProvider::onDelete has the same code. May be this one is excess?
         if (previous && Gui::Application::Instance->getViewProvider(previous)) {
             Gui::Application::Instance->getViewProvider(previous)->show();
-        } else if (body != NULL) {
+        }
+        else if (body) {
             App::DocumentObject* tip = body->Tip.getValue();
             if (tip && Gui::Application::Instance->getViewProvider(tip)) {
                 Gui::Application::Instance->getViewProvider(tip)->show();
             }
         }
     }
+
+    Gui::cmdAppDocument(document, "recompute()");
+    Gui::cmdGuiDocument(document, "resetEdit()");
 
     return true;
 }

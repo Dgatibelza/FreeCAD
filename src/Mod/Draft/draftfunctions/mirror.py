@@ -30,14 +30,15 @@ It just creates a `Part::Mirroring` object, and sets the appropriate
 # \ingroup draftfunctions
 # \brief Provides functions to produce a mirrored object.
 
-## \addtogroup draftfuctions
+## \addtogroup draftfunctions
 # @{
 import FreeCAD as App
-import draftutils.utils as utils
-import draftutils.gui_utils as gui_utils
+import WorkingPlane
 
+from draftutils import gui_utils
+from draftutils import utils
 from draftutils.messages import _err
-from draftutils.translate import _tr
+from draftutils.translate import translate
 
 if App.GuiUp:
     import FreeCADGui as Gui
@@ -48,14 +49,7 @@ def mirror(objlist, p1, p2):
 
     It creates a `Part::Mirroring` object from the given `objlist` using
     a plane that is defined by the two given points `p1` and `p2`,
-    and either
-
-    - the Draft working plane normal, or
-    - the negative normal provided by the camera direction
-      if the working plane normal does not exist and the graphical interface
-      is available.
-
-    If neither of these two is available, it uses as normal the +Z vector.
+    and the Draft working plane normal.
 
     Parameters
     ----------
@@ -67,7 +61,7 @@ def mirror(objlist, p1, p2):
         of the resulting object.
 
     p2: Base::Vector3
-        Point 1 of the mirror plane.
+        Point 2 of the mirror plane.
 
     Returns
     -------
@@ -84,33 +78,26 @@ def mirror(objlist, p1, p2):
     just use `Part::Mirroring`. It should create a derived object,
     that is, it should work similar to `Draft.offset`.
     """
-    utils.print_header('mirror', "Create mirror")
 
     if not objlist:
-        _err(_tr("No object given"))
+        _err(translate("draft","No object given"))
         return
 
     if p1 == p2:
-        _err(_tr("The two points are coincident"))
+        _err(translate("draft","The two points are coincident"))
         return
 
     if not isinstance(objlist, list):
         objlist = [objlist]
 
-    if hasattr(App, "DraftWorkingPlane"):
-        norm = App.DraftWorkingPlane.getNormal()
-    elif App.GuiUp:
-        norm = Gui.ActiveDocument.ActiveView.getViewDirection().negative()
-    else:
-        norm = App.Vector(0, 0, 1)
-
+    norm = WorkingPlane.get_working_plane(update=False).axis
     pnorm = p2.sub(p1).cross(norm).normalize()
 
     result = []
 
     for obj in objlist:
-        mir = App.ActiveDocument.addObject("Part::Mirroring", "mirror")
-        mir.Label = obj.Label + _tr(" (mirrored)")
+        mir = App.ActiveDocument.addObject("Part::Mirroring", "Mirror")
+        mir.Label = obj.Label + " (" + translate("draft", "mirrored") + ")"
         mir.Source = obj
         mir.Base = p1
         mir.Normal = pnorm

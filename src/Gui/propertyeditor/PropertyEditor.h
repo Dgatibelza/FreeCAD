@@ -24,19 +24,17 @@
 #ifndef PROPERTYEDITOR_H
 #define PROPERTYEDITOR_H
 
-#include <map>
-#include <string>
-#include <vector>
 #include <unordered_set>
 
 #include <QTreeView>
 
-#include <App/DocumentObserver.h>
 #include "PropertyItem.h"
 #include "PropertyModel.h"
 
+
 namespace App {
 class Property;
+class Document;
 }
 
 namespace Gui {
@@ -64,50 +62,69 @@ class PropertyEditor : public QTreeView
 {
     Q_OBJECT
 
-    Q_PROPERTY(QBrush groupBackground READ groupBackground WRITE setGroupBackground DESIGNABLE true SCRIPTABLE true)
-    Q_PROPERTY(QColor groupTextColor READ groupTextColor WRITE setGroupTextColor DESIGNABLE true SCRIPTABLE true)
+    Q_PROPERTY(QBrush groupBackground READ groupBackground WRITE setGroupBackground DESIGNABLE true SCRIPTABLE true) // clazy:exclude=qproperty-without-notify
+    Q_PROPERTY(QColor groupTextColor READ groupTextColor WRITE setGroupTextColor DESIGNABLE true SCRIPTABLE true) // clazy:exclude=qproperty-without-notify
+    Q_PROPERTY(QBrush itemBackground READ itemBackground WRITE setItemBackground DESIGNABLE true SCRIPTABLE true) // clazy:exclude=qproperty-without-notify
 
 public:
-    PropertyEditor(QWidget *parent = 0);
-    ~PropertyEditor();
+    PropertyEditor(QWidget *parent = nullptr);
+    ~PropertyEditor() override;
 
     /** Builds up the list view with the properties. */
     void buildUp(PropertyModel::PropertyList &&props = PropertyModel::PropertyList(), bool checkDocument=false);
     void updateProperty(const App::Property&);
-    void updateEditorMode(const App::Property&);
-    bool appendProperty(const App::Property&);
     void removeProperty(const App::Property&);
+    void setAutomaticExpand(bool);
+    bool isAutomaticExpand(bool) const;
     void setAutomaticDocumentUpdate(bool);
     bool isAutomaticDocumentUpdate(bool) const;
     /*! Reset the internal state of the view. */
-    virtual void reset();
+    void reset() override;
 
     QBrush groupBackground() const;
     void setGroupBackground(const QBrush& c);
     QColor groupTextColor() const;
     void setGroupTextColor(const QColor& c);
+    QBrush itemBackground() const;
+    void setItemBackground(const QBrush& c);
 
     bool isBinding() const { return binding; }
+    void openEditor(const QModelIndex &index);
+    void closeEditor();
 
 protected Q_SLOTS:
     void onItemActivated(const QModelIndex &index);
+    void onItemExpanded(const QModelIndex &index);
+    void onItemCollapsed(const QModelIndex &index);
+    void onRowsMoved(const QModelIndex &parent, int start, int end, const QModelIndex &dst, int row);
+    void onRowsRemoved(const QModelIndex &parent, int start, int end);
 
 protected:
-    virtual void closeEditor (QWidget * editor, QAbstractItemDelegate::EndEditHint hint);
-    virtual void commitData (QWidget * editor);
-    virtual void editorDestroyed (QObject * editor);
-    virtual void currentChanged (const QModelIndex & current, const QModelIndex & previous);
-    virtual void rowsInserted (const QModelIndex & parent, int start, int end);
-    virtual void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const;
-    virtual QStyleOptionViewItem viewOptions() const;
-    virtual void contextMenuEvent(QContextMenuEvent *event);
-    virtual bool event(QEvent*);
+    bool eventFilter(QObject* object, QEvent* event) override;
+    void closeEditor (QWidget * editor, QAbstractItemDelegate::EndEditHint hint) override;
+    void commitData (QWidget * editor) override;
+    void editorDestroyed (QObject * editor) override;
+    void currentChanged (const QModelIndex & current, const QModelIndex & previous) override;
+    void rowsInserted (const QModelIndex & parent, int start, int end) override;
+    void rowsAboutToBeRemoved (const QModelIndex & parent, int start, int end) override;
+    void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const override;
+    void drawRow(QPainter *painter, const QStyleOptionViewItem &options, const QModelIndex &index) const override;
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+    QStyleOptionViewItem viewOptions() const override;
+#else
+    void initViewItemOption(QStyleOptionViewItem *option) const override;
+#endif
+    void contextMenuEvent(QContextMenuEvent *event) override;
+    bool event(QEvent*) override;
 
 private:
     void setEditorMode(const QModelIndex & parent, int start, int end);
-    void updateItemEditor(bool enable, int column, const QModelIndex& parent);
-    void setupTransaction(const QModelIndex &);
     void closeTransaction();
+    void recomputeDocument(App::Document*);
+
+    // check if mouse_pos is around right or bottom side of a cell 
+    // and return the index of that cell if found
+    QModelIndex indexResizable(QPoint mouse_pos);
 
 private:
     PropertyItemDelegate *delegate;
@@ -115,17 +132,32 @@ private:
     QStringList selectedProperty;
     PropertyModel::PropertyList propList;
     std::unordered_set<const App::PropertyContainer*> propOwners;
+    bool autoexpand;
     bool autoupdate;
     bool committing;
     bool delaybuild;
     bool binding;
+    bool checkDocument;
+    bool closingEditor;
+    bool dragInProgress;
+
+    //max distance between mouse and a cell, small enough to trigger resize
+    int dragSensibility = 5; // NOLINT
+    int dragSection = 0;
+    int dragPreviousPos = 0;
 
     int transactionID = 0;
 
     QColor groupColor;
     QBrush background;
+    QBrush _itemBackground;
+
+    QPointer<QWidget> activeEditor;
+    QPersistentModelIndex editingIndex;
+    int removingRows = 0;
 
     friend class Gui::PropertyView;
+    friend class PropertyItemDelegate;
 };
 
 } //namespace PropertyEditor

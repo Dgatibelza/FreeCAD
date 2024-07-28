@@ -40,13 +40,13 @@ import FreeCAD as App
 import FreeCADGui as Gui
 import Draft_rc
 import DraftVecUtils
-import draftutils.utils as utils
-import draftguitools.gui_base_original as gui_base_original
-import draftguitools.gui_tool_utils as gui_tool_utils
-import draftguitools.gui_trackers as trackers
-
-from draftutils.messages import _msg, _wrn, _err
-from draftutils.translate import translate, _tr
+from draftguitools import gui_base_original
+from draftguitools import gui_tool_utils
+from draftguitools import gui_trackers as trackers
+from draftutils import params
+from draftutils import utils
+from draftutils.messages import _err, _msg, _toolmsg, _wrn
+from draftutils.translate import translate
 
 # The module is used to prevent complaints from code checkers (flake8)
 True if Draft_rc.__name__ else False
@@ -57,30 +57,26 @@ class Offset(gui_base_original.Modifier):
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _tip = ("Offsets of the selected object.\n"
-                "It can also create an offset copy of the original object.\n"
-                "CTRL to snap, SHIFT to constrain. "
-                "Hold ALT and click to create a copy with each click.")
 
         return {'Pixmap': 'Draft_Offset',
                 'Accel': "O, S",
                 'MenuText': QT_TRANSLATE_NOOP("Draft_Offset", "Offset"),
-                'ToolTip': QT_TRANSLATE_NOOP("Draft_Offset", _tip)}
+                'ToolTip': QT_TRANSLATE_NOOP("Draft_Offset", "Offsets of the selected object.\nIt can also create an offset copy of the original object.\nCTRL to snap, SHIFT to constrain. Hold ALT and click to create a copy with each click.")}
 
     def Activated(self):
         """Execute when the command is called."""
         self.running = False
-        super(Offset, self).Activated(name=_tr("Offset"))
+        super().Activated(name="Offset")
         self.ghost = None
         self.linetrack = None
         self.arctrack = None
         if self.ui:
             if not Gui.Selection.getSelection():
-                self.ui.selectUi()
+                self.ui.selectUi(on_close_call=self.finish)
                 _msg(translate("draft", "Select an object to offset"))
-                self.call = \
-                    self.view.addEventCallback("SoEvent",
-                                               gui_tool_utils.selectObject)
+                self.call = self.view.addEventCallback(
+                    "SoEvent",
+                    gui_tool_utils.selectObject)
             elif len(Gui.Selection.getSelection()) > 1:
                 _wrn(translate("draft", "Offset only works "
                                         "on one object at a time."))
@@ -102,7 +98,7 @@ class Offset(gui_base_original.Modifier):
             self.constrainSeg = None
 
             self.ui.offsetUi()
-            occmode = utils.param.GetBool("Offset_OCC", False)
+            occmode = params.get_param("Offset_OCC")
             self.ui.occOffset.setChecked(occmode)
 
             self.linetrack = trackers.lineTracker()
@@ -114,7 +110,10 @@ class Offset(gui_base_original.Modifier):
                 self.mode = "Circle"
                 self.center = self.shape.Edges[0].Curve.Center
                 self.ghost.setCenter(self.center)
-                self.ghost.setStartAngle(math.radians(self.sel.FirstAngle))
+                if self.sel.FirstAngle <= self.sel.LastAngle:
+                    self.ghost.setStartAngle(math.radians(self.sel.FirstAngle))
+                else:
+                    self.ghost.setStartAngle(math.radians(self.sel.FirstAngle) - 2 * math.pi)
                 self.ghost.setEndAngle(math.radians(self.sel.LastAngle))
             elif utils.getType(self.sel) == "BSpline":
                 self.ghost = trackers.bsplineTracker(points=self.sel.Points)
@@ -141,7 +140,7 @@ class Offset(gui_base_original.Modifier):
                     self.ghost = trackers.wireTracker(self.shape)
                     self.mode = "Wire"
             self.call = self.view.addEventCallback("SoEvent", self.action)
-            _msg(translate("draft", "Pick distance"))
+            _toolmsg(translate("draft", "Pick distance"))
             if self.planetrack:
                 self.planetrack.set(self.shape.Vertexes[0].Point)
             self.running = True
@@ -158,14 +157,13 @@ class Offset(gui_base_original.Modifier):
             from the 3D view.
         """
         import DraftGeomUtils
-        plane = App.DraftWorkingPlane
 
         if arg["Type"] == "SoKeyboardEvent":
             if arg["Key"] == "ESCAPE":
                 self.finish()
         elif arg["Type"] == "SoLocation2Event":
             self.point, ctrlPoint, info = gui_tool_utils.getPoint(self, arg)
-            if (gui_tool_utils.hasMod(arg, gui_tool_utils.MODCONSTRAIN)
+            if (gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_constrain_key())
                     and self.constrainSeg):
                 dist = DraftGeomUtils.findPerpendicular(self.point,
                                                         self.shape,
@@ -181,10 +179,10 @@ class Offset(gui_base_original.Modifier):
                                                    self.point)
                     v2 = DraftGeomUtils.getTangent(self.shape.Edges[dist[1]],
                                                    self.point)
-                    a = -DraftVecUtils.angle(v1, v2, plane.axis)
-                    self.dvec = DraftVecUtils.rotate(d, a, plane.axis)
+                    a = -DraftVecUtils.angle(v1, v2, self.wp.axis)
+                    self.dvec = DraftVecUtils.rotate(d, a, self.wp.axis)
                     occmode = self.ui.occOffset.isChecked()
-                    utils.param.SetBool("Offset_OCC", occmode)
+                    params.set_param("Offset_OCC", occmode)
                     _wire = DraftGeomUtils.offsetWire(self.shape,
                                                       self.dvec,
                                                       occ=occmode)
@@ -196,8 +194,8 @@ class Offset(gui_base_original.Modifier):
                     self.npts = []
                     for p in self.sel.Points:
                         currtan = DraftGeomUtils.getTangent(e, p)
-                        a = -DraftVecUtils.angle(currtan, basetan, plane.axis)
-                        self.dvec = DraftVecUtils.rotate(d, a, plane.axis)
+                        a = -DraftVecUtils.angle(currtan, basetan, self.wp.axis)
+                        self.dvec = DraftVecUtils.rotate(d, a, self.wp.axis)
                         self.npts.append(p.add(self.dvec))
                     self.ghost.update(self.npts)
                 elif self.mode == "Circle":
@@ -217,7 +215,7 @@ class Offset(gui_base_original.Modifier):
             self.ui.radiusValue.setFocus()
             self.ui.radiusValue.selectAll()
             if self.extendedCopy:
-                if not gui_tool_utils.hasMod(arg, gui_tool_utils.MODALT):
+                if not gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_alt_key()):
                     self.finish()
             gui_tool_utils.redraw3DView()
 
@@ -225,13 +223,12 @@ class Offset(gui_base_original.Modifier):
             if (arg["State"] == "DOWN") and (arg["Button"] == "BUTTON1"):
                 copymode = False
                 occmode = self.ui.occOffset.isChecked()
-                utils.param.SetBool("Offset_OCC", occmode)
-                if (gui_tool_utils.hasMod(arg, gui_tool_utils.MODALT)
+                params.set_param("Offset_OCC", occmode)
+                if (gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_alt_key())
                         or self.ui.isCopy.isChecked()):
                     copymode = True
                 Gui.addModule("Draft")
                 if self.npts:
-                    # _msg("offset:npts= " + str(self.npts))
                     _cmd = 'Draft.offset'
                     _cmd += '('
                     _cmd += 'FreeCAD.ActiveDocument.'
@@ -260,19 +257,20 @@ class Offset(gui_base_original.Modifier):
                                  'FreeCAD.ActiveDocument.recompute()']
                     self.commit(translate("draft", "Offset"),
                                 _cmd_list)
-                if gui_tool_utils.hasMod(arg, gui_tool_utils.MODALT):
+                if gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_alt_key()):
                     self.extendedCopy = True
                 else:
                     self.finish()
 
-    def finish(self, closed=False):
+    def finish(self, cont=False):
         """Finish the offset operation."""
+        self.end_callbacks(self.call)
         if self.running:
             if self.linetrack:
                 self.linetrack.finalize()
             if self.ghost:
                 self.ghost.finalize()
-        super(Offset, self).finish()
+        super().finish()
 
     def numericRadius(self, rad):
         """Validate the radius entry field in the user interface.
@@ -307,7 +305,7 @@ class Offset(gui_base_original.Modifier):
                 delta = DraftVecUtils.toString(self.dvec)
             copymode = False
             occmode = self.ui.occOffset.isChecked()
-            utils.param.SetBool("Offset_OCC", occmode)
+            params.set_param("Offset_OCC", occmode)
 
             if self.ui.isCopy.isChecked():
                 copymode = True
@@ -327,9 +325,7 @@ class Offset(gui_base_original.Modifier):
             self.finish()
         else:
             _err(translate("Draft",
-                           "Offset direction is not defined. "
-                           "Please move the mouse on either side "
-                           "of the object first to indicate a direction"))
+                           "Offset direction is not defined. Please move the mouse on either side of the object first to indicate a direction"))
 
 
 Gui.addCommand('Draft_Offset', Offset())

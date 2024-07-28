@@ -51,8 +51,8 @@ import draftguitools.gui_base_original as gui_base_original
 import draftguitools.gui_tool_utils as gui_tool_utils
 import draftguitools.gui_trackers as trackers
 
-from draftutils.messages import _msg, _err
-from draftutils.translate import translate, _tr
+from draftutils.messages import _msg, _err, _toolmsg
+from draftutils.translate import translate
 
 # The module is used to prevent complaints from code checkers (flake8)
 True if Draft_rc.__name__ else False
@@ -70,19 +70,18 @@ class Trimex(gui_base_original.Modifier):
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _tip = ("Trims or extends the selected object, "
-                "or extrudes single faces.\n"
-                "CTRL snaps, SHIFT constrains to current segment "
-                "or to normal, ALT inverts.")
 
         return {'Pixmap': 'Draft_Trimex',
                 'Accel': "T, R",
                 'MenuText': QT_TRANSLATE_NOOP("Draft_Trimex", "Trimex"),
-                'ToolTip': QT_TRANSLATE_NOOP("Draft_Trimex", _tip)}
+                'ToolTip': QT_TRANSLATE_NOOP("Draft_Trimex",
+                    "Trims or extends the selected object, or extrudes single"
+                    + " faces.\nCTRL snaps, SHIFT constrains to current segment"
+                    + " or to normal, ALT inverts.")}
 
     def Activated(self):
         """Execute when the command is called."""
-        super(Trimex, self).Activated(name=_tr("Trimex"))
+        super().Activated(name="Trimex")
         self.edges = []
         self.placement = None
         self.ghost = []
@@ -91,7 +90,7 @@ class Trimex(gui_base_original.Modifier):
         self.width = None
         if self.ui:
             if not Gui.Selection.getSelection():
-                self.ui.selectUi()
+                self.ui.selectUi(on_close_call=self.finish)
                 _msg(translate("draft", "Select objects to trim or extend"))
                 self.call = \
                     self.view.addEventCallback("SoEvent",
@@ -109,7 +108,7 @@ class Trimex(gui_base_original.Modifier):
             self.finish()
             return
         self.obj = sel[0]
-        self.ui.trimUi()
+        self.ui.trimUi(title=translate("draft",self.featureName))
         self.linetrack = trackers.lineTracker()
 
         import DraftGeomUtils
@@ -124,8 +123,7 @@ class Trimex(gui_base_original.Modifier):
             self.extrudeMode = True
             self.ghost = [trackers.ghostTracker([self.obj])]
             self.normal = self.obj.Shape.Faces[0].normalAt(0.5, 0.5)
-            for v in self.obj.Shape.Vertexes:
-                self.ghost.append(trackers.lineTracker())
+            self.ghost += [trackers.lineTracker() for _ in self.obj.Shape.Vertexes]
         elif len(self.obj.Shape.Faces) > 1:
             # face extrude mode, a new object is created
             ss = Gui.Selection.getSelectionEx()[0]
@@ -136,8 +134,7 @@ class Trimex(gui_base_original.Modifier):
                     self.extrudeMode = True
                     self.ghost = [trackers.ghostTracker([self.obj])]
                     self.normal = self.obj.Shape.Faces[0].normalAt(0.5, 0.5)
-                    for v in self.obj.Shape.Vertexes:
-                        self.ghost.append(trackers.lineTracker())
+                    self.ghost += [trackers.lineTracker() for _ in self.obj.Shape.Vertexes]
         else:
             # normal wire trimex mode
             self.color = self.obj.ViewObject.LineColor
@@ -173,7 +170,7 @@ class Trimex(gui_base_original.Modifier):
         self.force = None
         self.cv = None
         self.call = self.view.addEventCallback("SoEvent", self.action)
-        _msg(translate("draft", "Pick distance"))
+        _toolmsg(translate("draft", "Pick distance"))
 
     def action(self, arg):
         """Handle the 3D scene events.
@@ -190,28 +187,37 @@ class Trimex(gui_base_original.Modifier):
             if arg["Key"] == "ESCAPE":
                 self.finish()
         elif arg["Type"] == "SoLocation2Event":  # mouse movement detection
-            self.shift = gui_tool_utils.hasMod(arg,
-                                               gui_tool_utils.MODCONSTRAIN)
-            self.alt = gui_tool_utils.hasMod(arg, gui_tool_utils.MODALT)
-            self.ctrl = gui_tool_utils.hasMod(arg, gui_tool_utils.MODSNAP)
+            self.shift = gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_constrain_key())
+            self.alt = gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_alt_key())
+            self.ctrl = gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_snap_key())
             if self.extrudeMode:
                 arg["ShiftDown"] = False
             elif hasattr(Gui, "Snapper"):
                 Gui.Snapper.setSelectMode(not self.ctrl)
-            wp = not(self.extrudeMode and self.shift)
-            self.point, cp, info = gui_tool_utils.getPoint(self, arg,
-                                                           workingplane=wp)
-            if gui_tool_utils.hasMod(arg, gui_tool_utils.MODSNAP):
+            self.point, cp, info = gui_tool_utils.getPoint(self, arg)
+            if gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_snap_key()):
                 self.snapped = None
             else:
                 self.snapped = self.view.getObjectInfo((arg["Position"][0],
                                                         arg["Position"][1]))
             if self.extrudeMode:
-                dist = self.extrude(self.shift)
+                dist, ang = (self.extrude(self.shift), None)
             else:
-                dist = self.redraw(self.point, self.snapped,
-                                   self.shift, self.alt)
-            self.ui.setRadiusValue(dist, unit="Length")
+                # If the geomType of the edge is "Line" ang will be None,
+                # else dist will be None.
+                dist, ang = self.redraw(self.point, self.snapped,
+                                        self.shift, self.alt)
+
+            if dist:
+                self.ui.labelRadius.setText(translate("draft", "Distance"))
+                self.ui.radiusValue.setToolTip(translate("draft",
+                                                         "Offset distance"))
+                self.ui.setRadiusValue(dist, unit="Length")
+            else:
+                self.ui.labelRadius.setText(translate("draft", "Angle"))
+                self.ui.radiusValue.setToolTip(translate("draft",
+                                                         "Offset angle"))
+                self.ui.setRadiusValue(ang, unit="Angle")
             self.ui.radiusValue.setFocus()
             self.ui.radiusValue.selectAll()
             gui_tool_utils.redraw3DView()
@@ -219,10 +225,9 @@ class Trimex(gui_base_original.Modifier):
         elif arg["Type"] == "SoMouseButtonEvent":
             if (arg["State"] == "DOWN") and (arg["Button"] == "BUTTON1"):
                 cursor = arg["Position"]
-                self.shift = gui_tool_utils.hasMod(arg,
-                                                   gui_tool_utils.MODCONSTRAIN)
-                self.alt = gui_tool_utils.hasMod(arg, gui_tool_utils.MODALT)
-                if gui_tool_utils.hasMod(arg, gui_tool_utils.MODSNAP):
+                self.shift = gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_constrain_key())
+                self.alt = gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_alt_key())
+                if gui_tool_utils.hasMod(arg, gui_tool_utils.get_mod_snap_key()):
                     self.snapped = None
                 else:
                     self.snapped = self.view.getObjectInfo((cursor[0],
@@ -307,6 +312,7 @@ class Trimex(gui_base_original.Modifier):
 
         # modifying active edge
         if DraftGeomUtils.geomType(edge) == "Line":
+            ang = None
             ve = DraftGeomUtils.vec(edge)
             chord = v1.sub(point)
             n = ve.cross(chord)
@@ -319,9 +325,6 @@ class Trimex(gui_base_original.Modifier):
             dist = v1.sub(self.newpoint).Length
             ghost.p1(self.newpoint)
             ghost.p2(v2)
-            self.ui.labelRadius.setText(translate("draft", "Distance"))
-            self.ui.radiusValue.setToolTip(translate("draft",
-                                                     "The offset distance"))
             if real:
                 if self.force:
                     ray = self.newpoint.sub(v1)
@@ -329,16 +332,14 @@ class Trimex(gui_base_original.Modifier):
                     self.newpoint = App.Vector.add(v1, ray)
                 newedges.append(Part.LineSegment(self.newpoint, v2).toShape())
         else:
+            dist = None
             center = edge.Curve.Center
             rad = edge.Curve.Radius
             ang1 = DraftVecUtils.angle(v2.sub(center))
             ang2 = DraftVecUtils.angle(point.sub(center))
             _rot_rad = DraftVecUtils.rotate(App.Vector(rad, 0, 0), -ang2)
             self.newpoint = App.Vector.add(center, _rot_rad)
-            self.ui.labelRadius.setText(translate("draft", "Angle"))
-            self.ui.radiusValue.setToolTip(translate("draft",
-                                                     "The offset angle"))
-            dist = math.degrees(-ang2)
+            ang = math.degrees(-ang2)
             # if ang1 > ang2:
             #     ang1, ang2 = ang2, ang1
             # print("last calculated:",
@@ -390,7 +391,7 @@ class Trimex(gui_base_original.Modifier):
         if real:
             return newedges
         else:
-            return dist
+            return [dist, ang]
 
     def trimObject(self):
         """Trim the actual object."""
@@ -542,9 +543,9 @@ class Trimex(gui_base_original.Modifier):
                     obj.FirstAngle = ang
         self.doc.recompute()
 
-    def finish(self, closed=False):
+    def finish(self, cont=False):
         """Terminate the operation of the Trimex tool."""
-        super(Trimex, self).finish()
+        self.end_callbacks(self.call)
         self.force = None
         if self.ui:
             if self.linetrack:
@@ -558,7 +559,8 @@ class Trimex(gui_base_original.Modifier):
                     self.obj.ViewObject.LineColor = self.color
                 if self.width:
                     self.obj.ViewObject.LineWidth = self.width
-            gui_utils.select(self.obj)
+                gui_utils.select(self.obj)
+        super().finish()
 
     def numericRadius(self, dist):
         """Validate the entry fields in the user interface.

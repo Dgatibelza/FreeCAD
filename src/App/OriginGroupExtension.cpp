@@ -21,17 +21,18 @@
  ***************************************************************************/
 
 #include "PreCompiled.h"
-#include "OriginGroupExtension.h"
-
-#ifndef _PreComp_
-#endif
-
-#include <Base/Exception.h>
 
 #include <App/Document.h>
+#include <Base/Console.h>
+#include <Base/Exception.h>
+#include <Base/Tools.h>
+
+#include "OriginGroupExtension.h"
+#include "GeoFeature.h"
 #include "Origin.h"
 
-#include "GeoFeature.h"
+
+FC_LOG_LEVEL_INIT("App", true, true)
 
 using namespace App;
 
@@ -41,12 +42,11 @@ OriginGroupExtension::OriginGroupExtension () {
 
     initExtensionType(OriginGroupExtension::getExtensionClassTypeId());
 
-    EXTENSION_ADD_PROPERTY_TYPE ( Origin, (0), 0, App::Prop_Hidden, "Origin linked to the group" );
+    EXTENSION_ADD_PROPERTY_TYPE ( Origin, (nullptr), 0, App::Prop_Hidden, "Origin linked to the group" );
     Origin.setScope(LinkScope::Child);
 }
 
-OriginGroupExtension::~OriginGroupExtension ()
-{ }
+OriginGroupExtension::~OriginGroupExtension () = default;
 
 App::Origin *OriginGroupExtension::getOrigin () const {
     App::DocumentObject *originObj = Origin.getValue ();
@@ -71,7 +71,7 @@ bool OriginGroupExtension::extensionGetSubObject(DocumentObject *&ret, const cha
 {
     App::DocumentObject *originObj = Origin.getValue ();
     const char *dot;
-    if(originObj && originObj->getNameInDocument() &&
+    if(originObj && originObj->isAttachedToDocument() &&
        subname && (dot=strchr(subname,'.')))
     {
         bool found;
@@ -129,10 +129,17 @@ App::DocumentObjectExecReturn *OriginGroupExtension::extensionExecute() {
     return GeoFeatureGroupExtension::extensionExecute ();
 }
 
+App::DocumentObject *OriginGroupExtension::getLocalizedOrigin(App::Document *doc) {
+    App::DocumentObject *originObject = doc->addObject ( "App::Origin", "Origin" );
+    QByteArray byteArray = tr("Origin").toUtf8();
+    originObject->Label.setValue(byteArray.constData());
+    return originObject;
+}
+
 void OriginGroupExtension::onExtendedSetupObject () {
     App::Document *doc = getExtendedObject()->getDocument ();
 
-    App::DocumentObject *originObj = doc->addObject ( "App::Origin", "Origin" );
+    App::DocumentObject *originObj = getLocalizedOrigin(doc);
 
     assert ( originObj && originObj->isDerivedFrom ( App::Origin::getClassTypeId () ) );
     Origin.setValue (originObj);
@@ -160,8 +167,13 @@ void OriginGroupExtension::extensionOnChanged(const Property* p) {
                    && owner->getDocument()->testStatus(Document::Importing)) {
             for (auto o : origin->getInList()) {
                 if(o != owner && o->hasExtension(App::OriginGroupExtension::getExtensionClassTypeId())) {
-                    Origin.setValue(nullptr);
-                    throw Base::RuntimeError("Origin can only be in a single OriginGroup");
+                    App::Document *document = owner->getDocument();
+                    // Temporarily reset 'Restoring' status to allow document to auto label new objects
+                    Base::ObjectStatusLocker<Document::Status, Document> guard(
+                            Document::Restoring, document, false);
+                    Origin.setValue(getLocalizedOrigin(document));
+                    FC_WARN("Reset origin in " << owner->getFullName());
+                    return;
                 }
             }
         }
@@ -177,7 +189,7 @@ void OriginGroupExtension::relinkToOrigin(App::DocumentObject* obj)
     std::vector<App::Property*> list;
     obj->getPropertyList(list);
     for(App::Property* prop : list) {
-        if(prop->getTypeId().isDerivedFrom(App::PropertyLink::getClassTypeId())) {
+        if(prop->isDerivedFrom<App::PropertyLink>()) {
 
             auto p = static_cast<App::PropertyLink*>(prop);
             if(!p->getValue() || !p->getValue()->isDerivedFrom(App::OriginFeature::getClassTypeId()))
@@ -185,7 +197,7 @@ void OriginGroupExtension::relinkToOrigin(App::DocumentObject* obj)
 
             p->setValue(getOrigin()->getOriginFeature(static_cast<OriginFeature*>(p->getValue())->Role.getValue()));
         }
-        else if(prop->getTypeId().isDerivedFrom(App::PropertyLinkList::getClassTypeId())) {
+        else if(prop->isDerivedFrom<App::PropertyLinkList>()) {
             auto p = static_cast<App::PropertyLinkList*>(prop);
             auto vec = p->getValues();
             std::vector<App::DocumentObject*> result;
@@ -201,7 +213,7 @@ void OriginGroupExtension::relinkToOrigin(App::DocumentObject* obj)
             if(changed)
                 static_cast<App::PropertyLinkList*>(prop)->setValues(result);
         }
-        else if(prop->getTypeId().isDerivedFrom(App::PropertyLinkSub::getClassTypeId())) {
+        else if(prop->isDerivedFrom<App::PropertyLinkSub>()) {
             auto p = static_cast<App::PropertyLinkSub*>(prop);
             if(!p->getValue() || !p->getValue()->isDerivedFrom(App::OriginFeature::getClassTypeId()))
                 continue;
@@ -209,7 +221,7 @@ void OriginGroupExtension::relinkToOrigin(App::DocumentObject* obj)
             std::vector<std::string> subValues = p->getSubValues();
             p->setValue(getOrigin()->getOriginFeature(static_cast<OriginFeature*>(p->getValue())->Role.getValue()), subValues);
         }
-        else if(prop->getTypeId().isDerivedFrom(App::PropertyLinkSubList::getClassTypeId())) {
+        else if(prop->isDerivedFrom<App::PropertyLinkSubList>()) {
             auto p = static_cast<App::PropertyLinkSubList*>(prop);
             auto vec = p->getSubListValues();
             bool changed = false;

@@ -28,7 +28,7 @@ parameter.
 
 This array was developed in order to build a `twisted bridge` object.
 
-See https://forum.freecadweb.org/viewtopic.php?f=23&t=49617
+See https://forum.freecad.org/viewtopic.php?f=23&t=49617
 
 A `twisted bridge` would consist of three parts:
  1. The ribcage composed of a twisted array generated from a frame
@@ -48,8 +48,9 @@ object in the Arch Workbench.
 # \brief Provides the object code for the TwistedArray object.
 
 import draftgeoutils.geo_arrays as geo
-from draftutils.translate import _tr
-
+from draftutils.messages import _wrn
+from draftutils.translate import translate
+def QT_TRANSLATE_NOOP(ctx,txt): return txt
 from draftobjects.draftlink import DraftLink
 
 ## \addtogroup draftobjects
@@ -65,12 +66,12 @@ class PathTwistedArray(DraftLink):
     """
 
     def __init__(self, obj):
-        super(PathTwistedArray, self).__init__(obj, "PathTwistedArray")
+        super().__init__(obj, "PathTwistedArray")
 
     def attach(self, obj):
         """Set up the properties when the object is attached."""
         self.set_properties(obj)
-        super(PathTwistedArray, self).attach(obj)
+        super().attach(obj)
 
     def set_properties(self, obj):
         """Set properties only if they don't exist."""
@@ -80,79 +81,71 @@ class PathTwistedArray(DraftLink):
             properties = []
 
         if "Base" not in properties:
-            _tip = _tr("The base object that will be duplicated.")
             obj.addProperty("App::PropertyLink",
                             "Base",
                             "Objects",
-                            _tip)
+                            QT_TRANSLATE_NOOP("App::Property","The base object that will be duplicated."))
             obj.Base = None
 
         if "PathObject" not in properties:
-            _tip = _tr("The object along which "
-                       "the copies will be distributed. "
-                       "It must contain 'Edges'.")
             obj.addProperty("App::PropertyLink",
                             "PathObject",
                             "Objects",
-                            _tip)
+                            QT_TRANSLATE_NOOP("App::Property","The object along which the copies will be distributed. It must contain 'Edges'."))
             obj.PathObject = None
 
+        if "Fuse" not in properties:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                                     "Specifies if the copies "
+                                     "should be fused together "
+                                     "if they touch each other (slower)")
+            obj.addProperty("App::PropertyBool",
+                            "Fuse",
+                            "Objects",
+                            _tip)
+            obj.Fuse = False
+
         if "Count" not in properties:
-            _tip = _tr("Number of copies to create.")
             obj.addProperty("App::PropertyInteger",
                             "Count",
                             "Objects",
-                            _tip)
+                            QT_TRANSLATE_NOOP("App::Property","Number of copies to create."))
             obj.Count = 15
 
         if "RotationFactor" not in properties:
-            _tip = _tr("Rotation factor of the twisted array.")
             obj.addProperty("App::PropertyFloat",
                             "RotationFactor",
                             "Objects",
-                            _tip)
+                            QT_TRANSLATE_NOOP("App::Property","Rotation factor of the twisted array."))
             obj.RotationFactor = 0.25
 
         if self.use_link and "ExpandArray" not in properties:
-            _tip = _tr("Show the individual array elements "
-                       "(only for Link arrays)")
             obj.addProperty("App::PropertyBool",
                             "ExpandArray",
                             "Objects",
-                            _tip)
+                            QT_TRANSLATE_NOOP("App::Property","Show the individual array elements (only for Link arrays)"))
             obj.ExpandArray = False
             obj.setPropertyStatus('Shape', 'Transient')
 
     def linkSetup(self, obj):
         """Set up the object as a link object."""
-        super(PathTwistedArray, self).linkSetup(obj)
+        super().linkSetup(obj)
         obj.configLinkProperty(ElementCount='Count')
 
-    def onChanged(self, obj, prop):
-        """Execute when a property is changed."""
-        super(PathTwistedArray, self).onChanged(obj, prop)
-
     def onDocumentRestored(self, obj):
-        """Execute code when the document is restored.
-
-        Add properties that don't exist.
-        """
+        super().onDocumentRestored(obj)
+        # Fuse property was added in v1.0, obj should be OK if it is present:
+        if hasattr(obj, "Fuse"):
+            return
         self.set_properties(obj)
-
-        if self.use_link:
-            self.linkSetup(obj)
-        else:
-            obj.setPropertyStatus('Shape', '-Transient')
-
-        if obj.Shape.isNull():
-            if getattr(obj, 'PlacementList', None):
-                self.buildShape(obj, obj.Placement, obj.PlacementList)
-            else:
-                self.execute(obj)
+        _wrn("v1.0, " + obj.Label + ", " + translate("draft", "added 'Fuse' property"))
 
     def execute(self, obj):
         """Execute when the object is created or recomputed."""
-        if not obj.Base or not obj.PathObject:
+        if self.props_changed_placement_only(obj) \
+                or not obj.Base \
+                or not obj.PathObject:
+            self.props_changed_clear()
             return
 
         # placement of entire PathArray object
@@ -166,8 +159,8 @@ class PathTwistedArray(DraftLink):
                                                         count=count,
                                                         rot_factor=rot_factor)
 
-        return super(PathTwistedArray, self).buildShape(obj,
-                                                        array_placement,
-                                                        copy_placements)
+        self.buildShape(obj, array_placement, copy_placements)
+        self.props_changed_clear()
+        return (not self.use_link)
 
 ## @}

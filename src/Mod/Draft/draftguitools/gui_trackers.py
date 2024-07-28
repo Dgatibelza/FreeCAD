@@ -42,14 +42,15 @@ import FreeCAD
 import FreeCADGui
 import Draft
 import DraftVecUtils
-
 from FreeCAD import Vector
-from draftutils.todo import ToDo
+from draftutils import params
+from draftutils import utils
 from draftutils.messages import _msg
+from draftutils.todo import ToDo
 
 __title__ = "FreeCAD Draft Trackers"
 __author__ = "Yorik van Havre"
-__url__ = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 
 class Tracker:
@@ -58,10 +59,10 @@ class Tracker:
     def __init__(self, dotted=False, scolor=None, swidth=None,
                  children=[], ontop=False, name=None):
         global Part, DraftGeomUtils
-        import Part, DraftGeomUtils
+        import Part
+        import DraftGeomUtils
         self.ontop = ontop
         self.color = coin.SoBaseColor()
-        self.color.rgb = scolor or FreeCADGui.draftToolBar.getDefaultColor("line")
         drawstyle = coin.SoDrawStyle()
         if swidth:
             drawstyle.lineWidth = swidth
@@ -77,11 +78,14 @@ class Tracker:
             self.switch.setName(name)
         self.switch.addChild(node)
         self.switch.whichChild = -1
+        self.setColor(scolor)
         self.Visible = False
         ToDo.delay(self._insertSwitch, self.switch)
 
     def finalize(self):
-        """Finish the command by removing the switch."""
+        """Finish the command by removing the switch.
+        Also called by ghostTracker.remove.
+        """
         ToDo.delay(self._removeSwitch, self.switch)
         self.switch = None
 
@@ -137,26 +141,46 @@ class Tracker:
             sg.removeChild(self.switch)
             sg.insertChild(self.switch, 0)
 
+    def setColor(self, color=None):
+        """Set the color."""
+        if color is not None:
+            self.color.rgb = color
+        elif hasattr(FreeCAD, "activeDraftCommand") \
+                and FreeCAD.activeDraftCommand is not None \
+                and hasattr(FreeCAD.activeDraftCommand, "featureName") \
+                and FreeCAD.activeDraftCommand.featureName in ("Dimension", "Label", "Text"):
+            self.color.rgb = utils.get_rgba_tuple(params.get_param("DefaultAnnoLineColor"))[:3]
+        else:
+            self.color.rgb = utils.get_rgba_tuple(params.get_param_view("DefaultShapeLineColor"))[:3]
+
+    def _get_wp(self):
+        return FreeCAD.DraftWorkingPlane
+
 
 class snapTracker(Tracker):
     """Define Snap Mark tracker, used by tools that support snapping."""
 
     def __init__(self):
-        color = coin.SoBaseColor()
-        color.rgb = FreeCADGui.draftToolBar.getDefaultColor("snap")
         self.marker = coin.SoMarkerSet()  # this is the marker symbol
-        self.marker.markerIndex = FreeCADGui.getMarkerIndex("", 9)
+        self.marker.markerIndex = FreeCADGui.getMarkerIndex("CIRCLE_FILLED", params.get_param_view("MarkerSize"))
         self.coords = coin.SoCoordinate3()  # this is the coordinate
         self.coords.point.setValue((0, 0, 0))
         node = coin.SoAnnotation()
         node.addChild(self.coords)
-        node.addChild(color)
         node.addChild(self.marker)
-        Tracker.__init__(self, children=[node], name="snapTracker")
+        super().__init__(children=[node], name="snapTracker")
+        self.setColor()
 
     def setMarker(self, style):
         """Set the marker index."""
-        self.marker.markerIndex = FreeCADGui.getMarkerIndex(style, 9)
+        self.marker.markerIndex = FreeCADGui.getMarkerIndex(style, params.get_param_view("MarkerSize"))
+
+    def setColor(self, color=None):
+        """Set the color."""
+        if color is None:
+            self.color.rgb = utils.get_rgba_tuple(params.get_param("snapcolor"))[:3]
+        else:
+            self.color.rgb = color
 
     def setCoords(self, point):
         """Set the coordinates to the point."""
@@ -181,7 +205,7 @@ class lineTracker(Tracker):
         line.numVertices.setValue(2)
         self.coords = coin.SoCoordinate3()  # this is the coordinate
         self.coords.point.setValues(0, 2, [[0, 0, 0], [1, 0, 0]])
-        Tracker.__init__(self, dotted, scolor, swidth,
+        super().__init__(dotted, scolor, swidth,
                          [self.coords, line],
                          ontop, name="lineTracker")
 
@@ -227,15 +251,16 @@ class rectangleTracker(Tracker):
             m1.diffuseColor.setValue([0.5, 0.5, 1.0])
             f = coin.SoIndexedFaceSet()
             f.coordIndex.setValues([0, 1, 2, 3])
-            Tracker.__init__(self, dotted, scolor, swidth,
+            super().__init__(dotted, scolor, swidth,
                              [self.coords, line, m1, f],
                              name="rectangleTracker")
         else:
-            Tracker.__init__(self, dotted, scolor, swidth,
+            super().__init__(dotted, scolor, swidth,
                              [self.coords, line],
                              name="rectangleTracker")
-        self.u = FreeCAD.DraftWorkingPlane.u
-        self.v = FreeCAD.DraftWorkingPlane.v
+        wp = self._get_wp()
+        self.u = wp.u
+        self.v = wp.v
 
     def setorigin(self, point):
         """Set the base point of the rectangle."""
@@ -262,8 +287,8 @@ class rectangleTracker(Tracker):
         if v:
             self.v = v
         else:
-            norm = FreeCAD.DraftWorkingPlane.u.cross(FreeCAD.DraftWorkingPlane.v)
-            self.v = self.u.cross(norm)
+            norm = self._get_wp().axis
+            self.v = norm.cross(self.u)
 
     def p1(self, point=None):
         """Set or get the base point of the rectangle."""
@@ -326,7 +351,7 @@ class dimTracker(Tracker):
                                      [0, 0, 0],
                                      [0, 0, 0],
                                      [0, 0, 0]])
-        Tracker.__init__(self, dotted, scolor, swidth,
+        super().__init__(dotted, scolor, swidth,
                          [self.coords, line], name="dimTracker")
         self.p1 = self.p2 = self.p3 = None
 
@@ -381,7 +406,7 @@ class bsplineTracker(Tracker):
         self.trans = coin.SoTransform()
         self.sep = coin.SoSeparator()
         self.recompute()
-        Tracker.__init__(self, dotted, scolor, swidth,
+        super().__init__(dotted, scolor, swidth,
                          [self.trans, self.sep], name="bsplineTracker")
 
     def update(self, points):
@@ -420,7 +445,7 @@ class bsplineTracker(Tracker):
             except Exception:
                 # workaround for pivy SoInput.setBuffer() bug
                 buf = buf.replace("\n", "")
-                pts = re.findall("point \[(.*?)\]", buf)[0]
+                pts = re.findall("point \\[(.*?)\\]", buf)[0]
                 pts = pts.split(",")
                 pc = []
                 for p in pts:
@@ -454,7 +479,7 @@ class bezcurveTracker(Tracker):
         self.trans = coin.SoTransform()
         self.sep = coin.SoSeparator()
         self.recompute()
-        Tracker.__init__(self, dotted, scolor, swidth,
+        super().__init__(dotted, scolor, swidth,
                          [self.trans, self.sep], name="bezcurveTracker")
 
     def update(self, points, degree=None):
@@ -498,7 +523,7 @@ class bezcurveTracker(Tracker):
                 except Exception:
                     # workaround for pivy SoInput.setBuffer() bug
                     buf = buf.replace("\n","")
-                    pts = re.findall("point \[(.*?)\]", buf)[0]
+                    pts = re.findall("point \\[(.*?)\\]", buf)[0]
                     pts = pts.split(",")
                     pc = []
                     for p in pts:
@@ -525,9 +550,9 @@ class bezcurveTracker(Tracker):
 
 class arcTracker(Tracker):
     """An arc tracker."""
-
+    # Note: used by the Arc command but also for angular dimensions.
     def __init__(self, dotted=False, scolor=None, swidth=None,
-                 start=0, end=math.pi*2, normal=None):
+                 start=0, end=math.pi*2):
         self.circle = None
         self.startangle = math.degrees(start)
         self.endangle = math.degrees(end)
@@ -535,13 +560,9 @@ class arcTracker(Tracker):
         self.trans.translation.setValue([0, 0, 0])
         self.sep = coin.SoSeparator()
         self.autoinvert = True
-        if normal:
-            self.normal = normal
-        else:
-            self.normal = FreeCAD.DraftWorkingPlane.axis
-        self.basevector = self.getDeviation()
+        self.normal = self._get_wp().axis
         self.recompute()
-        Tracker.__init__(self, dotted, scolor, swidth,
+        super().__init__(dotted, scolor, swidth,
                          [self.trans, self.sep], name="arcTracker")
 
     def getDeviation(self):
@@ -576,10 +597,7 @@ class arcTracker(Tracker):
         """Return the angle of a given vector in radians."""
         c = self.trans.translation.getValue()
         center = Vector(c[0], c[1], c[2])
-        rad = pt.sub(center)
-        a = DraftVecUtils.angle(rad, self.basevector, self.normal)
-        # print(a)
-        return a
+        return DraftVecUtils.angle(pt.sub(center), self.getDeviation(), self.normal)
 
     def getAngles(self):
         """Return the start and end angles in degrees."""
@@ -609,7 +627,6 @@ class arcTracker(Tracker):
         e = arc.toShape()
         self.autoinvert = False
         self.normal = e.Curve.Axis.negative()  # axis is always in wrong direction
-        self.basevector = self.getDeviation()
         self.setCenter(e.Curve.Center)
         self.setRadius(e.Curve.Radius)
         self.setStartPoint(p1)
@@ -635,7 +652,7 @@ class arcTracker(Tracker):
         except Exception:
             # workaround for pivy SoInput.setBuffer() bug
             buf = buf.replace("\n", "")
-            pts = re.findall("point \[(.*?)\]", buf)[0]
+            pts = re.findall("point \\[(.*?)\\]", buf)[0]
             pts = pts.split(",")
             pc = []
             for p in pts:
@@ -665,7 +682,7 @@ class ghostTracker(Tracker):
     You can pass it an object or a list of objects, or a shape.
     """
 
-    def __init__(self, sel, dotted=False, scolor=None, swidth=None):
+    def __init__(self, sel, dotted=False, scolor=None, swidth=None, mirror=False):
         self.trans = coin.SoTransform()
         self.trans.translation.setValue([0, 0, 0])
         self.children = [self.trans]
@@ -679,29 +696,32 @@ class ghostTracker(Tracker):
             else:
                 self.coords = coin.SoCoordinate3()
                 self.coords.point.setValue((obj.X, obj.Y, obj.Z))
-                color = coin.SoBaseColor()
-                color.rgb = FreeCADGui.draftToolBar.getDefaultColor("snap")
                 self.marker = coin.SoMarkerSet()  # this is the marker symbol
-                self.marker.markerIndex = FreeCADGui.getMarkerIndex("quad", 9)
+                self.marker.markerIndex = FreeCADGui.getMarkerIndex("SQUARE_FILLED", params.get_param_view("MarkerSize"))
                 node = coin.SoAnnotation()
                 selnode = coin.SoSeparator()
                 selnode.addChild(self.coords)
-                selnode.addChild(color)
                 selnode.addChild(self.marker)
                 node.addChild(selnode)
                 rootsep.addChild(node)
+        if mirror is True:
+            self._flip(rootsep)
         self.children.append(rootsep)
-        Tracker.__init__(self, dotted, scolor, swidth,
+        super().__init__(dotted, scolor, swidth,
                          children=self.children, name="ghostTracker")
+        self.setColor(scolor)
 
-    def update(self, obj):
-        """Recreate the ghost from a new object."""
-        obj.ViewObject.show()
-        self.finalize()
-        sep = self.getNode(obj)
-        Tracker.__init__(self, children=[self.sep])
-        self.on()
-        obj.ViewObject.hide()
+    def setColor(self, color=None):
+        """Set the color."""
+        if color is None:
+            self.color.rgb = utils.get_rgba_tuple(params.get_param("snapcolor"))[:3]
+        else:
+            self.color.rgb = color
+
+    def remove(self):
+        """Remove the ghost when switching to and from subelement mode."""
+        if self.switch:
+            self.finalize()
 
     def move(self, delta):
         """Move the ghost to a given position.
@@ -779,29 +799,49 @@ class ghostTracker(Tracker):
             return FreeCAD.Matrix()
 
     def setMatrix(self, matrix):
-        """Set the transformation matrix."""
+        """Set the transformation matrix.
+
+        The 4th column of the matrix (the position) is ignored.
+        """
         m = coin.SbMatrix(matrix.A11, matrix.A12, matrix.A13, matrix.A14,
                           matrix.A21, matrix.A22, matrix.A23, matrix.A24,
                           matrix.A31, matrix.A32, matrix.A33, matrix.A34,
                           matrix.A41, matrix.A42, matrix.A43, matrix.A44)
         self.trans.setMatrix(m)
 
+    def _flip(self, root):
+        """Flip the normals of the coin faces."""
+        # Code by wmayer:
+        # https://forum.freecad.org/viewtopic.php?p=702640#p702640
+        search = coin.SoSearchAction()
+        search.setType(coin.SoIndexedFaceSet.getClassTypeId())
+        search.apply(root)
+        path = search.getPath()
+        if path:
+            node = path.getTail()
+            index = node.coordIndex.getValues()
+            if len(index) % 4 == 0:
+                for i in range(0, len(index), 4):
+                    tmp = index[i]
+                    index[i] = index[i+1]
+                    index[i+1] = tmp
+
+                node.coordIndex.setValues(index)
+
 
 class editTracker(Tracker):
     """A node edit tracker."""
 
     def __init__(self, pos=Vector(0, 0, 0), name=None, idx=0, objcol=None,
-                 marker=FreeCADGui.getMarkerIndex("quad", 9),
-                 inactive=False):
-        self.color = coin.SoBaseColor()
-        if objcol:
-            self.color.rgb = objcol[:3]
-        else:
-            self.color.rgb = FreeCADGui.draftToolBar.getDefaultColor("snap")
+                 marker=None, inactive=False):
         self.marker = coin.SoMarkerSet()  # this is the marker symbol
-        self.marker.markerIndex = marker
+        if marker is None:
+            self.marker.markerIndex = FreeCADGui.getMarkerIndex("SQUARE_FILLED", params.get_param_view("MarkerSize"))
+        else:
+            self.marker.markerIndex = marker
         self.coords = coin.SoCoordinate3()  # this is the coordinate
         self.coords.point.setValue((pos.x, pos.y, pos.z))
+        self.position = pos
         if inactive:
             self.selnode = coin.SoSeparator()
         else:
@@ -813,22 +853,25 @@ class editTracker(Tracker):
                 self.selnode.subElementName.setValue("EditNode" + str(idx))
         node = coin.SoAnnotation()
         self.selnode.addChild(self.coords)
-        self.selnode.addChild(self.color)
         self.selnode.addChild(self.marker)
         node.addChild(self.selnode)
         ontop = not inactive
-        Tracker.__init__(self, children=[node],
+        super().__init__(children=[node],
                          ontop=ontop, name="editTracker")
+        if objcol is None:
+            self.setColor()
+        else:
+            self.setColor(objcol[:3])
         self.on()
 
     def set(self, pos):
         """Set the point to the position."""
         self.coords.point.setValue((pos.x, pos.y, pos.z))
+        self.position = pos
 
     def get(self):
         """Get a vector from the point."""
-        p = self.coords.point.getValues()[0]
-        return Vector(p[0], p[1], p[2])
+        return self.position
 
     def get_doc_name(self):
         """Get the document name."""
@@ -852,12 +895,12 @@ class editTracker(Tracker):
         """Get the point and add a delta, and set the new point."""
         self.set(self.get().add(delta))
 
-    def setColor(self, color):
+    def setColor(self, color=None):
         """Set the color."""
-        if color:
-            self.color.rgb = color
+        if color is None:
+            self.color.rgb = utils.get_rgba_tuple(params.get_param("snapcolor"))[:3]
         else:
-            self.color.rgb = FreeCADGui.draftToolBar.getDefaultColor("snap")
+            self.color.rgb = color
 
 
 class PlaneTracker(Tracker):
@@ -867,7 +910,7 @@ class PlaneTracker(Tracker):
         # getting screen distance
         p1 = Draft.get3DView().getPoint((100, 100))
         p2 = Draft.get3DView().getPoint((110, 100))
-        bl = (p2.sub(p1)).Length * (Draft.getParam("snapRange", 8)/2.0)
+        bl = (p2.sub(p1)).Length * (params.get_param("snapRange")/2.0)
         pick = coin.SoPickStyle()
         pick.style.setValue(coin.SoPickStyle.UNPICKABLE)
         self.trans = coin.SoTransform()
@@ -902,15 +945,13 @@ class PlaneTracker(Tracker):
         s.addChild(m2)
         s.addChild(c2)
         s.addChild(l)
-        Tracker.__init__(self, children=[s], name="planeTracker")
+        super().__init__(children=[s], name="planeTracker")
 
     def set(self, pos=None):
         """Set the translation to the position."""
-        if pos:
-            Q = FreeCAD.DraftWorkingPlane.getRotation().Rotation.Q
-        else:
-            plm = FreeCAD.DraftWorkingPlane.getPlacement()
-            Q = plm.Rotation.Q
+        plm = self._get_wp().get_placement()
+        Q = plm.Rotation.Q
+        if pos is None:
             pos = plm.Base
         self.trans.translation.setValue([pos.x, pos.y, pos.z])
         self.trans.rotation.setValue([Q[0], Q[1], Q[2], Q[3]])
@@ -929,7 +970,7 @@ class wireTracker(Tracker):
             self.line.numVertices.setValue(len(wire.Vertexes))
         self.coords = coin.SoCoordinate3()
         self.update(wire)
-        Tracker.__init__(self, children=[self.coords, self.line],
+        super().__init__(children=[self.coords, self.line],
                          name="wireTracker")
 
     def update(self, wire, forceclosed=False):
@@ -960,25 +1001,16 @@ class gridTracker(Tracker):
 
     def __init__(self):
 
-        gtrans = Draft.getParam("gridTransparency",0)
-        col = self.getGridColor()
-        if Draft.getParam("coloredGridAxes",True):
-            red = ((1.0+col[0])/2,0.0,0.0)
-            green = (0.0,(1.0+col[1])/2,0.0)
-            blue = (0.0,0.0,(1.0+col[2])/2)
-        else:
-            red = col
-            green = col
-            blue = col
+        col, red, green, blue, gtrans = self.getGridColors()
         pick = coin.SoPickStyle()
         pick.style.setValue(coin.SoPickStyle.UNPICKABLE)
         self.trans = coin.SoTransform()
         self.trans.translation.setValue([0, 0, 0])
 
         # small squares
-        mat1 = coin.SoMaterial()
-        mat1.transparency.setValue(0.7*(1-gtrans))
-        mat1.diffuseColor.setValue(col)
+        self.mat1 = coin.SoMaterial()
+        self.mat1.transparency.setValue(0.8*(1-gtrans))
+        self.mat1.diffuseColor.setValue(col)
         self.font = coin.SoFont()
         self.coords1 = coin.SoCoordinate3()
         self.lines1 = coin.SoLineSet() # small squares
@@ -1003,16 +1035,23 @@ class gridTracker(Tracker):
         texts.addChild(t2)
 
         # big squares
-        mat2 = coin.SoMaterial()
-        mat2.transparency.setValue(0.3*(1-gtrans))
-        mat2.diffuseColor.setValue(col)
+        self.mat2 = coin.SoMaterial()
+        self.mat2.transparency.setValue(0.2*(1-gtrans))
+        self.mat2.diffuseColor.setValue(col)
         self.coords2 = coin.SoCoordinate3()
         self.lines2 = coin.SoLineSet() # big squares
 
+        # human figure
+        mat_human = coin.SoMaterial()
+        mat_human.transparency.setValue(0.3*(1-gtrans))
+        mat_human.diffuseColor.setValue(col)
+        self.coords_human = coin.SoCoordinate3()
+        self.human = coin.SoLineSet()
+
         # axes
-        mat3 = coin.SoMaterial()
-        mat3.transparency.setValue(gtrans)
-        mat3.diffuseColor.setValues([col,red,green,blue])
+        self.mat3 = coin.SoMaterial()
+        self.mat3.transparency.setValue(gtrans)
+        self.mat3.diffuseColor.setValues([col,red,green,blue])
         self.coords3 = coin.SoCoordinate3()
         self.lines3 = coin.SoIndexedLineSet() # axes
         self.lines3.coordIndex.setValues(0,5,[0,1,-1,2,3])
@@ -1021,35 +1060,49 @@ class gridTracker(Tracker):
         mbind3.value = coin.SoMaterialBinding.PER_PART_INDEXED
 
         self.pts = []
-        s = coin.SoSeparator()
+        s = coin.SoType.fromName("SoSkipBoundingGroup").createInstance()
         s.addChild(pick)
         s.addChild(self.trans)
-        s.addChild(mat1)
+        s.addChild(self.mat1)
         s.addChild(self.coords1)
         s.addChild(self.lines1)
-        s.addChild(mat2)
+        s.addChild(self.mat2)
         s.addChild(self.coords2)
         s.addChild(self.lines2)
+        s.addChild(mat_human)
+        s.addChild(self.coords_human)
+        s.addChild(self.human)
         s.addChild(mbind3)
-        s.addChild(mat3)
+        s.addChild(self.mat3)
         s.addChild(self.coords3)
         s.addChild(self.lines3)
         s.addChild(texts)
-        Tracker.__init__(self, children=[s], name="gridTracker")
-        self.reset()
 
-    def getGridColor(self):
-        """Get the grid color from the parameter editor."""
-        color = Draft.getParam("gridColor", 842157055)
-        r = ((color >> 24) & 0xFF) / 255
-        g = ((color >> 16) & 0xFF) / 255
-        b = ((color >> 8) & 0xFF) / 255
-        return [r, g, b]
+        super().__init__(children=[s], name="gridTracker")
+        self.show_during_command = False
+        self.show_always = False
+        self.reset()
 
     def update(self):
         """Redraw the grid."""
         # Resize the grid to make sure it fits
         # an exact pair number of main lines
+        if self.space == 0:
+            self.lines1.numVertices.deleteValues(0)
+            self.lines2.numVertices.deleteValues(0)
+            self.pts = []
+            FreeCAD.Console.PrintWarning("Draft Grid: Spacing value is zero\n")
+            return
+        if self.mainlines == 0:
+            self.lines1.numVertices.deleteValues(0)
+            self.lines2.numVertices.deleteValues(0)
+            self.pts = []
+            return
+        if self.numlines == 0:
+            self.lines1.numVertices.deleteValues(0)
+            self.lines2.numVertices.deleteValues(0)
+            self.pts = []
+            return
         numlines = self.numlines // self.mainlines // 2 * 2 * self.mainlines
         bound = (numlines // 2) * self.space
         border = (numlines//2 + self.mainlines/2) * self.space
@@ -1089,7 +1142,7 @@ class gridTracker(Tracker):
             for cp in range(0, len(cpts),2):
                 cidx.append(2)
 
-            if Draft.getParam("gridBorder", True):
+            if params.get_param("gridBorder"):
                 # extra border
                 border = (numlines//2 + self.mainlines/2) * self.space
                 mpts.extend([[-border, -border, z], [border, -border, z], [border, border, z], [-border, border, z], [-border, -border, z]])
@@ -1099,23 +1152,12 @@ class gridTracker(Tracker):
                 midx.extend(cidx)
                 # texts
                 self.font.size = self.space*(self.mainlines//4) or 1
-                self.font.name = Draft.getParam("textfont","Sans")
+                self.font.name = params.get_param("textfont")
                 txt = FreeCAD.Units.Quantity(self.space*self.mainlines,FreeCAD.Units.Length).UserString
                 self.text1.string = txt
                 self.text2.string = txt
                 self.textpos1.translation.setValue((-bound+self.space,-border+self.space,z))
                 self.textpos2.translation.setValue((-bound-self.space,-bound+self.space,z))
-                # human from BIM workbench
-                loc = FreeCAD.Vector(-bound+self.space/2,-bound+self.space/2,0)
-                try:
-                    import BimProject
-                    hpts = BimProject.getHuman(loc)
-                except:
-                    # BIM not installed
-                    pass
-                else:
-                    mpts.extend([tuple(p) for p in hpts])
-                    midx.append(len(hpts))
             else:
                 self.text1.string = " "
                 self.text2.string = " "
@@ -1130,13 +1172,63 @@ class gridTracker(Tracker):
             self.coords3.point.setValues(apts)
             #self.lines3.numVertices.setValues(aidx)
             self.pts = pts
-            self.setAxesColor()
 
-    def setAxesColor(self):
+        # update the grid colors
+        col, red, green, blue, gtrans = self.getGridColors()
+        self.mat1.diffuseColor.setValue(col)
+        self.mat2.diffuseColor.setValue(col)
+        self.mat3.diffuseColor.setValues([col,red,green,blue])
+
+    def getGridColors(self):
+        """Returns grid colors stored in the preferences"""
+        gtrans = params.get_param("gridTransparency")/100.0
+        col = utils.get_rgba_tuple(params.get_param("gridColor"))[:3]
+        if params.get_param("coloredGridAxes"):
+            vp = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/View")
+            red = vp.GetUnsigned("AxisXColor",0xCC333300)
+            green =  vp.GetUnsigned("AxisYColor",0x33CC3300)
+            blue = vp.GetUnsigned("AxisZColor",0x3333CC00)
+            red = utils.get_rgba_tuple(red)[:3]
+            green = utils.get_rgba_tuple(green)[:3]
+            blue = utils.get_rgba_tuple(blue)[:3]
+        else:
+            red = col
+            green = col
+            blue = col
+        return col, red, green, blue, gtrans
+
+    def displayHumanFigure(self, wp):
+        """ Display the human figure at the grid corner.
+        The silhouette is displayed only if:
+        - BIM Workbench is available;
+        - preference BaseApp/Preferences/Mod/Draft/gridBorder is True;
+        - preference BaseApp/Preferences/Mod/Draft/gridShowHuman is True;
+        - the working plane normal is vertical.
+        """
+        numlines = self.numlines // self.mainlines // 2 * 2 * self.mainlines
+        bound = (numlines // 2) * self.space
+        pts = []
+        pidx = []
+        if params.get_param("gridBorder") \
+                and params.get_param("gridShowHuman") \
+                and wp.axis.getAngle(FreeCAD.Vector(0,0,1)) < 0.001:
+            try:
+                import BimProjectManager
+                loc = FreeCAD.Vector(-bound+self.space/2,-bound+self.space/2,0)
+                hpts = BimProjectManager.getHuman(loc)
+                pts.extend([tuple(p) for p in hpts])
+                pidx.append(len(hpts))
+            except Exception:
+                # BIM not installed
+                return
+        self.human.numVertices.deleteValues(0)
+        self.coords_human.point.setValues(pts)
+        self.human.numVertices.setValues(pidx)
+
+    def setAxesColor(self, wp):
         """set axes color"""
         cols = [0,0]
-        if Draft.getParam("coloredGridAxes",True) and hasattr(FreeCAD,"DraftWorkingPlane"):
-            wp = FreeCAD.DraftWorkingPlane
+        if params.get_param("coloredGridAxes"):
             if round(wp.u.getAngle(FreeCAD.Vector(1,0,0)),2) in (0,3.14):
                 cols[0] = 1
             elif round(wp.u.getAngle(FreeCAD.Vector(0,1,0)),2) in (0,3.14):
@@ -1168,29 +1260,33 @@ class gridTracker(Tracker):
 
     def reset(self):
         """Reset the grid according to preferences settings."""
-        self.space = Draft.getParam("gridSpacing", 1)
-        self.mainlines = Draft.getParam("gridEvery", 10)
-        self.numlines = Draft.getParam("gridSize", 100)
+        try:
+            self.space = FreeCAD.Units.Quantity(params.get_param("gridSpacing")).Value
+        except ValueError:
+            self.space = 1
+        self.mainlines = params.get_param("gridEvery")
+        self.numlines = params.get_param("gridSize")
         self.update()
 
     def set(self):
         """Move and rotate the grid according to the current working plane."""
         self.reset()
-        Q = FreeCAD.DraftWorkingPlane.getRotation().Rotation.Q
-        P = FreeCAD.DraftWorkingPlane.position
+        wp = self._get_wp()
+        Q = wp.get_placement().Rotation.Q
+        P = wp.position
         self.trans.rotation.setValue([Q[0], Q[1], Q[2], Q[3]])
         self.trans.translation.setValue([P.x, P.y, P.z])
-        self.setAxesColor()
+        self.displayHumanFigure(wp)
+        self.setAxesColor(wp)
         self.on()
 
     def getClosestNode(self, point):
         """Return the closest node from the given point."""
-        # get the 2D coords.
-        # point = FreeCAD.DraftWorkingPlane.projectPoint(point)
-        pt = FreeCAD.DraftWorkingPlane.getLocalCoords(point)
+        wp = self._get_wp()
+        pt = wp.get_local_coords(point)
         pu = round(pt.x / self.space, 0) * self.space
         pv = round(pt.y / self.space, 0) * self.space
-        pt = FreeCAD.DraftWorkingPlane.getGlobalCoords(Vector(pu, pv, 0))
+        pt = wp.get_global_coords(Vector(pu, pv, 0))
         return pt
 
 
@@ -1212,17 +1308,17 @@ class boxTracker(Tracker):
             self.baseline = line
             self.update()
         if shaded:
-            Tracker.__init__(self, children=[self.trans, m, self.cube],
+            super().__init__(children=[self.trans, m, self.cube],
                              name="boxTracker")
         else:
-            Tracker.__init__(self, children=[self.trans, w, self.cube],
+            super().__init__(children=[self.trans, w, self.cube],
                              name="boxTracker")
 
     def update(self, line=None, normal=None):
         """Update the tracker."""
-        import WorkingPlane, DraftGeomUtils
+        import DraftGeomUtils
         if not normal:
-            normal = FreeCAD.DraftWorkingPlane.axis
+            normal = self._get_wp().axis
         if line:
             if isinstance(line, list):
                 bp = line[0]
@@ -1235,16 +1331,18 @@ class boxTracker(Tracker):
             bp = self.baseline.Shape.Edges[0].Vertexes[0].Point
         else:
             return
-        right = lvec.cross(normal)
         self.cube.width.setValue(lvec.Length)
-        p = WorkingPlane.getPlacementFromPoints([bp,
-                                                 bp.add(lvec),
-                                                 bp.add(right)])
-        if p:
-            self.trans.rotation.setValue(p.Rotation.Q)
         bp = bp.add(lvec.multiply(0.5))
         bp = bp.add(DraftVecUtils.scaleTo(normal, self.cube.depth.getValue()/2.0))
         self.pos(bp)
+        tol = 1e-6
+        if lvec.Length > tol and normal.Length > tol:
+            lvec.normalize()
+            normal.normalize()
+            if not lvec.isEqual(normal, tol) \
+                    and not lvec.isEqual(normal.negative(), tol):
+                rot = FreeCAD.Rotation(lvec, FreeCAD.Vector(), normal, "XZY")
+                self.trans.rotation.setValue(rot.Q)
 
     def setRotation(self, rot):
         """Set the rotation."""
@@ -1289,7 +1387,7 @@ class radiusTracker(Tracker):
         self.sphere = coin.SoSphere()
         self.sphere.radius.setValue(radius)
         self.baseline = None
-        Tracker.__init__(self, children=[self.trans, m, self.sphere],
+        super().__init__(children=[self.trans, m, self.sphere],
                          name="radiusTracker")
 
     def update(self, arg1, arg2=None):
@@ -1316,7 +1414,7 @@ class archDimTracker(Tracker):
         p2node = coin.SbVec3f([p2.x, p2.y, p2.z])
         self.dimnode.pnts.setValues([p1node, p2node])
         self.dimnode.lineWidth = 1
-        color = FreeCADGui.draftToolBar.getDefaultColor("snap")
+        color = utils.get_rgba_tuple(params.get_param("snapcolor"))[:3]
         self.dimnode.textColor.setValue(coin.SbVec3f(color))
         self.dimnode.size = 11
         self.size_pixel = self.dimnode.size.getValue()*96/72
@@ -1330,16 +1428,16 @@ class archDimTracker(Tracker):
         self.string = self.dimnode.string
         self.view = Draft.get3DView()
         self.camera = self.view.getCameraNode()
-        self.plane = FreeCAD.DraftWorkingPlane
         self.setMode(mode)
         self.setString()
-        Tracker.__init__(self, children=[self.transform, self.dimnode], name="archDimTracker")
+        super().__init__(children=[self.transform, self.dimnode], name="archDimTracker")
 
     def setString(self, text=None):
         """Set the dim string to the given value or auto value."""
+        plane = self._get_wp()
         p1 = Vector(self.pnts.getValues()[0].getValue())
         p2 = Vector(self.pnts.getValues()[-1].getValue())
-        self.norm.setValue(self.plane.getNormal())
+        self.norm.setValue(plane.axis)
         # set the offset sign to prevent the dim line from intersecting the curve near the cursor
         sign_dx = math.copysign(1, (p2.sub(p1)).x)
         sign_dy = math.copysign(1, (p2.sub(p1)).y)
@@ -1354,7 +1452,7 @@ class archDimTracker(Tracker):
             self.Distance = (p2.sub(p1)).Length
 
         text = FreeCAD.Units.Quantity(self.Distance, FreeCAD.Units.Length).UserString
-        self.matrix.setValue(*self.plane.getPlacement().Matrix.transposed().A)
+        self.matrix.setValue(*plane.get_placement().Matrix.transposed().A)
         self.string.setValue(text.encode('utf8'))
         # change the text position to external depending on the distance and scale values
         volume = self.camera.getViewVolume()
@@ -1377,10 +1475,11 @@ class archDimTracker(Tracker):
 
     def p1(self, point=None):
         """Set or get the first point of the dim."""
+        plane = self._get_wp()
         if point:
-            p1_proj = self.plane.projectPoint(point)
-            p1_proj_u = (p1_proj - self.plane.position).dot(self.plane.u.normalize())
-            p1_proj_v = (p1_proj - self.plane.position).dot(self.plane.v.normalize())
+            p1_proj = plane.project_point(point)
+            p1_proj_u = (p1_proj - plane.position).dot(plane.u.normalize())
+            p1_proj_v = (p1_proj - plane.position).dot(plane.v.normalize())
             self.pnts.set1Value(0, p1_proj_u, p1_proj_v, 0)
             self.setString()
         else:
@@ -1388,10 +1487,11 @@ class archDimTracker(Tracker):
 
     def p2(self, point=None):
         """Set or get the second point of the dim."""
+        plane = self._get_wp()
         if point:
-            p2_proj = self.plane.projectPoint(point)
-            p2_proj_u = (p2_proj - self.plane.position).dot(self.plane.u.normalize())
-            p2_proj_v = (p2_proj - self.plane.position).dot(self.plane.v.normalize())
+            p2_proj = plane.project_point(point)
+            p2_proj_u = (p2_proj - plane.position).dot(plane.u.normalize())
+            p2_proj_v = (p2_proj - plane.position).dot(plane.v.normalize())
             self.pnts.set1Value(1, p2_proj_u, p2_proj_v, 0)
             self.setString()
         else:

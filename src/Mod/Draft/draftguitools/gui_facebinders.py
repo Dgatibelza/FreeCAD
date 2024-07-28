@@ -43,7 +43,7 @@ import draftguitools.gui_base_original as gui_base_original
 import draftguitools.gui_tool_utils as gui_tool_utils
 
 from draftutils.messages import _msg
-from draftutils.translate import translate, _tr
+from draftutils.translate import translate
 
 # The module is used to prevent complaints from code checkers (flake8)
 True if Draft_rc.__name__ else False
@@ -54,45 +54,41 @@ class Facebinder(gui_base_original.Creator):
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _tip = "Creates a facebinder object from selected faces."
 
-        d = {'Pixmap': 'Draft_Facebinder',
-             'Accel': "F,F",
-             'MenuText': QT_TRANSLATE_NOOP("Draft_Facebinder", "Facebinder"),
-             'ToolTip': QT_TRANSLATE_NOOP("Draft_Facebinder", _tip)}
-        return d
+        return {"Pixmap": "Draft_Facebinder",
+                "Accel": "F,F",
+                "MenuText": QT_TRANSLATE_NOOP("Draft_Facebinder", "Facebinder"),
+                "ToolTip": QT_TRANSLATE_NOOP("Draft_Facebinder", "Creates a facebinder object from selected faces.")}
 
     def Activated(self):
         """Execute when the command is called."""
-        super(Facebinder, self).Activated(name=_tr("Facebinder"))
-
+        super().Activated(name="Facebinder")
+        if not self.ui:
+            return
         if not Gui.Selection.getSelection():
-            if self.ui:
-                self.ui.selectUi()
-                _msg(translate("draft", "Select faces from existing objects"))
-                self.call = \
-                    self.view.addEventCallback("SoEvent",
-                                               gui_tool_utils.selectObject)
+            self.ui.selectUi(on_close_call=self.finish)
+            _msg(translate("draft", "Select faces from existing objects"))
+            self.call = self.view.addEventCallback("SoEvent", gui_tool_utils.selectObject)
         else:
             self.proceed()
 
     def proceed(self):
         """Proceed when a valid selection has been made."""
-        if self.call:
-            self.view.removeEventCallback("SoEvent", self.call)
+        if self.call is not None:
+            self.end_callbacks(self.call)
         if Gui.Selection.getSelection():
             App.ActiveDocument.openTransaction("Create Facebinder")
             Gui.addModule("Draft")
-            Gui.doCommand("s = FreeCADGui.Selection.getSelectionEx()")
-            Gui.doCommand("facebinder = Draft.makeFacebinder(s)")
-            Gui.doCommand('Draft.autogroup(facebinder)')
-            Gui.doCommand('FreeCAD.ActiveDocument.recompute()')
+            Gui.doCommand("sels = FreeCADGui.Selection.getSelectionEx('', 0)")
+            Gui.doCommand("facebinder = Draft.make_facebinder(sels)")
+            Gui.doCommand("Draft.autogroup(facebinder)")
+            Gui.doCommand("FreeCAD.ActiveDocument.recompute()")
             App.ActiveDocument.commitTransaction()
             App.ActiveDocument.recompute()
         self.finish()
 
 
 Draft_Facebinder = Facebinder
-Gui.addCommand('Draft_Facebinder', Facebinder())
+Gui.addCommand("Draft_Facebinder", Facebinder())
 
 ## @}

@@ -41,43 +41,38 @@ import draftguitools.gui_base_original as gui_base_original
 import draftguitools.gui_tool_utils as gui_tool_utils
 
 from draftutils.messages import _msg
-from draftutils.translate import translate, _tr
+from draftutils.translate import translate
 
 
 class SubelementHighlight(gui_base_original.Modifier):
     """Gui Command for the SubelementHighlight tool."""
 
     def __init__(self):
+        super().__init__()
         self.is_running = False
         self.editable_objects = []
         self.original_view_settings = {}
 
     def GetResources(self):
         """Set icon, menu and tooltip."""
-        _menu = "Subelement highlight"
-        _tip = ("Highlight the subelements "
-                "of the selected objects, "
-                "so that they can then be edited "
-                "with the move, rotate, and scale tools.")
 
         return {'Pixmap': 'Draft_SubelementHighlight',
                 'Accel': "H, S",
-                'MenuText': QT_TRANSLATE_NOOP("Draft_SubelementHighlight",
-                                              _menu),
-                'ToolTip': QT_TRANSLATE_NOOP("Draft_SubelementHighlight",
-                                             _tip)}
+                'MenuText': QT_TRANSLATE_NOOP("Draft_SubelementHighlight","Subelement highlight"),
+                'ToolTip': QT_TRANSLATE_NOOP("Draft_SubelementHighlight","Highlight the subelements of the selected objects, so that they can then be edited with the move, rotate, and scale tools.")}
 
     def Activated(self):
         """Execute when the command is called."""
         if self.is_running:
             return self.finish()
         self.is_running = True
-        super(SubelementHighlight, self).Activated(name=_tr("Subelement highlight"))
+        super().Activated(name="Subelement highlight")
         self.get_selection()
 
     def proceed(self):
         """Continue with the command."""
-        self.remove_view_callback()
+        if self.call:
+            self.view.removeEventCallback("SoEvent", self.call)
         self.get_editable_objects_from_selection()
         if not self.editable_objects:
             return self.finish()
@@ -89,9 +84,9 @@ class SubelementHighlight(gui_base_original.Modifier):
 
         Re-initialize by running __init__ again at the end.
         """
-        super(SubelementHighlight, self).finish()
-        self.remove_view_callback()
+        self.end_callbacks(self.call)
         self.restore_editable_objects_graphics()
+        super().finish()
         self.__init__()
 
     def action(self, event):
@@ -117,11 +112,6 @@ class SubelementHighlight(gui_base_original.Modifier):
         else:
             self.proceed()
 
-    def remove_view_callback(self):
-        """Remove the installed callback if it exists."""
-        if self.call:
-            self.view.removeEventCallback("SoEvent", self.call)
-
     def get_editable_objects_from_selection(self):
         """Get editable Draft objects for the selection."""
         for obj in Gui.Selection.getSelection():
@@ -144,9 +134,10 @@ class SubelementHighlight(gui_base_original.Modifier):
             obj.ViewObject.PointColor = (1.0, 0.0, 0.0)
             obj.ViewObject.LineColor = (1.0, 0.0, 0.0)
             xray = coin.SoAnnotation()
-            xray.addChild(obj.ViewObject.RootNode.getChild(2).getChild(0))
-            xray.setName("xray")
-            obj.ViewObject.RootNode.addChild(xray)
+            if obj.ViewObject.RootNode.getNumChildren() > 2:
+                xray.addChild(obj.ViewObject.RootNode.getChild(2).getChild(0))
+                xray.setName("xray")
+                obj.ViewObject.RootNode.addChild(xray)
 
     def restore_editable_objects_graphics(self):
         """Restore the editable objects' appearance."""

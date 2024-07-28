@@ -4,35 +4,35 @@
   <context>
     <name>CmdApproxCylinder</name>
     <message>
-      <location filename="../../Command.cpp" line="211"/>
+      <location filename="../../Command.cpp" line="248"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="212"/>
+      <location filename="../../Command.cpp" line="249"/>
       <source>Cylinder</source>
       <translation>Cilindru</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="213"/>
+      <location filename="../../Command.cpp" line="250"/>
       <source>Approximate a cylinder</source>
-      <translation type="unfinished">Approximate a cylinder</translation>
+      <translation>Aproximează un cilindru</translation>
     </message>
   </context>
   <context>
     <name>CmdApproxPlane</name>
     <message>
-      <location filename="../../Command.cpp" line="110"/>
+      <location filename="../../Command.cpp" line="140"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="111"/>
-      <source>Plane...</source>
-      <translation type="unfinished">Plane...</translation>
+      <location filename="../../Command.cpp" line="141"/>
+      <source>Plane</source>
+      <translation>Plan</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="112"/>
+      <location filename="../../Command.cpp" line="142"/>
       <source>Approximate a plane</source>
       <translation>Aproximaţi un plan</translation>
     </message>
@@ -40,53 +40,53 @@
   <context>
     <name>CmdApproxPolynomial</name>
     <message>
-      <location filename="../../Command.cpp" line="324"/>
+      <location filename="../../Command.cpp" line="364"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="325"/>
+      <location filename="../../Command.cpp" line="365"/>
       <source>Polynomial surface</source>
-      <translation type="unfinished">Polynomial surface</translation>
+      <translation>Suprafață polinomială</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="326"/>
+      <location filename="../../Command.cpp" line="366"/>
       <source>Approximate a polynomial surface</source>
-      <translation type="unfinished">Approximate a polynomial surface</translation>
+      <translation>Aproximează o suprafaţă polinomială</translation>
     </message>
   </context>
   <context>
     <name>CmdApproxSphere</name>
     <message>
-      <location filename="../../Command.cpp" line="277"/>
+      <location filename="../../Command.cpp" line="316"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="278"/>
+      <location filename="../../Command.cpp" line="317"/>
       <source>Sphere</source>
       <translation>Sfera</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="279"/>
+      <location filename="../../Command.cpp" line="318"/>
       <source>Approximate a sphere</source>
-      <translation type="unfinished">Approximate a sphere</translation>
+      <translation>Aprobă o sferă</translation>
     </message>
   </context>
   <context>
     <name>CmdApproxSurface</name>
     <message>
-      <location filename="../../Command.cpp" line="74"/>
+      <location filename="../../Command.cpp" line="102"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="75"/>
+      <location filename="../../Command.cpp" line="103"/>
       <source>Approximate B-spline surface...</source>
       <translation>Aproximează o suprafață de B-spline...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="76"/>
+      <location filename="../../Command.cpp" line="104"/>
       <source>Approximate a B-spline surface</source>
       <translation>Aproximează o suprafaţă de B-spline</translation>
     </message>
@@ -94,35 +94,35 @@
   <context>
     <name>CmdMeshBoundary</name>
     <message>
-      <location filename="../../Command.cpp" line="490"/>
+      <location filename="../../Command.cpp" line="536"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="491"/>
+      <location filename="../../Command.cpp" line="537"/>
       <source>Wire from mesh boundary...</source>
-      <translation type="unfinished">Wire from mesh boundary...</translation>
+      <translation>Wire din limitele plasei...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="492"/>
+      <location filename="../../Command.cpp" line="538"/>
       <source>Create wire from mesh boundaries</source>
-      <translation type="unfinished">Create wire from mesh boundaries</translation>
+      <translation>Creați un cablu din limitele ochiurilor de plasă</translation>
     </message>
   </context>
   <context>
     <name>CmdPoissonReconstruction</name>
     <message>
-      <location filename="../../Command.cpp" line="556"/>
+      <location filename="../../Command.cpp" line="603"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="557"/>
+      <location filename="../../Command.cpp" line="604"/>
       <source>Poisson...</source>
       <translation>Poisson...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="558"/>
+      <location filename="../../Command.cpp" line="605"/>
       <source>Poisson surface reconstruction</source>
       <translation>Reconstrucţia suprafaţă Poisson</translation>
     </message>
@@ -130,17 +130,17 @@
   <context>
     <name>CmdSegmentation</name>
     <message>
-      <location filename="../../Command.cpp" line="379"/>
+      <location filename="../../Command.cpp" line="422"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="380"/>
+      <location filename="../../Command.cpp" line="423"/>
       <source>Mesh segmentation...</source>
-      <translation type="unfinished">Mesh segmentation...</translation>
+      <translation>Segmentarea plasei...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="381"/>
+      <location filename="../../Command.cpp" line="424"/>
       <source>Create mesh segments</source>
       <translation>Creează segmente de plasă</translation>
     </message>
@@ -148,56 +148,105 @@
   <context>
     <name>CmdSegmentationFromComponents</name>
     <message>
-      <location filename="../../Command.cpp" line="440"/>
+      <location filename="../../Command.cpp" line="484"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="441"/>
+      <location filename="../../Command.cpp" line="485"/>
       <source>From components</source>
-      <translation type="unfinished">From components</translation>
+      <translation>Din componente</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="442"/>
+      <location filename="../../Command.cpp" line="486"/>
       <source>Create mesh segments from components</source>
-      <translation type="unfinished">Create mesh segments from components</translation>
+      <translation>Crează segmente de plasă din componente</translation>
     </message>
   </context>
   <context>
     <name>CmdSegmentationManual</name>
     <message>
-      <location filename="../../Command.cpp" line="411"/>
+      <location filename="../../Command.cpp" line="454"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="412"/>
+      <location filename="../../Command.cpp" line="455"/>
       <source>Manual segmentation...</source>
-      <translation type="unfinished">Manual segmentation...</translation>
+      <translation>Segmentare manuală...</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="413"/>
+      <location filename="../../Command.cpp" line="456"/>
       <source>Create mesh segments manually</source>
-      <translation type="unfinished">Create mesh segments manually</translation>
+      <translation>Crează manual segmentele de plasă</translation>
     </message>
   </context>
   <context>
     <name>CmdViewTriangulation</name>
     <message>
-      <location filename="../../Command.cpp" line="590"/>
+      <location filename="../../Command.cpp" line="638"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="591"/>
+      <location filename="../../Command.cpp" line="639"/>
       <source>Structured point clouds</source>
       <translation>Nor de puncte structurate</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="592"/>
-      <location filename="../../Command.cpp" line="593"/>
+      <location filename="../../Command.cpp" line="640"/>
+      <location filename="../../Command.cpp" line="641"/>
       <source>Triangulation of structured point clouds</source>
       <translation>Triangulaţie structurii norului de puncte</translation>
+    </message>
+  </context>
+  <context>
+    <name>Command</name>
+    <message>
+      <location filename="../../Command.cpp" line="226"/>
+      <source>Fit plane</source>
+      <translation>Potrivire plan</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="258"/>
+      <source>Fit cylinder</source>
+      <translation>Potrivire cilindru</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="326"/>
+      <source>Fit sphere</source>
+      <translation>Potrivire sferică</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="375"/>
+      <source>Fit polynomial surface</source>
+      <translation>Potrivire pe suprafață polinomială</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="650"/>
+      <source>View triangulation</source>
+      <translation>Vezi triangularea</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="154"/>
+      <source>Placement</source>
+      <translation>Amplasare</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="231"/>
+      <location filename="../../FitBSplineCurve.cpp" line="139"/>
+      <source>Fit B-spline</source>
+      <translation type="unfinished">Fit B-spline</translation>
+    </message>
+    <message>
+      <location filename="../../Poisson.cpp" line="83"/>
+      <source>Poisson reconstruction</source>
+      <translation>Reconstrucția lui Poisson</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.cpp" line="281"/>
+      <source>Segmentation</source>
+      <translation>Segmentare</translation>
     </message>
   </context>
   <context>
@@ -246,57 +295,57 @@
     </message>
     <message>
       <location filename="../../FitBSplineSurface.ui" line="218"/>
-      <source>Smoothing</source>
-      <translation>Netezire</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="227"/>
-      <source>Total Weight</source>
-      <translation>Greutatea totală</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="256"/>
-      <source>Length of gradient</source>
-      <translation>Lungimea degradeului</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="285"/>
-      <source>Bending energy</source>
-      <translation>Energiea de îndoire</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="314"/>
-      <source>Curvature variation</source>
-      <translation>Variaţie de curbură</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.ui" line="346"/>
       <source>User-defined u/v directions</source>
       <translation>Direcții u/v personalizate</translation>
     </message>
     <message>
-      <location filename="../../FitBSplineSurface.ui" line="359"/>
+      <location filename="../../FitBSplineSurface.ui" line="231"/>
       <source>Create placement</source>
-      <translation type="unfinished">Create placement</translation>
+      <translation>Crează plasament</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="238"/>
+      <source>Smoothing</source>
+      <translation>Netezire</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="247"/>
+      <source>Total Weight</source>
+      <translation>Greutatea totală</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="276"/>
+      <source>Length of gradient</source>
+      <translation>Lungimea degradeului</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="305"/>
+      <source>Bending energy</source>
+      <translation>Energiea de îndoire</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.ui" line="334"/>
+      <source>Curvature variation</source>
+      <translation>Variaţie de curbură</translation>
     </message>
   </context>
   <context>
     <name>ReenGui::FitBSplineSurfaceWidget</name>
     <message>
-      <location filename="../../FitBSplineSurface.cpp" line="207"/>
+      <location filename="../../FitBSplineSurface.cpp" line="165"/>
+      <location filename="../../FitBSplineSurface.cpp" line="238"/>
+      <source>Input error</source>
+      <translation>Eroare de intrare</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineSurface.cpp" line="206"/>
       <source>Wrong selection</source>
       <translation>Selecţie greşită</translation>
     </message>
     <message>
-      <location filename="../../FitBSplineSurface.cpp" line="208"/>
+      <location filename="../../FitBSplineSurface.cpp" line="207"/>
       <source>Please select a single placement object to get local orientation.</source>
       <translation>Vă rugăm să selectaţi un obiect unic de plasare pentru a obţine orientarea locală.</translation>
-    </message>
-    <message>
-      <location filename="../../FitBSplineSurface.cpp" line="167"/>
-      <location filename="../../FitBSplineSurface.cpp" line="235"/>
-      <source>Input error</source>
-      <translation>Eroare de intrare</translation>
     </message>
   </context>
   <context>
@@ -327,7 +376,7 @@
       <translation>Eșantioane pe nod</translation>
     </message>
     <message>
-      <location filename="../../Poisson.cpp" line="108"/>
+      <location filename="../../Poisson.cpp" line="90"/>
       <source>Input error</source>
       <translation>Eroare de intrare</translation>
     </message>
@@ -335,18 +384,24 @@
   <context>
     <name>Reen_ApproxSurface</name>
     <message>
-      <location filename="../../Command.cpp" line="89"/>
-      <location filename="../../Command.cpp" line="569"/>
+      <location filename="../../Command.cpp" line="82"/>
+      <location filename="../../Command.cpp" line="120"/>
+      <location filename="../../Command.cpp" line="618"/>
       <source>Wrong selection</source>
       <translation>Selecţie greşită</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="90"/>
-      <source>Please select a point cloud or mesh.</source>
-      <translation type="unfinished">Please select a point cloud or mesh.</translation>
+      <location filename="../../Command.cpp" line="83"/>
+      <source>Please select a point cloud.</source>
+      <translation type="unfinished">Please select a point cloud.</translation>
     </message>
     <message>
-      <location filename="../../Command.cpp" line="570"/>
+      <location filename="../../Command.cpp" line="121"/>
+      <source>Please select a point cloud or mesh.</source>
+      <translation>Vă rugăm să selectați un punct cloud sau plasă.</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="619"/>
       <source>Please select a single point cloud.</source>
       <translation>Va rugam selectati un singur nor de puncte.</translation>
     </message>
@@ -354,7 +409,7 @@
   <context>
     <name>Reen_ViewTriangulation</name>
     <message>
-      <location filename="../../Command.cpp" line="625"/>
+      <location filename="../../Command.cpp" line="672"/>
       <source>View triangulation failed</source>
       <translation>Eroarea la vederea de triangulație</translation>
     </message>
@@ -367,39 +422,39 @@
       <translation>Segmentarea plasei</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="27"/>
-      <source>Create compound</source>
-      <translation type="unfinished">Create compound</translation>
-    </message>
-    <message>
-      <location filename="../../Segmentation.ui" line="34"/>
+      <location filename="../../Segmentation.ui" line="20"/>
       <source>Smooth mesh</source>
       <translation>Netezirea plasei</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="44"/>
+      <location filename="../../Segmentation.ui" line="37"/>
       <source>Plane</source>
       <translation>Plan</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="53"/>
+      <location filename="../../Segmentation.ui" line="46"/>
       <source>Curvature tolerance</source>
-      <translation type="unfinished">Curvature tolerance</translation>
+      <translation>Toleranța curburii</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="70"/>
+      <location filename="../../Segmentation.ui" line="63"/>
       <source>Distance to plane</source>
-      <translation type="unfinished">Distance to plane</translation>
+      <translation>Distanța până la plan</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="87"/>
+      <location filename="../../Segmentation.ui" line="80"/>
       <source>Minimum number of faces</source>
       <translation>Numar maxim de fete</translation>
     </message>
     <message>
-      <location filename="../../Segmentation.ui" line="107"/>
+      <location filename="../../Segmentation.ui" line="100"/>
       <source>Create mesh from unused triangles</source>
-      <translation type="unfinished">Create mesh from unused triangles</translation>
+      <translation>Creează o plasă din triunghiuri neutilizate</translation>
+    </message>
+    <message>
+      <location filename="../../Segmentation.ui" line="107"/>
+      <source>Create compound</source>
+      <translation>Creați o combinată</translation>
     </message>
   </context>
   <context>
@@ -407,7 +462,7 @@
     <message>
       <location filename="../../SegmentationManual.ui" line="14"/>
       <source>Manual segmentation</source>
-      <translation type="unfinished">Manual segmentation</translation>
+      <translation>Segmentarea manuală</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="20"/>
@@ -416,33 +471,33 @@
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="41"/>
-      <source>Components</source>
-      <translation>Componente</translation>
-    </message>
-    <message>
-      <location filename="../../SegmentationManual.ui" line="48"/>
       <source>Region</source>
       <translation>Regiune</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="55"/>
-      <source>Select whole component</source>
-      <translation>Selectati intregul component</translation>
+      <location filename="../../SegmentationManual.ui" line="61"/>
+      <source>All</source>
+      <translation>Toate</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="62"/>
-      <source>Pick triangle</source>
-      <translation>Alege triunghiul</translation>
+      <location filename="../../SegmentationManual.ui" line="81"/>
+      <source>Components</source>
+      <translation>Componente</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="82"/>
+      <location filename="../../SegmentationManual.ui" line="88"/>
       <source>&lt; faces than</source>
       <translation>&lt; fațete decât</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="89"/>
-      <source>All</source>
-      <translation>Toate</translation>
+      <location filename="../../SegmentationManual.ui" line="98"/>
+      <source>Pick triangle</source>
+      <translation>Alege triunghiul</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.ui" line="105"/>
+      <source>Select whole component</source>
+      <translation>Selectati intregul component</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="112"/>
@@ -458,22 +513,22 @@
       <location filename="../../SegmentationManual.ui" line="128"/>
       <location filename="../../SegmentationManual.ui" line="181"/>
       <location filename="../../SegmentationManual.ui" line="234"/>
+      <source>Detect</source>
+      <translation>Detectează</translation>
+    </message>
+    <message>
+      <location filename="../../SegmentationManual.ui" line="135"/>
+      <location filename="../../SegmentationManual.ui" line="188"/>
+      <location filename="../../SegmentationManual.ui" line="241"/>
       <source>Tolerance</source>
       <translation>Toleranţă</translation>
     </message>
     <message>
-      <location filename="../../SegmentationManual.ui" line="148"/>
-      <location filename="../../SegmentationManual.ui" line="201"/>
-      <location filename="../../SegmentationManual.ui" line="254"/>
+      <location filename="../../SegmentationManual.ui" line="155"/>
+      <location filename="../../SegmentationManual.ui" line="208"/>
+      <location filename="../../SegmentationManual.ui" line="261"/>
       <source>Minimum number of faces</source>
       <translation>Numar maxim de fete</translation>
-    </message>
-    <message>
-      <location filename="../../SegmentationManual.ui" line="165"/>
-      <location filename="../../SegmentationManual.ui" line="218"/>
-      <location filename="../../SegmentationManual.ui" line="271"/>
-      <source>Detect</source>
-      <translation type="unfinished">Detect</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="175"/>
@@ -503,23 +558,23 @@
     <message>
       <location filename="../../SegmentationManual.ui" line="310"/>
       <source>Segmentation</source>
-      <translation type="unfinished">Segmentation</translation>
+      <translation>Segmentare</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="316"/>
       <source>Cut segment from mesh</source>
-      <translation type="unfinished">Cut segment from mesh</translation>
+      <translation>Tăiaţi segmentul din plasă</translation>
     </message>
     <message>
       <location filename="../../SegmentationManual.ui" line="326"/>
       <source>Hide segment</source>
-      <translation type="unfinished">Hide segment</translation>
+      <translation>Ascunde segment</translation>
     </message>
   </context>
   <context>
     <name>ReverseEngineeringGui::TaskSegmentationManual</name>
     <message>
-      <location filename="../../SegmentationManual.cpp" line="310"/>
+      <location filename="../../SegmentationManual.cpp" line="352"/>
       <source>Create</source>
       <translation>Creează</translation>
     </message>
@@ -527,9 +582,143 @@
   <context>
     <name>Workbench</name>
     <message>
-      <location filename="../../Workbench.cpp" line="37"/>
+      <location filename="../../Workbench.cpp" line="34"/>
       <source>Reverse Engineering</source>
       <translation>Inginerie Inversă</translation>
+    </message>
+  </context>
+  <context>
+    <name>ReenGui::FitBSplineCurve</name>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="14"/>
+      <source>Fit B-spline surface</source>
+      <translation>Adaptați o suprafata de B-Spline</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="20"/>
+      <source>Parameters</source>
+      <translation>Parametrii</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="26"/>
+      <source>Maximum degree</source>
+      <translation type="unfinished">Maximum degree</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="37"/>
+      <source>Chord length</source>
+      <translation type="unfinished">Chord length</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="42"/>
+      <source>Centripetal</source>
+      <translation type="unfinished">Centripetal</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="47"/>
+      <source>Iso-Parametric</source>
+      <translation type="unfinished">Iso-Parametric</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="55"/>
+      <source>Continuity</source>
+      <translation>Continuitate</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="88"/>
+      <source>Parametrization type</source>
+      <translation type="unfinished">Parametrization type</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="96"/>
+      <source>C0</source>
+      <translation type="unfinished">C0</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="101"/>
+      <source>G1</source>
+      <translation type="unfinished">G1</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="106"/>
+      <source>C1</source>
+      <translation type="unfinished">C1</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="111"/>
+      <source>G2</source>
+      <translation type="unfinished">G2</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="116"/>
+      <source>C2</source>
+      <translation type="unfinished">C2</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="121"/>
+      <source>C3</source>
+      <translation type="unfinished">C3</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="126"/>
+      <source>CN</source>
+      <translation type="unfinished">CN</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="134"/>
+      <source>Minimum degree</source>
+      <translation type="unfinished">Minimum degree</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="141"/>
+      <source>Closed curve</source>
+      <translation type="unfinished">Closed curve</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="151"/>
+      <source>Smoothing</source>
+      <translation>Netezire</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="160"/>
+      <source>Torsion</source>
+      <translation type="unfinished">Torsion</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="167"/>
+      <source>Curve length</source>
+      <translation type="unfinished">Curve length</translation>
+    </message>
+    <message>
+      <location filename="../../FitBSplineCurve.ui" line="174"/>
+      <source>Curvature</source>
+      <translation>Curbura</translation>
+    </message>
+  </context>
+  <context>
+    <name>CmdApproxCurve</name>
+    <message>
+      <location filename="../../Command.cpp" line="69"/>
+      <source>Reverse Engineering</source>
+      <translation>Inginerie Inversă</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="70"/>
+      <source>Approximate B-spline curve...</source>
+      <translation type="unfinished">Approximate B-spline curve...</translation>
+    </message>
+    <message>
+      <location filename="../../Command.cpp" line="71"/>
+      <source>Approximate a B-spline curve</source>
+      <translation type="unfinished">Approximate a B-spline curve</translation>
+    </message>
+  </context>
+  <context>
+    <name>ReenGui::FitBSplineCurveWidget</name>
+    <message>
+      <location filename="../../FitBSplineCurve.cpp" line="91"/>
+      <source>Input error</source>
+      <translation>Eroare de intrare</translation>
     </message>
   </context>
 </TS>

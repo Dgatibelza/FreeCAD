@@ -24,6 +24,7 @@
 #ifndef GUI_SelectionFilter_H
 #define GUI_SelectionFilter_H
 
+#include <memory>
 #include <string>
 #include <CXX/Extensions.hxx>
 #include "Selection.h"
@@ -34,7 +35,7 @@ namespace App {
 
 namespace Gui {
     struct Node_Block;
-
+    class SelectionFilterPy;
 
 /** Selection filter definition
  *  This class builds up a type/count tree out of a string
@@ -51,8 +52,8 @@ class GuiExport SelectionFilter
 
 public:
     /** Constructs a SelectionFilter object. */
-    SelectionFilter(const char* filter);
-    SelectionFilter(const std::string& filter);
+    explicit SelectionFilter(const char* filter);
+    explicit SelectionFilter(const std::string& filter);
     virtual ~SelectionFilter();
 
     /// Set a new filter string
@@ -65,7 +66,7 @@ public:
      *  against the filter and returns true if the
      *  described object(s) are selected.
      */
-    bool match(void);
+    bool match();
     /** Test objects
      *  This method tests if a given object is described in the
      *  filter. If SubName is not NULL the Subelement gets also
@@ -80,15 +81,14 @@ public:
     std::vector<std::vector<SelectionObject> > Result;
 
     /// true if a valid filter is set
-    bool isValid(void) const {return Ast ? true : false;}
+    bool isValid() const {return Ast ? true : false;}
 
 protected:
     std::string Filter;
     std::string Errors;
-    bool parse(void);
+    bool parse();
 
-    Node_Block *Ast;
-
+    std::shared_ptr<Node_Block> Ast;
 };
 
 /** Filter object for the SelectionSengleton
@@ -103,12 +103,19 @@ class GuiExport SelectionFilterGate: public SelectionGate
 {
 public:
     /// construct with the filter string
-    SelectionFilterGate(const char* filter);
-    SelectionFilterGate(SelectionFilter* filter);
-    ~SelectionFilterGate();
-    virtual bool allow(App::Document*,App::DocumentObject*, const char*);
+    explicit SelectionFilterGate(const char* filter);
+    explicit SelectionFilterGate(SelectionFilter* filter);
+    ~SelectionFilterGate() override;
+    bool allow(App::Document*,App::DocumentObject*, const char*) override;
 
 protected:
+    static SelectionFilter* nullPointer() {
+        return nullptr;
+    }
+
+    static const char* nullString() {
+        return nullptr;
+    }
     SelectionFilterGate();
 
 protected:
@@ -123,43 +130,13 @@ class SelectionGatePython : public SelectionGate
 {
 public:
     /// Constructor
-    SelectionGatePython(const Py::Object& obj);
-    virtual ~SelectionGatePython();
+    explicit SelectionGatePython(const Py::Object& obj);
+    ~SelectionGatePython() override;
 
-    bool allow(App::Document*, App::DocumentObject*, const char*);
+    bool allow(App::Document*, App::DocumentObject*, const char*) override;
 
 private:
     Py::Object gate;
-};
-
-/**
- * Python binding for SelectionFilter class.
- * \code
- * filter=Gui.Selection.Filter("SELECT Part::Feature SUBELEMENT Edge")
- * Gui.Selection.addSelectionGate(filter)
- * \endcode
- * @see SelectionFilter
- * @author Werner Mayer
- */
-class SelectionFilterPy : public Py::PythonExtension<SelectionFilterPy>
-{
-public:
-    SelectionFilter filter;
-
-public:
-    static void init_type(void);    // announce properties and methods
-
-    SelectionFilterPy(const std::string&);
-    ~SelectionFilterPy();
-
-    Py::Object repr();
-    Py::Object match(const Py::Tuple&);
-    Py::Object result(const Py::Tuple&);
-    Py::Object test(const Py::Tuple&);
-    Py::Object setFilter(const Py::Tuple&);
-
-private:
-    static PyObject *PyMake(struct _typeobject *, PyObject *, PyObject *);
 };
 
 /**
@@ -182,10 +159,10 @@ class SelectionFilterGatePython : public SelectionGate
 {
 public:
     /// Constructor
-    SelectionFilterGatePython(SelectionFilterPy* obj);
-    virtual ~SelectionFilterGatePython();
+    explicit SelectionFilterGatePython(SelectionFilterPy* obj);
+    ~SelectionFilterGatePython() override;
 
-    bool allow(App::Document*, App::DocumentObject*, const char*);
+    bool allow(App::Document*, App::DocumentObject*, const char*) override;
 
 private:
     SelectionFilterPy* filter;
@@ -195,7 +172,7 @@ private:
 
 struct Node_Slice
 {
-    Node_Slice(int min=1,int max=INT_MAX):Min(min),Max(max){}
+    explicit Node_Slice(int min=1,int max=INT_MAX):Min(min),Max(max){}
     int Min,Max;
 
 };
@@ -207,10 +184,8 @@ struct Node_Object
         :Slice(slc)
     {
         ObjectType = Base::Type::fromName(type->c_str());
-        delete (type);
-        if(subname){
+        if (subname) {
             SubName = *subname;
-            delete subname;
         }
     }
     ~Node_Object(){
@@ -220,11 +195,14 @@ struct Node_Object
     Node_Slice  *Slice;
     std::string SubName;
 };
+using Node_ObjectPtr = std::shared_ptr<Node_Object>;
 
 struct Node_Block
 {
-    Node_Block(Node_Object* obj){Objects.push_back(obj);}
-    std::vector< Node_Object *> Objects;
+    explicit Node_Block(Node_Object* obj){
+        Objects.emplace_back(obj);
+    }
+    std::vector<Node_ObjectPtr> Objects;
 };
 
 

@@ -1,5 +1,6 @@
 # SGEOM cmake build file
 #PROJECT(SMESH Fortran CXX)
+set(CMAKE_AUTOMOC FALSE)
 
 SET(SMESH_VERSION_MAJOR 7)  # see main CMakeLists.txt of FreeCAD
 SET(SMESH_VERSION_MINOR 7)
@@ -16,6 +17,13 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     if (_flag_found)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-result")
+    endif ()
+
+    unset(_flag_found CACHE)
+    check_cxx_compiler_flag("-Wno-cast-function-type" _flag_found)
+    if (_flag_found)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-cast-function-type")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-cast-function-type")
     endif ()
 
     unset(_flag_found CACHE)
@@ -45,6 +53,12 @@ elseif(CMAKE_COMPILER_IS_CLANGXX)
     check_cxx_compiler_flag("-Wno-missing-field-initializers" _flag_found)
     if (_flag_found)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-missing-field-initializers")
+    endif ()
+
+    unset(_flag_found CACHE)
+    check_cxx_compiler_flag("-Wno-c++17-extensions" _flag_found)
+    if (_flag_found)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-c++17-extensions")
     endif ()
 endif()
 
@@ -236,7 +250,7 @@ TARGET_LINK_LIBRARIES(DriverSTL ${SMESH_LIBS} Driver SMDS ${Boost_LIBRARIES})
 
 SET_BIN_DIR(DriverSTL DriverSTL)
 if(WIN32)
-    set_target_properties(DriverSTL PROPERTIES COMPILE_FLAGS "-DMESHDRIVERSTL_EXPORTS -DBASICS_EXPORT -DSMESHUtils_EXPORTS -DBASICS_EXPORTS")
+    set_target_properties(DriverSTL PROPERTIES COMPILE_FLAGS "-DMESHDRIVERSTL_EXPORTS -DSMESHUtils_EXPORTS -DBASICS_EXPORTS")
 endif(WIN32)
 
 
@@ -421,10 +435,10 @@ else()
 endif(WIN32)
 IF(NOT NETGEN_VERSION_C LESS NETGEN_VERSION_62_2004) # Version >= 6.2.2004
     set_target_properties(NETGENPlugin PROPERTIES CXX_STANDARD_REQUIRED ON)
-    set_target_properties(NETGENPlugin PROPERTIES CXX_STANDARD 17) # Standard std=c++1y could work aswell
+    set_target_properties(NETGENPlugin PROPERTIES CXX_STANDARD 17) # Standard std=c++1y could work as well
 ELSEIF(NOT NETGEN_VERSION_C LESS NETGEN_VERSION_62) # Version >= 6.2
     set_target_properties(NETGENPlugin PROPERTIES CXX_STANDARD_REQUIRED ON)
-    set_target_properties(NETGENPlugin PROPERTIES CXX_STANDARD 14) # Standard std=c++1y could work aswell
+    set_target_properties(NETGENPlugin PROPERTIES CXX_STANDARD 14) # Standard std=c++1y could work as ell
 ENDIF()
 
 endif (BUILD_FEM_NETGEN)

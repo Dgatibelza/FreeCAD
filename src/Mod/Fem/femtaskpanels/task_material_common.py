@@ -22,16 +22,15 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__  = "FreeCAD FEM material task panel for the document object"
+__title__ = "FreeCAD FEM material task panel for the document object"
 __author__ = "Juergen Riegel, Bernd Hahnebach, Qingfeng Xia"
-__url__    = "https://www.freecadweb.org"
+__url__ = "https://www.freecad.org"
 
 ## @package task_material_common
 #  \ingroup FEM
 #  \brief FreeCAD FEM _ViewProviderFemMaterial
 #  \brief task panel for common material object
 
-import sys
 from PySide import QtCore
 from PySide import QtGui
 
@@ -42,8 +41,7 @@ from FreeCAD import Units
 from femguiutils import selection_widgets
 
 
-if sys.version_info.major >= 3:
-    unicode = str
+unicode = str
 
 
 class _TaskPanel:
@@ -74,63 +72,59 @@ class _TaskPanel:
         )
         # globals
         QtCore.QObject.connect(
-            self.parameterWidget.cb_materials,
-            QtCore.SIGNAL("activated(int)"),
-            self.choose_material
+            self.parameterWidget.cb_materials, QtCore.SIGNAL("activated(int)"), self.choose_material
         )
         QtCore.QObject.connect(
             self.parameterWidget.chbu_allow_edit,
             QtCore.SIGNAL("clicked()"),
-            self.toggleInputFieldsReadOnly
+            self.toggleInputFieldsReadOnly,
         )
         QtCore.QObject.connect(
-            self.parameterWidget.pushButton_editMat,
-            QtCore.SIGNAL("clicked()"),
-            self.edit_material
+            self.parameterWidget.pushButton_editMat, QtCore.SIGNAL("clicked()"), self.edit_material
         )
         # basic properties must be provided
         QtCore.QObject.connect(
             self.parameterWidget.input_fd_density,
             QtCore.SIGNAL("editingFinished()"),
-            self.density_changed
+            self.density_changed,
         )
         # mechanical properties
         QtCore.QObject.connect(
             self.parameterWidget.input_fd_young_modulus,
             QtCore.SIGNAL("editingFinished()"),
-            self.ym_changed
+            self.ym_changed,
         )
         QtCore.QObject.connect(
             self.parameterWidget.spinBox_poisson_ratio,
             QtCore.SIGNAL("editingFinished()"),
-            self.pr_changed
+            self.pr_changed,
         )
         # thermal properties
         QtCore.QObject.connect(
             self.parameterWidget.input_fd_thermal_conductivity,
             QtCore.SIGNAL("editingFinished()"),
-            self.tc_changed
+            self.tc_changed,
         )
         QtCore.QObject.connect(
             self.parameterWidget.input_fd_expansion_coefficient,
             QtCore.SIGNAL("editingFinished()"),
-            self.tec_changed
+            self.tec_changed,
         )
         QtCore.QObject.connect(
             self.parameterWidget.input_fd_specific_heat,
             QtCore.SIGNAL("editingFinished()"),
-            self.sh_changed
+            self.sh_changed,
         )
         # fluidic properties, only volumetric thermal expansion coeff makes sense
         QtCore.QObject.connect(
             self.parameterWidget.input_fd_kinematic_viscosity,
             QtCore.SIGNAL("editingFinished()"),
-            self.kinematic_viscosity_changed
+            self.kinematic_viscosity_changed,
         )
         QtCore.QObject.connect(
             self.parameterWidget.input_fd_vol_expansion_coefficient,
             QtCore.SIGNAL("editingFinished()"),
-            self.vtec_changed
+            self.vtec_changed,
         )
 
         # init all parameter input files with read only
@@ -138,11 +132,13 @@ class _TaskPanel:
         self.toggleInputFieldsReadOnly()
 
         # hide some groupBox according to material category
+        # note: input_fd_vol_expansion_coefficient is currently not used
+        #       it might be used in future for solids
         self.parameterWidget.label_category.setText(self.obj.Category)
         if self.obj.Category == "Fluid":
             self.parameterWidget.groupBox_mechanical.setVisible(0)
-            self.parameterWidget.label_expansion_coefficient.setVisible(0)
-            self.parameterWidget.input_fd_expansion_coefficient.setVisible(0)
+            self.parameterWidget.label_vol_expansion_coefficient.setVisible(0)
+            self.parameterWidget.input_fd_vol_expansion_coefficient.setVisible(0)
         else:
             self.parameterWidget.groupBox_fluidic.setVisible(0)
             self.parameterWidget.label_vol_expansion_coefficient.setVisible(0)
@@ -150,6 +146,7 @@ class _TaskPanel:
 
         # get all available materials (fill self.materials, self.cards and self.icons)
         from materialtools.cardutils import import_materials as getmats
+
         # Note: import_materials(category="Solid", ...),
         #           category default to Solid, but must be given for FluidMaterial to be imported
         self.materials, self.cards, self.icons = getmats(self.obj.Category)
@@ -158,7 +155,7 @@ class _TaskPanel:
 
         # search for exact this mat_card in all known cards, choose the current material
         self.card_path = self.get_material_card(self.material)
-        FreeCAD.Console.PrintLog("card_path: {}\n".format(self.card_path))
+        FreeCAD.Console.PrintLog(f"card_path: {self.card_path}\n")
         if not self.card_path:
             # we have not found our material in self.materials dict :-(
             # we're going to add a user-defined temporary material: a document material
@@ -169,12 +166,9 @@ class _TaskPanel:
             self.card_path = "_document_material"
             self.materials[self.card_path] = self.material
             self.parameterWidget.cb_materials.addItem(
-                QtGui.QIcon(":/icons/help-browser.svg"),
-                self.card_path,
-                self.card_path
+                QtGui.QIcon(":/icons/help-browser.svg"), self.card_path, self.card_path
             )
             index = self.parameterWidget.cb_materials.findData(self.card_path)
-            # print(index)
             # fill input fields and set the current material in the cb widget
             self.choose_material(index)
         else:
@@ -184,15 +178,12 @@ class _TaskPanel:
                 "We will use this material.\n"
             )
             index = self.parameterWidget.cb_materials.findData(self.card_path)
-            # print(index)
             # fill input fields and set the current material in the cb widget
             self.choose_material(index)
 
         # geometry selection widget
         self.selectionWidget = selection_widgets.GeometryElementsSelection(
-            obj.References,
-            ["Solid", "Face", "Edge"],
-            False
+            obj.References, ["Solid", "Face", "Edge"], False, True
         )  # start with Solid in list!
 
         # form made from param and selection widget
@@ -204,9 +195,14 @@ class _TaskPanel:
     # leave task panel ***************************************************************************
     def accept(self):
         # print(self.material)
+        if self.material == {}:  # happens if material editor was canceled
+            FreeCAD.Console.PrintError("Empty material dictionary, nothing was changed.\n")
+            self.recompute_and_set_back_all()
+            return True
         if self.selectionWidget.has_equal_references_shape_types():
             self.do_not_set_thermal_zeros()
             from materialtools.cardutils import check_mat_units as checkunits
+
             if checkunits(self.material) is True:
                 self.obj.Material = self.material
                 self.obj.References = self.selectionWidget.references
@@ -227,13 +223,11 @@ class _TaskPanel:
     def recompute_and_set_back_all(self):
         doc = FreeCADGui.getDocument(self.obj.Document)
         doc.Document.recompute()
-        self.selectionWidget.setback_listobj_visibility()
-        if self.selectionWidget.sel_server:
-            FreeCADGui.Selection.removeObserver(self.selectionWidget.sel_server)
+        self.selectionWidget.finish_selection()
         doc.resetEdit()
 
     def do_not_set_thermal_zeros(self):
-        """ thermal material parameter are set to 0.0 if not available
+        """thermal material parameter are set to 0.0 if not available
         this leads to wrong material values and to not finding the card
         on reopen the task pane, thus do not write thermal parameter,
         if they are 0.0
@@ -253,18 +247,47 @@ class _TaskPanel:
         if Units.Quantity(self.material["SpecificHeat"]) == 0.0:
             self.material.pop("SpecificHeat", None)
             FreeCAD.Console.PrintMessage(
-                "Zero SpecificHeat value. "
-                "This parameter is not saved in the material data.\n"
+                "Zero SpecificHeat value. This parameter is not saved in the material data.\n"
             )
+
+    def isfloat(self, num):
+        try:
+            float(num)
+            return True
+        except ValueError:
+            return False
 
     # choose material ****************************************************************************
     def get_material_card(self, material):
         for a_mat in self.materials:
-            unmatched_items = set(self.materials[a_mat].items()) ^ set(material.items())
-            # print(a_mat + "  -->  unmatched_items = " + str(len(unmatched_items)))
-            # if len(unmatched_items) < 4:
-            #     print(unmatched_items)
-            if len(unmatched_items) == 0:
+            # check if every item of the current material fits to a known material card
+            # if all items were found we know it is the right card
+            # we can hereby not simply perform
+            # set(self.materials[a_mat].items()) ^ set(material.items())
+            # because entries are often identical, just appear in the set in a different order
+            unmatched_item = False
+            for item in material.items():
+                if item not in self.materials[a_mat].items():
+                    unmatched_item = True
+                    # often the difference is just a decimal e.g. "120" to "120.0"
+                    # therefore first check if the item name exists
+                    for a_mat_item in self.materials[a_mat].items():
+                        if item[0] == a_mat_item[0]:
+                            # now check if we have a number value in a unit
+                            if item[1].split() and not self.isfloat(item[1].split()[0]):
+                                break
+                            if item[1].split() and float(item[1].split()[0]) == float(
+                                a_mat_item[1].split()[0]
+                            ):
+                                unmatched_item = False
+                            elif not item[1].split():
+                                # handle the case where item[1] is an empty string
+                                if not self.isfloat(item[1]):
+                                    break
+                                if float(item[1]) == float(a_mat_item[1]):
+                                    unmatched_item = False
+                    break
+            if not unmatched_item:
                 return a_mat
         return ""
 
@@ -272,10 +295,7 @@ class _TaskPanel:
         if index < 0:
             return
         self.card_path = self.parameterWidget.cb_materials.itemData(index)  # returns whole path
-        FreeCAD.Console.PrintMessage(
-            "choose_material in FEM material task panel:\n"
-            "    {}\n".format(self.card_path)
-        )
+        FreeCAD.Console.PrintMessage(f"Material card chosen:\n    {self.card_path}\n")
         self.material = self.materials[self.card_path]
         self.check_material_keys()
         self.set_mat_params_in_input_fields(self.material)
@@ -300,9 +320,7 @@ class _TaskPanel:
         self.has_transient_mat = True
         self.card_path = "_transient_material"
         self.parameterWidget.cb_materials.addItem(
-            QtGui.QIcon(":/icons/help-browser.svg"),
-            self.card_path,
-            self.card_path
+            QtGui.QIcon(":/icons/help-browser.svg"), self.card_path, self.card_path
         )
         self.set_transient_material()
 
@@ -310,13 +328,18 @@ class _TaskPanel:
     def edit_material(self):
         # opens the material editor to choose a material or edit material params
         import MaterialEditor
+
         if self.card_path not in self.cards:
             FreeCAD.Console.PrintLog(
                 "Card path not in cards, material dict will be used to open Material Editor.\n"
             )
-            new_material_params = MaterialEditor.editMaterial(material=self.material)
+            new_material_params = MaterialEditor.editMaterial(
+                material=self.material, category=self.obj.Category
+            )
         else:
-            new_material_params = MaterialEditor.editMaterial(card_path=self.card_path)
+            new_material_params = MaterialEditor.editMaterial(
+                card_path=self.card_path, category=self.obj.Category
+            )
         # material editor returns the mat_dict only, not a card_path
         # if the material editor was canceled a empty dict will be returned
         # do not change the self.material
@@ -324,10 +347,10 @@ class _TaskPanel:
         if new_material_params:
             # check material quantity units
             from materialtools.cardutils import check_mat_units as checkunits
+
             if checkunits(new_material_params) is True:
                 self.material = new_material_params
                 self.card_path = self.get_material_card(self.material)
-                # print("card_path: " + self.card_path)
                 self.check_material_keys()
                 self.set_mat_params_in_input_fields(self.material)
                 if not self.card_path:
@@ -349,7 +372,6 @@ class _TaskPanel:
                         "The found material card will be used.\n"
                     )
                     index = self.parameterWidget.cb_materials.findData(self.card_path)
-                    # print(index)
                     # set the current material in the cb widget
                     self.choose_material(index)
             else:
@@ -360,9 +382,7 @@ class _TaskPanel:
                 FreeCAD.Console.PrintError(error_message)
                 QtGui.QMessageBox.critical(None, "Material data not changed", error_message)
         else:
-            FreeCAD.Console.PrintLog(
-                "No changes where made by the material editor.\n"
-            )
+            FreeCAD.Console.PrintLog("No changes where made by the material editor.\n")
 
     def toggleInputFieldsReadOnly(self):
         if self.parameterWidget.chbu_allow_edit.isChecked():
@@ -388,21 +408,19 @@ class _TaskPanel:
     def check_material_keys(self):
         # FreeCAD units definition is at file end of src/Base/Unit.cpp
         if not self.material:
-            FreeCAD.Console.PrintMessage("For some reason all material data is empty!\n")
-            self.material["Name"] = "Empty"
+            self.material["Name"] = "NoName"
         if "Density" in self.material:
             if "Density" not in str(Units.Unit(self.material["Density"])):
                 FreeCAD.Console.PrintMessage(
                     "Density in material data seems to have no unit "
-                    "or a wrong unit (reset the value): {}\n"
-                    .format(self.material["Name"])
+                    "or a wrong unit (reset the value): {}\n".format(self.material["Name"])
                 )
                 self.material["Density"] = "0 kg/m^3"
         else:
-            FreeCAD.Console.PrintMessage(
-                "Density not found in material data of: {}\n"
-                .format(self.material["Name"])
-            )
+            if self.material["Name"] != "NoName":
+                FreeCAD.Console.PrintMessage(
+                    "Density not found in {}\n".format(self.material["Name"])
+                )
             self.material["Density"] = "0 kg/m^3"
         if self.obj.Category == "Solid":
             # mechanical properties
@@ -411,31 +429,33 @@ class _TaskPanel:
                 if "Pressure" not in str(Units.Unit(self.material["YoungsModulus"])):
                     FreeCAD.Console.PrintMessage(
                         "YoungsModulus in material data seems to have no unit "
-                        "or a wrong unit (reset the value): {}\n"
-                        .format(self.material["Name"])
+                        "or a wrong unit (reset the value): {}\n".format(self.material["Name"])
                     )
                     self.material["YoungsModulus"] = "0 MPa"
             else:
-                FreeCAD.Console.PrintMessage(
-                    "YoungsModulus not found in material data of: {}\n"
-                    .format(self.material["Name"])
-                )
+                if self.material["Name"] != "NoName":
+                    FreeCAD.Console.PrintMessage(
+                        "YoungsModulus not found in {}\n".format(self.material["Name"])
+                    )
                 self.material["YoungsModulus"] = "0 MPa"
             if "PoissonRatio" in self.material:
-                # PoissonRatio does not have a unit, but it is checked it there is no value at all
+                # PoissonRatio does not have a unit, but it is checked if there is no value at all
                 try:
+                    # next line with float() is ok
+                    # a quantity of a empty string returns very small value, would be wrong here
                     float(self.material["PoissonRatio"])
                 except ValueError:
                     FreeCAD.Console.PrintMessage(
-                        "PoissonRatio has wrong or no data (reset the value): {}\n"
-                        .format(self.material["PoissonRatio"])
+                        "PoissonRatio has wrong or no data (reset the value): {}\n".format(
+                            self.material["PoissonRatio"]
+                        )
                     )
                     self.material["PoissonRatio"] = "0"
             else:
-                FreeCAD.Console.PrintMessage(
-                    "PoissonRatio not found in material data of: {}\n"
-                    .format(self.material["Name"])
-                )
+                if self.material["Name"] != "NoName":
+                    FreeCAD.Console.PrintMessage(
+                        "PoissonRatio not found in {}\n".format(self.material["Name"])
+                    )
                 self.material["PoissonRatio"] = "0"
         if self.obj.Category == "Fluid":
             # Fluidic properties
@@ -444,87 +464,126 @@ class _TaskPanel:
                 if "KinematicViscosity" not in str(Units.Unit(ki_vis)):
                     FreeCAD.Console.PrintMessage(
                         "KinematicViscosity in material data seems to have no unit "
-                        "or a wrong unit (reset the value): {}\n"
-                        .format(self.material["Name"])
+                        "or a wrong unit (reset the value): {}\n".format(self.material["Name"])
                     )
                     self.material["KinematicViscosity"] = "0 m^2/s"
             else:
-                FreeCAD.Console.PrintMessage(
-                    "KinematicViscosity not found in material data of: {}\n"
-                    .format(self.material["Name"])
-                )
+                if self.material["Name"] != "NoName":
+                    FreeCAD.Console.PrintMessage(
+                        "KinematicViscosity not found in {}\n".format(self.material["Name"])
+                    )
                 self.material["KinematicViscosity"] = "0 m^2/s"
+            if "ThermalExpansionCoefficient" in self.material:
+                vol_ther_ex_co = self.material["ThermalExpansionCoefficient"]
+                if "ThermalExpansionCoefficient" not in str(Units.Unit(vol_ther_ex_co)):
+                    FreeCAD.Console.PrintMessage(
+                        "ThermalExpansionCoefficient in material data "
+                        "seems to have no unit or a wrong unit (reset the value): {}\n".format(
+                            self.material["Name"]
+                        )
+                    )
+                    self.material["ThermalExpansionCoefficient"] = "0 1/K"
+            else:
+                if self.material["Name"] != "NoName":
+                    FreeCAD.Console.PrintMessage(
+                        "ThermalExpansionCoefficient not found in {}\n".format(
+                            self.material["Name"]
+                        )
+                    )
+                self.material["ThermalExpansionCoefficient"] = "0 1/K"
             if "VolumetricThermalExpansionCoefficient" in self.material:
                 # unit type VolumetricThermalExpansionCoefficient is ThermalExpansionCoefficient
                 vol_ther_ex_co = self.material["VolumetricThermalExpansionCoefficient"]
-                if "VolumetricThermalExpansionCoefficient" not in str(Units.Unit(vol_ther_ex_co)):
+                if "ThermalExpansionCoefficient" not in str(Units.Unit(vol_ther_ex_co)):
                     FreeCAD.Console.PrintMessage(
                         "VolumetricThermalExpansionCoefficient in material data "
-                        "seems to have no unit or a wrong unit (reset the value): {}\n"
-                        .format(self.material["Name"])
+                        "seems to have no unit or a wrong unit (reset the value): {}\n".format(
+                            self.material["Name"]
+                        )
                     )
-                    self.material["VolumetricThermalExpansionCoefficient"] = "0 m^3/m^3/K"
+                    self.material["VolumetricThermalExpansionCoefficient"] = "0 1/K"
             else:
-                FreeCAD.Console.PrintMessage(
-                    "VolumetricThermalExpansionCoefficient not found in material data of: {}\n"
-                    .format(self.material["Name"])
-                )
-                self.material["VolumetricThermalExpansionCoefficient"] = "0 m^3/m^3/K"
+                # as fallback only add VolumetricThermalExpansionCoefficient if there is no
+                # ThermalExpansionCoefficient
+                if "ThermalExpansionCoefficient" not in self.material:
+                    self.material["VolumetricThermalExpansionCoefficient"] = "0 1/K"
         # Thermal properties
         if "ThermalConductivity" in self.material:
+            # TODO implement for all task panel values
+            # https://forum.freecad.org/viewtopic.php?f=18&t=56912&p=516826#p516800
+            try:
+                Units.Quantity(self.material["ThermalConductivity"])
+            except Exception:
+                FreeCAD.Console.PrintError(
+                    "Problem with the quantity for ThermalConductivity: '{}' Reset value.\n"
+                    "May try the following in Python console:\n"
+                    "from FreeCAD import Units\n"
+                    "Units.Quantity('{}')\n".format(
+                        self.material["ThermalConductivity"], self.material["ThermalConductivity"]
+                    )
+                )
+                self.material["ThermalConductivity"] = "0 W/m/K"
             if "ThermalConductivity" not in str(Units.Unit(self.material["ThermalConductivity"])):
                 FreeCAD.Console.PrintMessage(
                     "ThermalConductivity in material data seems to have no unit "
-                    "or a wrong unit (reset the value): {}\n"
-                    .format(self.material["Name"])
+                    "or a wrong unit (reset the value): {}\n".format(self.material["Name"])
                 )
                 self.material["ThermalConductivity"] = "0 W/m/K"
         else:
-            FreeCAD.Console.PrintMessage(
-                "ThermalConductivity not found in material data of: {}\n"
-                .format(self.material["Name"])
-            )
+            if self.material["Name"] != "NoName":
+                FreeCAD.Console.PrintMessage(
+                    "ThermalConductivity not found in {}\n".format(self.material["Name"])
+                )
             self.material["ThermalConductivity"] = "0 W/m/K"
         if "ThermalExpansionCoefficient" in self.material:
             the_ex_co = self.material["ThermalExpansionCoefficient"]
             if "ThermalExpansionCoefficient" not in str(Units.Unit(the_ex_co)):
                 FreeCAD.Console.PrintMessage(
                     "ThermalExpansionCoefficient in material data seems to have no unit "
-                    "or a wrong unit (reset the value): {}\n"
-                    .format(self.material["Name"])
+                    "or a wrong unit (reset the value): {}\n".format(self.material["Name"])
                 )
                 self.material["ThermalExpansionCoefficient"] = "0 um/m/K"
         else:
-            FreeCAD.Console.PrintMessage(
-                "ThermalExpansionCoefficient not found in material data of: {}\n"
-                .format(self.material["Name"])
-            )
+            if self.material["Name"] != "NoName":
+                FreeCAD.Console.PrintMessage(
+                    "ThermalExpansionCoefficient not found in {}\n".format(self.material["Name"])
+                )
             self.material["ThermalExpansionCoefficient"] = "0 um/m/K"
         if "SpecificHeat" in self.material:
             if "SpecificHeat" not in str(Units.Unit(self.material["SpecificHeat"])):
                 FreeCAD.Console.PrintMessage(
                     "SpecificHeat in material data seems to have no unit "
-                    "or a wrong unit (reset the value): {}\n"
-                    .format(self.material["Name"])
+                    "or a wrong unit (reset the value): {}\n".format(self.material["Name"])
                 )
                 self.material["SpecificHeat"] = "0 J/kg/K"
         else:
-            FreeCAD.Console.PrintMessage(
-                "SpecificHeat not found in material data of: {}\n"
-                .format(self.material["Name"])
-            )
+            if self.material["Name"] != "NoName":
+                FreeCAD.Console.PrintMessage(
+                    "SpecificHeat not found in {}\n".format(self.material["Name"])
+                )
             self.material["SpecificHeat"] = "0 J/kg/K"
         FreeCAD.Console.PrintMessage("\n")
 
-    def update_material_property(self, input_field, matProperty, qUnit, variation=0.001):
+    def update_material_property(self, inputfield_text, matProperty, qUnit, variation=0.001):
+        # print(inputfield_text)
         # this update property works for all Gui::InputField widgets
-        value = Units.Quantity(input_field.text()).getValueAs(qUnit)
-        old_value = Units.Quantity(self.material[matProperty]).getValueAs(qUnit)
+        if qUnit != "":
+            value = Units.Quantity(inputfield_text).getValueAs(qUnit)
+            old_value = Units.Quantity(self.material[matProperty]).getValueAs(qUnit)
+        else:
+            # for example PoissonRatio
+            value = Units.Quantity(inputfield_text).Value
+            old_value = Units.Quantity(self.material[matProperty]).Value
+            # value = float(inputfield_text)  # this fails on locale with comma
+            # https://forum.freecad.org/viewtopic.php?f=18&t=56912&p=523313#p523313
         if value:
             if not (1 - variation < float(old_value) / value < 1 + variation):
                 material = self.material
                 # unicode() is an alias to str for py3
-                material[matProperty] = unicode(value) + " " + qUnit
+                if qUnit != "":
+                    material[matProperty] = unicode(value) + " " + qUnit
+                else:
+                    material[matProperty] = unicode(value)
                 self.material = material
                 if self.has_transient_mat is False:
                     self.add_transient_material()
@@ -532,40 +591,37 @@ class _TaskPanel:
                     self.set_transient_material()
         else:
             pass  # some check or default value set can be done here
+        # print(inputfield_text)
 
     # mechanical input fields
     def ym_changed(self):
         # FreeCADs standard unit for stress is kPa for UnitsSchemeInternal, but MPa can be used
-        input_field = self.parameterWidget.input_fd_young_modulus
-        variation = 0.001
         self.update_material_property(
-            input_field,
+            self.parameterWidget.input_fd_young_modulus.text(),
             "YoungsModulus",
             "kPa",
-            variation
         )
 
     def density_changed(self):
+        print(
+            "String read from density input field: {}".format(
+                self.parameterWidget.input_fd_density.text()
+            )
+        )
         # FreeCADs standard unit for density is kg/mm^3 for UnitsSchemeInternal
-        input_field = self.parameterWidget.input_fd_density
-        variation = 0.001
         self.update_material_property(
-            input_field,
+            self.parameterWidget.input_fd_density.text(),
             "Density",
             "kg/m^3",
-            variation
         )
 
     def pr_changed(self):
         value = self.parameterWidget.spinBox_poisson_ratio.value()
-        input_field = self.parameterWidget.spinBox_poisson_ratio
         if value:
-            variation = 0.001
             self.update_material_property(
-                input_field,
+                self.parameterWidget.spinBox_poisson_ratio.text(),
                 "PoissonRatio",
                 "",
-                variation
             )
         elif value == 0:
             # PoissonRatio was set to 0.0 what is possible
@@ -579,104 +635,93 @@ class _TaskPanel:
 
     # thermal input fields
     def tc_changed(self):
-        input_field = self.parameterWidget.input_fd_thermal_conductivity
-        variation = 0.001
         self.update_material_property(
-            input_field,
+            self.parameterWidget.input_fd_thermal_conductivity.text(),
             "ThermalConductivity",
             "W/m/K",
-            variation
         )
 
     def tec_changed(self):
-        input_field = self.parameterWidget.input_fd_expansion_coefficient
-        variation = 0.001
         self.update_material_property(
-            input_field,
+            self.parameterWidget.input_fd_expansion_coefficient.text(),
             "ThermalExpansionCoefficient",
             "um/m/K",
-            variation
         )
 
     def sh_changed(self):
-        input_field = self.parameterWidget.input_fd_specific_heat
-        variation = 0.001
         self.update_material_property(
-            input_field,
+            self.parameterWidget.input_fd_specific_heat.text(),
             "SpecificHeat",
             "J/kg/K",
-            variation
         )
 
     # fluidic input fields
     def vtec_changed(self):
-        input_field = self.parameterWidget.input_fd_vol_expansion_coefficient
         self.update_material_property(
-            input_field,
+            self.parameterWidget.input_fd_vol_expansion_coefficient.text(),
             "VolumetricThermalExpansionCoefficient",
-            "m^3/m^3/K"
+            "m^3/m^3/K",
         )
 
     def kinematic_viscosity_changed(self):
-        input_field = self.parameterWidget.input_fd_kinematic_viscosity
         self.update_material_property(
-            input_field,
+            self.parameterWidget.input_fd_kinematic_viscosity.text(),
             "KinematicViscosity",
-            "m^2/s"
+            "m^2/s",
         )
 
     def set_mat_params_in_input_fields(self, matmap):
         if "YoungsModulus" in matmap:
             ym_new_unit = "MPa"
-            ym = FreeCAD.Units.Quantity(matmap["YoungsModulus"])
+            ym = Units.Quantity(matmap["YoungsModulus"])
             ym_with_new_unit = ym.getValueAs(ym_new_unit)
-            q = FreeCAD.Units.Quantity("{} {}".format(ym_with_new_unit, ym_new_unit))
+            q = Units.Quantity(f"{ym_with_new_unit} {ym_new_unit}")
             self.parameterWidget.input_fd_young_modulus.setText(q.UserString)
         if "PoissonRatio" in matmap:
             self.parameterWidget.spinBox_poisson_ratio.setValue(float(matmap["PoissonRatio"]))
         # Fluidic properties
         if "KinematicViscosity" in matmap:
             nu_new_unit = "m^2/s"
-            nu = FreeCAD.Units.Quantity(matmap["KinematicViscosity"])
+            nu = Units.Quantity(matmap["KinematicViscosity"])
             nu_with_new_unit = nu.getValueAs(nu_new_unit)
-            q = FreeCAD.Units.Quantity("{} {}".format(nu_with_new_unit, nu_new_unit))
+            q = Units.Quantity(f"{nu_with_new_unit} {nu_new_unit}")
             self.parameterWidget.input_fd_kinematic_viscosity.setText(q.UserString)
         # For isotropic materials and fluidic material
         # use the volumetric thermal expansion coefficient
         # is approximately three times the linear coefficient for solids
         if "VolumetricThermalExpansionCoefficient" in matmap:
             vtec_new_unit = "m^3/m^3/K"
-            vtec = FreeCAD.Units.Quantity(matmap["VolumetricThermalExpansionCoefficient"])
+            vtec = Units.Quantity(matmap["VolumetricThermalExpansionCoefficient"])
             vtec_with_new_unit = vtec.getValueAs(vtec_new_unit)
-            q = FreeCAD.Units.Quantity("{} {}".format(vtec_with_new_unit, vtec_new_unit))
+            q = Units.Quantity(f"{vtec_with_new_unit} {vtec_new_unit}")
             self.parameterWidget.input_fd_vol_expansion_coefficient.setText(q.UserString)
         if "Density" in matmap:
             density_new_unit = "kg/m^3"
-            density = FreeCAD.Units.Quantity(matmap["Density"])
+            density = Units.Quantity(matmap["Density"])
             density_with_new_unit = density.getValueAs(density_new_unit)
             # self.parameterWidget.input_fd_density.setText(
             #     "{} {}".format(density_with_new_unit, density_new_unit)
             # )
-            q = FreeCAD.Units.Quantity("{} {}".format(density_with_new_unit, density_new_unit))
+            q = Units.Quantity(f"{density_with_new_unit} {density_new_unit}")
             self.parameterWidget.input_fd_density.setText(q.UserString)
         # thermal properties
         if "ThermalConductivity" in matmap:
             tc_new_unit = "W/m/K"
-            tc = FreeCAD.Units.Quantity(matmap["ThermalConductivity"])
+            tc = Units.Quantity(matmap["ThermalConductivity"])
             tc_with_new_unit = tc.getValueAs(tc_new_unit)
-            q = FreeCAD.Units.Quantity("{} {}".format(tc_with_new_unit, tc_new_unit))
+            q = Units.Quantity(f"{tc_with_new_unit} {tc_new_unit}")
             self.parameterWidget.input_fd_thermal_conductivity.setText(q.UserString)
         if "ThermalExpansionCoefficient" in matmap:  # linear, only for solid
             tec_new_unit = "um/m/K"
-            tec = FreeCAD.Units.Quantity(matmap["ThermalExpansionCoefficient"])
+            tec = Units.Quantity(matmap["ThermalExpansionCoefficient"])
             tec_with_new_unit = tec.getValueAs(tec_new_unit)
-            q = FreeCAD.Units.Quantity("{} {}".format(tec_with_new_unit, tec_new_unit))
+            q = Units.Quantity(f"{tec_with_new_unit} {tec_new_unit}")
             self.parameterWidget.input_fd_expansion_coefficient.setText(q.UserString)
         if "SpecificHeat" in matmap:
             sh_new_unit = "J/kg/K"
-            sh = FreeCAD.Units.Quantity(matmap["SpecificHeat"])
+            sh = Units.Quantity(matmap["SpecificHeat"])
             sh_with_new_unit = sh.getValueAs(sh_new_unit)
-            q = FreeCAD.Units.Quantity("{} {}".format(sh_with_new_unit, sh_new_unit))
+            q = Units.Quantity(f"{sh_with_new_unit} {sh_new_unit}")
             self.parameterWidget.input_fd_specific_heat.setText(q.UserString)
 
     # fill the combo box with cards **************************************************************
@@ -690,13 +735,13 @@ class _TaskPanel:
         card_name_list = []  # [ [card_name, card_path, icon_path], ... ]
 
         if sort_by_resources is True:
-            for a_path in sorted(self.materials.keys()):
+            for a_path in sorted(self.materials):
                 card_name_list.append([self.cards[a_path], a_path, self.icons[a_path]])
         else:
             card_names_tmp = {}
             for path, name in self.cards.items():
                 card_names_tmp[name] = path
-            for a_name in sorted(card_names_tmp.keys()):
+            for a_name in sorted(card_names_tmp):
                 a_path = card_names_tmp[a_name]
                 card_name_list.append([a_name, a_path, self.icons[a_path]])
 
@@ -704,4 +749,4 @@ class _TaskPanel:
             self.parameterWidget.cb_materials.addItem(QtGui.QIcon(mat[2]), mat[0], mat[1])
             # the whole card path is added to the combo box to make it unique
             # see def choose_material:
-            # for assignment of self.card_path the path form the parameterWidget ist used
+            # for assignment of self.card_path the path form the parameterWidget is used

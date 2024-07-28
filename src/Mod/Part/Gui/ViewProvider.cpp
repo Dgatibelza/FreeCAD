@@ -20,20 +20,16 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
-# include <QAction>
-# include <QMenu>
+# include <QObject>
 #endif
 
+#include <App/Document.h>
 #include <Base/Console.h>
 #include <Base/Exception.h>
-#include <App/Document.h>
 #include <Gui/Command.h>
-
-#include <Mod/Part/App/PartFeature.h>
 
 #include "ViewProvider.h"
 
@@ -43,15 +39,11 @@ using namespace PartGui;
 PROPERTY_SOURCE(PartGui::ViewProviderPart, PartGui::ViewProviderPartExt)
 
 
-ViewProviderPart::ViewProviderPart()
-{
-}
+ViewProviderPart::ViewProviderPart() = default;
 
-ViewProviderPart::~ViewProviderPart()
-{
-}
+ViewProviderPart::~ViewProviderPart() = default;
 
-bool ViewProviderPart::doubleClicked(void)
+bool ViewProviderPart::doubleClicked()
 {
     try {
         QString text = QObject::tr("Edit %1").arg(QString::fromUtf8(getObject()->Label.getValue()));
@@ -79,8 +71,21 @@ void ViewProviderPart::applyColor(const Part::ShapeHistory& hist,
     }
 }
 
-void ViewProviderPart::applyTransparency(const float& transparency,
-                                  std::vector<App::Color>& colors)
+void ViewProviderPart::applyMaterial(const Part::ShapeHistory& hist,
+                                     const std::vector<App::Material>& colBase,
+                                     std::vector<App::Material>& colBool)
+{
+    std::map<int, std::vector<int>>::const_iterator jt;
+    // apply color from modified faces
+    for (jt = hist.shapeMap.begin(); jt != hist.shapeMap.end(); ++jt) {
+        std::vector<int>::const_iterator kt;
+        for (kt = jt->second.begin(); kt != jt->second.end(); ++kt) {
+            colBool[*kt] = colBase[jt->first];
+        }
+    }
+}
+
+void ViewProviderPart::applyTransparency(float transparency, std::vector<App::Color>& colors)
 {
     if (transparency != 0.0) {
         // transparency has been set object-wide
@@ -89,6 +94,20 @@ void ViewProviderPart::applyTransparency(const float& transparency,
             // transparency hasn't been set for this face
             if (j->a == 0.0)
                 j->a = transparency/100.0; // transparency comes in percent
+        }
+    }
+}
+
+void ViewProviderPart::applyTransparency(float transparency, std::vector<App::Material>& colors)
+{
+    if (transparency != 0.0) {
+        // transparency has been set object-wide
+        std::vector<App::Material>::iterator j;
+        for (j = colors.begin(); j != colors.end(); ++j) {
+            // transparency hasn't been set for this face
+            if (j->transparency == 0.0) {
+                j->transparency = transparency / 100.0;  // transparency comes in percent
+            }
         }
     }
 }

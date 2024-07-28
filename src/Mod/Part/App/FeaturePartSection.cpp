@@ -20,7 +20,6 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 #ifndef _PreComp_
 # include <BRepAlgoAPI_Section.hxx>
@@ -28,15 +27,14 @@
 #endif
 
 #include "FeaturePartSection.h"
-
-#include <Base/Exception.h>
+#include "TopoShapeOpCode.h"
 
 using namespace Part;
 
 PROPERTY_SOURCE(Part::Section, Part::Boolean)
 
 
-Section::Section(void)
+Section::Section()
 {
     ADD_PROPERTY_TYPE(Approximation,(false),"Section",App::Prop_None,"Approximate the output edges");
 }
@@ -48,12 +46,16 @@ short Section::mustExecute() const
     return 0;
 }
 
+
+const char *Section::opCode() const
+{
+    return Part::OpCodes::Section;
+}
+
 BRepAlgoAPI_BooleanOperation* Section::makeOperation(const TopoDS_Shape& base, const TopoDS_Shape& tool) const
 {
     // Let's call algorithm computing a section operation:
-#if OCC_VERSION_HEX < 0x060900
-    return new BRepAlgoAPI_Section(base, tool);
-#else
+
     bool approx = Approximation.getValue();
     std::unique_ptr<BRepAlgoAPI_Section> mkSection(new BRepAlgoAPI_Section());
     mkSection->Init1(base);
@@ -63,5 +65,4 @@ BRepAlgoAPI_BooleanOperation* Section::makeOperation(const TopoDS_Shape& base, c
     if (!mkSection->IsDone())
         throw Base::RuntimeError("Section failed");
     return mkSection.release();
-#endif
 }

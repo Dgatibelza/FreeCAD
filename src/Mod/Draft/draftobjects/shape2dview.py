@@ -44,107 +44,180 @@ class Shape2DView(DraftObject):
 
     def __init__(self,obj):
 
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "The base object this 2D view must represent")
-        obj.addProperty("App::PropertyLink", "Base",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "The projection vector of this object")
-        obj.addProperty("App::PropertyVector", "Projection",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "The way the viewed object must be projected")
-        obj.addProperty("App::PropertyEnumeration", "ProjectionMode",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "The indices of the faces to be projected in Individual Faces mode")
-        obj.addProperty("App::PropertyIntegerList", "FaceNumbers",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "Show hidden lines")
-        obj.addProperty("App::PropertyBool", "HiddenLines",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "Fuse wall and structure objects of same type and material")
-        obj.addProperty("App::PropertyBool", "FuseArch",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "Tessellate Ellipses and B-splines into line segments")
-        obj.addProperty("App::PropertyBool", "Tessellation",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "For Cutlines and Cutfaces modes, \
-                this leaves the faces at the cut location")
-        obj.addProperty("App::PropertyBool", "InPlace",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property",
-                "Length of line segments if tessellating Ellipses or B-splines \
-                into line segments")
-        obj.addProperty("App::PropertyFloat", "SegmentLength",
-                        "Draft", _tip)
-
-        _tip = QT_TRANSLATE_NOOP("App::Property", 
-                "If this is True, this object will be recomputed only if it is \
-                visible")
-        obj.addProperty("App::PropertyBool", "VisibleOnly",
-                        "Draft", _tip)
-        
-        obj.Projection = App.Vector(0,0,1)
-        obj.ProjectionMode = ["Solid", "Individual Faces",
-                              "Cutlines", "Cutfaces"]
-        obj.HiddenLines = False
-        obj.Tessellation = False
-        obj.VisibleOnly = False
-        obj.InPlace = True
-        obj.SegmentLength = .05
+        self.setProperties(obj)
         super(Shape2DView, self).__init__(obj, "Shape2DView")
 
+    def setProperties(self,obj):
+
+        pl = obj.PropertiesList
+
+        if not "Base" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "The base object this 2D view must represent")
+            obj.addProperty("App::PropertyLink", "Base",
+                            "Draft", _tip)
+        if not "Projection" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "The projection vector of this object")
+            obj.addProperty("App::PropertyVector", "Projection",
+                            "Draft", _tip)
+            obj.Projection = App.Vector(0,0,1)
+        if not "ProjectionMode" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "The way the viewed object must be projected")
+            obj.addProperty("App::PropertyEnumeration", "ProjectionMode",
+                            "Draft", _tip)
+            obj.ProjectionMode = ["Solid", "Individual Faces",
+                                  "Cutlines", "Cutfaces","Solid faces"]
+        if not "FaceNumbers" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "The indices of the faces to be projected in Individual Faces mode")
+            obj.addProperty("App::PropertyIntegerList", "FaceNumbers",
+                            "Draft", _tip)
+        if not "HiddenLines" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "Show hidden lines")
+            obj.addProperty("App::PropertyBool", "HiddenLines",
+                            "Draft", _tip)
+            obj.HiddenLines = False
+        if not "FuseArch" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "Fuse wall and structure objects of same type and material")
+            obj.addProperty("App::PropertyBool", "FuseArch",
+                            "Draft", _tip)
+        if not "Tessellation" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "Tessellate Ellipses and B-splines into line segments")
+            obj.addProperty("App::PropertyBool", "Tessellation",
+                            "Draft", _tip)
+            obj.Tessellation = False
+        if not "InPlace" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "For Cutlines and Cutfaces modes, this leaves the faces at the cut location")
+            obj.addProperty("App::PropertyBool", "InPlace",
+                            "Draft", _tip)
+            obj.InPlace = True
+        if not "SegmentLength" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "Length of line segments if tessellating Ellipses or B-splines into line segments")
+            obj.addProperty("App::PropertyFloat", "SegmentLength",
+                            "Draft", _tip)
+            obj.SegmentLength = .05
+        if not "VisibleOnly" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "If this is True, this object will include only visible objects")
+            obj.addProperty("App::PropertyBool", "VisibleOnly",
+                            "Draft", _tip)
+            obj.VisibleOnly = False
+        if not "ExclusionPoints" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "A list of exclusion points. Any edge touching any of those points will not be drawn.")
+            obj.addProperty("App::PropertyVectorList", "ExclusionPoints",
+                            "Draft", _tip)
+        if not "ExclusionNames" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "A list of exclusion object names. Any object viewed that matches a name from the list will not be drawn.")
+            obj.addProperty("App::PropertyStringList", "ExclusionNames",
+                            "Draft", _tip)
+        if not "OnlySolids" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "If this is True, only solid geometry is handled. This overrides the base object's Only Solids property")
+            obj.addProperty("App::PropertyBool", "OnlySolids",
+                            "Draft", _tip)
+        if not "Clip" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "If this is True, the contents are clipped to the borders of the section plane, if applicable. This overrides the base object's Clip property")
+            obj.addProperty("App::PropertyBool", "Clip",
+                            "Draft", _tip)
+        if not "AutoUpdate" in pl:
+            _tip = QT_TRANSLATE_NOOP("App::Property",
+                    "This object will be recomputed only if this is True.")
+            obj.addProperty("App::PropertyBool", "AutoUpdate",
+                            "Draft", _tip)
+            obj.AutoUpdate = True
+
+    def onDocumentRestored(self, obj):
+
+        self.setProperties(obj)
+
     def getProjected(self,obj,shape,direction):
+
         "returns projected edges from a shape and a direction"
-        import Part, Drawing, DraftGeomUtils
+        import Part
+        import TechDraw
+        import DraftGeomUtils
         edges = []
-        _groups = Drawing.projectEx(shape, direction)
+        _groups = TechDraw.projectEx(shape, direction)
         for g in _groups[0:5]:
-            if g:
+            if not g.isNull():
                 edges.append(g)
-        if hasattr(obj,"HiddenLines"):
-            if obj.HiddenLines:
-                for g in _groups[5:]:
+        if getattr(obj, "HiddenLines", False):
+            for g in _groups[5:]:
+                if not g.isNull():
                     edges.append(g)
-        #return Part.makeCompound(edges)
-        if hasattr(obj,"Tessellation") and obj.Tessellation:
+        edges = self.cleanExcluded(obj,edges)
+        if getattr(obj, "Tessellation", False):
             return DraftGeomUtils.cleanProjection(Part.makeCompound(edges),
                                                   obj.Tessellation,
                                                   obj.SegmentLength)
         else:
             return Part.makeCompound(edges)
-            #return DraftGeomUtils.cleanProjection(Part.makeCompound(edges))
 
-    def execute(self,obj):
-        if hasattr(obj,"VisibleOnly"):
-            if obj.VisibleOnly:
-                if obj.ViewObject:
-                    if obj.ViewObject.Visibility == False:
-                        return False
-        import Part, DraftGeomUtils
-        obj.positionBySupport()
+    def cleanExcluded(self,obj,shapes):
+
+        """removes any edge touching exclusion points"""
+        import Part
+        MAXDIST = 0.0001
+        if (not hasattr(obj,"ExclusionPoints")) or (not obj.ExclusionPoints):
+            return shapes
+        #verts = [Part.Vertex(obj.Placement.multVec(p)) for p in obj.ExclusionPoints]
+        verts = [Part.Vertex(p) for p in obj.ExclusionPoints]
+        nedges = []
+        for s in shapes:
+            for e in s.Edges:
+                for v in verts:
+                    try:
+                        d = e.distToShape(v)
+                        if d and (d[0] <= MAXDIST):
+                            break
+                    except RuntimeError:
+                        print("FIXME: shape2dview: distance unavailable for edge",e,"in",obj.Label)
+                else:
+                    nedges.append(e)
+        return nedges
+
+    def excludeNames(self,obj,objs):
+        if hasattr(obj,"ExclusionNames"):
+            objs = [o for o in objs if not(o.Name in obj.ExclusionNames)]
+            return objs
+
+    def _get_shapes(self, shape, onlysolids=False):
+        if onlysolids:
+            return shape.Solids
+        if shape.isNull():
+            return []
+        if shape.ShapeType == "Compound":
+            return shape.SubShapes
+        return [shape.copy()]
+
+    def execute(self, obj):
+        if self.props_changed_placement_only(obj) \
+                or not getattr(obj, "AutoUpdate", True):
+            obj.positionBySupport()
+            self.props_changed_clear()
+            return
+
+        import Part
+        import DraftGeomUtils
         pl = obj.Placement
         if obj.Base:
             if utils.get_type(obj.Base) in ["BuildingPart","SectionPlane"]:
                 objs = []
                 if utils.get_type(obj.Base) == "SectionPlane":
-                    objs = obj.Base.Objects
+                    objs = self.excludeNames(obj,obj.Base.Objects)
                     cutplane = obj.Base.Shape
                 else:
-                    objs = obj.Base.Group
+                    objs = self.excludeNames(obj,obj.Base.Group)
                     cutplane = Part.makePlane(1000, 1000, App.Vector(-500, -500, 0))
                     m = 1
                     if obj.Base.ViewObject and hasattr(obj.Base.ViewObject,"CutMargin"):
@@ -155,53 +228,65 @@ class Shape2DView(DraftObject):
                     onlysolids = True
                     if hasattr(obj.Base,"OnlySolids"):
                         onlysolids = obj.Base.OnlySolids
-                    import Arch, Part, Drawing
+                    if hasattr(obj,"OnlySolids"): # override base object
+                        onlysolids = obj.OnlySolids
+                    import Arch
                     objs = groups.get_group_contents(objs, walls=True)
-                    objs = gui_utils.remove_hidden(objs)
+                    if getattr(obj,"VisibleOnly",True):
+                        objs = gui_utils.remove_hidden(objs)
                     shapes = []
-                    if hasattr(obj,"FuseArch") and obj.FuseArch:
+                    if getattr(obj,"FuseArch", False):
                         shtypes = {}
                         for o in objs:
                             if utils.get_type(o) in ["Wall","Structure"]:
-                                if onlysolids:
-                                    shtypes.setdefault(o.Material.Name
-                                                      if (hasattr(o,"Material") and o.Material) 
-                                                      else "None",[]).extend(o.Shape.Solids)
-                                else:
-                                    shtypes.setdefault(o.Material.Name 
-                                                       if (hasattr(o,"Material") and o.Material) 
-                                                       else "None",[]).append(o.Shape.copy())
-                            elif hasattr(o,'Shape'):
-                                if onlysolids:
-                                    shapes.extend(o.Shape.Solids)
-                                else:
-                                    shapes.append(o.Shape.copy())
+                                shtypes.setdefault(
+                                    o.Material.Name
+                                    if (hasattr(o,"Material") and o.Material) else "None",
+                                    []
+                                ).extend(self._get_shapes(o.Shape, onlysolids))
+                            elif hasattr(o, "Shape"):
+                                shapes.extend(self._get_shapes(o.Shape, onlysolids))
                         for k, v in shtypes.items():
                             v1 = v.pop()
                             if v:
-                                v1 = v1.multiFuse(v)
-                                v1 = v1.removeSplitter()
+                                try:
+                                    v1 = v1.multiFuse(v)
+                                except (RuntimeError, Part.OCCError):
+                                    # multifuse can fail
+                                    for v2 in v:
+                                        v1 = v1.fuse(v2)
+                                try:
+                                    v1 = v1.removeSplitter()
+                                except (RuntimeError, Part.OCCError):
+                                    pass
                             if v1.Solids:
                                 shapes.extend(v1.Solids)
                             else:
                                 print("Shape2DView: Fusing Arch objects produced non-solid results")
-                                shapes.append(v1)
+                                shapes.extend(v1.SubShapes)
                     else:
                         for o in objs:
-                            if hasattr(o,'Shape'):
-                                if onlysolids:
-                                    shapes.extend(o.Shape.Solids)
-                                else:
-                                    shapes.append(o.Shape.copy())
+                            if hasattr(o, "Shape"):
+                                shapes.extend(self._get_shapes(o.Shape, onlysolids))
                     clip = False
                     if hasattr(obj.Base,"Clip"):
                         clip = obj.Base.Clip
-                    cutp, cutv, iv = Arch.getCutVolume(cutplane, shapes, clip)
+                    if hasattr(obj,"Clip"): #override base object
+                        clip = obj.Clip
+                    depth = None
+                    if hasattr(obj.Base,"Depth"):
+                        depth = obj.Base.Depth.Value
+                    cutp, cutv, iv = Arch.getCutVolume(cutplane, shapes, clip, depth)
                     cuts = []
                     opl = App.Placement(obj.Base.Placement)
                     proj = opl.Rotation.multVec(App.Vector(0, 0, 1))
-                    if obj.ProjectionMode == "Solid":
-                        for sh in shapes:
+                    if obj.ProjectionMode in ["Solid","Solid faces"]:
+                        shapes_to_cut = shapes
+                        if obj.ProjectionMode == "Solid faces":
+                            shapes_to_cut = []
+                            for s in shapes:
+                                shapes_to_cut.extend(s.Faces)
+                        for sh in shapes_to_cut:
                             if cutv:
                                 if sh.Volume < 0:
                                     sh.reverse()
@@ -210,15 +295,9 @@ class Shape2DView(DraftObject):
                                 #else:
                                 #    c = sh.copy()
                                 c = sh.cut(cutv)
-                                if onlysolids:
-                                    cuts.extend(c.Solids)
-                                else:
-                                    cuts.append(c)
+                                cuts.extend(self._get_shapes(c, onlysolids))
                             else:
-                                if onlysolids:
-                                    cuts.extend(sh.Solids)
-                                else:
-                                    cuts.append(sh.copy())
+                                cuts.extend(self._get_shapes(sh, onlysolids))
                         comp = Part.makeCompound(cuts)
                         obj.Shape = self.getProjected(obj,comp,proj)
                     elif obj.ProjectionMode in ["Cutlines", "Cutfaces"]:
@@ -226,11 +305,11 @@ class Shape2DView(DraftObject):
                             if sh.Volume < 0:
                                 sh.reverse()
                             c = sh.section(cutp)
+                            if hasattr(obj,"InPlace"):
+                                if not obj.InPlace:
+                                    c = self.getProjected(obj, c, proj)
                             faces = []
                             if (obj.ProjectionMode == "Cutfaces") and (sh.ShapeType == "Solid"):
-                                if hasattr(obj,"InPlace"):
-                                    if not obj.InPlace:
-                                        c = self.getProjected(obj, c, proj)
                                 wires = DraftGeomUtils.findWires(c.Edges)
                                 for w in wires:
                                     if w.isClosed():
@@ -247,18 +326,16 @@ class Shape2DView(DraftObject):
 
             elif obj.Base.isDerivedFrom("App::DocumentObjectGroup"):
                 shapes = []
-                objs = groups.get_group_contents(obj.Base)
+                objs = self.excludeNames(obj,groups.get_group_contents(obj.Base))
                 for o in objs:
-                    if hasattr(o,'Shape'):
-                        if o.Shape:
-                            if not o.Shape.isNull():
-                                shapes.append(o.Shape)
+                    if hasattr(o, "Shape"):
+                        shapes.extend(self._get_shapes(o.Shape))
                 if shapes:
                     import Part
                     comp = Part.makeCompound(shapes)
                     obj.Shape = self.getProjected(obj,comp,obj.Projection)
 
-            elif hasattr(obj.Base,'Shape'):
+            elif hasattr(obj.Base, "Shape"):
                 if not DraftVecUtils.isNull(obj.Projection):
                     if obj.ProjectionMode == "Solid":
                         obj.Shape = self.getProjected(obj,obj.Base.Shape,obj.Projection)
@@ -276,8 +353,13 @@ class Shape2DView(DraftObject):
                                 obj.Shape = Part.makeCompound(views)
                     else:
                         App.Console.PrintWarning(obj.ProjectionMode+" mode not implemented\n")
-        if not DraftGeomUtils.isNull(pl):
-            obj.Placement = pl
+
+        obj.Placement = pl
+        obj.positionBySupport()
+        self.props_changed_clear()
+
+    def onChanged(self, obj, prop):
+        self.props_changed_store(prop)
 
 
 # Alias for compatibility with v0.18 and earlier

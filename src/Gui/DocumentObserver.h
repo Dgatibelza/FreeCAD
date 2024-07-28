@@ -20,12 +20,12 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #ifndef GUI_DOCUMENTOBSERVER_H
 #define GUI_DOCUMENTOBSERVER_H
 
 #include <Base/BaseClass.h>
-#include <boost/signals2.hpp>
+#include <boost_signals2.hpp>
+
 
 namespace App { class Property; }
 namespace Gui
@@ -46,9 +46,9 @@ public:
     /*! Constructor */
     DocumentT();
     /*! Constructor */
-    DocumentT(Document*);
+    explicit DocumentT(Document*);
     /*! Constructor */
-    DocumentT(const std::string&);
+    explicit DocumentT(const std::string&);
     /*! Constructor */
     DocumentT(const DocumentT&);
     /*! Destructor */
@@ -86,20 +86,26 @@ public:
     /*! Constructor */
     ViewProviderT();
     /*! Constructor */
-    ViewProviderT(ViewProviderDocumentObject*);
-    /*! Constructor */
     ViewProviderT(const ViewProviderT&);
+    /*! Constructor */
+    ViewProviderT(ViewProviderT &&);
+    /*! Constructor */
+    explicit ViewProviderT(const ViewProviderDocumentObject*);
     /*! Destructor */
     ~ViewProviderT();
     /*! Assignment operator */
-    void operator=(const ViewProviderT&);
+    ViewProviderT &operator=(const ViewProviderT&);
+    /*! Assignment operator */
+    ViewProviderT &operator=(ViewProviderT &&);
     /*! Assignment operator */
     void operator=(const ViewProviderDocumentObject*);
+    /*! Equality operator */
+    bool operator==(const ViewProviderT&) const;
 
     /*! Get a pointer to the document or 0 if it doesn't exist any more. */
     Document* getDocument() const;
     /*! Get the name of the document. */
-    std::string getDocumentName() const;
+    const std::string &getDocumentName() const;
     /*! Get the Gui::Document as Python command. */
     std::string getGuiDocumentPython() const;
     /*! Get the App::Document as Python command. */
@@ -107,7 +113,7 @@ public:
     /*! Get a pointer to the document object or 0 if it doesn't exist any more. */
     ViewProviderDocumentObject* getViewProvider() const;
     /*! Get the name of the document object. */
-    std::string getObjectName() const;
+    const std::string &getObjectName() const;
     /*! Get the document object as Python command. */
     std::string getObjectPython() const;
     /*! Get a pointer to the document or 0 if it doesn't exist any more or the type doesn't match. */
@@ -128,7 +134,7 @@ private:
 class GuiExport DocumentWeakPtrT
 {
 public:
-    DocumentWeakPtrT(Gui::Document*) noexcept;
+    explicit DocumentWeakPtrT(Gui::Document*) noexcept;
     ~DocumentWeakPtrT();
 
     /*!
@@ -142,16 +148,21 @@ public:
      */
     bool expired() const noexcept;
     /*!
+     * \brief operator *
+     * \return pointer to the document
+     */
+    Gui::Document* operator*() const noexcept;
+    /*!
      * \brief operator ->
      * \return pointer to the document
      */
-    Gui::Document* operator->() noexcept;
+    Gui::Document* operator->() const noexcept;
+
+    // disable
+    DocumentWeakPtrT(const DocumentWeakPtrT&) = delete;
+    DocumentWeakPtrT& operator=(const DocumentWeakPtrT&) = delete;
 
 private:
-    // disable
-    DocumentWeakPtrT(const DocumentWeakPtrT&);
-    DocumentWeakPtrT& operator=(const DocumentWeakPtrT&);
-
     class Private;
     std::unique_ptr<Private> d;
 };
@@ -159,27 +170,47 @@ private:
 /**
  * @brief The ViewProviderWeakPtrT class
  */
-class AppExport ViewProviderWeakPtrT
+class GuiExport ViewProviderWeakPtrT
 {
 public:
-    ViewProviderWeakPtrT(ViewProviderDocumentObject*) noexcept;
+    explicit ViewProviderWeakPtrT(ViewProviderDocumentObject*);
     ~ViewProviderWeakPtrT();
 
     /*!
      * \brief reset
      * Releases the reference to the managed object. After the call *this manages no object.
      */
-    void reset() noexcept;
+    void reset();
     /*!
      * \brief expired
      * \return true if the managed object has already been deleted, false otherwise.
      */
     bool expired() const noexcept;
     /*!
+     * \brief operator =
+     * Assignment operator
+     */
+    ViewProviderWeakPtrT& operator= (ViewProviderDocumentObject* p);
+    /*!
+     * \brief operator *
+     * \return pointer to the document
+     */
+    ViewProviderDocumentObject* operator*() const noexcept;
+    /*!
      * \brief operator ->
      * \return pointer to the document
      */
-    ViewProviderDocumentObject* operator->() noexcept;
+    ViewProviderDocumentObject* operator->() const noexcept;
+    /*!
+     * \brief operator ==
+     * \return true if both objects are equal, false otherwise
+     */
+    bool operator== (const ViewProviderWeakPtrT& p) const noexcept;
+    /*!
+     * \brief operator !=
+     * \return true if both objects are inequal, false otherwise
+     */
+    bool operator!= (const ViewProviderWeakPtrT& p) const noexcept;
     /*! Get a pointer to the object or 0 if it doesn't exist any more or the type doesn't match. */
     template<typename T>
     inline T* get() const noexcept
@@ -189,13 +220,90 @@ public:
 
 private:
     ViewProviderDocumentObject* _get() const noexcept;
+
+public:
     // disable
-    ViewProviderWeakPtrT(const ViewProviderWeakPtrT&);
-    ViewProviderWeakPtrT& operator=(const ViewProviderWeakPtrT&);
+    ViewProviderWeakPtrT(const ViewProviderWeakPtrT&) = delete;
+    ViewProviderWeakPtrT& operator=(const ViewProviderWeakPtrT&) = delete;
 
 private:
     class Private;
     std::unique_ptr<Private> d;
+};
+
+/**
+ * @brief The WeakPtrT class
+ */
+template <class T>
+class WeakPtrT
+{
+public:
+    explicit WeakPtrT(T* t) : ptr(t) {
+    }
+    ~WeakPtrT() = default;
+
+    /*!
+     * \brief reset
+     * Releases the reference to the managed object. After the call *this manages no object.
+     */
+    void reset() {
+        ptr.reset();
+    }
+    /*!
+     * \brief expired
+     * \return true if the managed object has already been deleted, false otherwise.
+     */
+    bool expired() const {
+        return ptr.expired();
+    }
+    /*!
+     * \brief operator =
+     * Assignment operator
+     */
+    WeakPtrT<T>& operator= (T* p) {
+        ptr = p;
+        return *this;
+    }
+    /*!
+     * \brief operator *
+     * \return pointer to the view provider
+     */
+    T* operator*() const {
+        return ptr.get<T>();
+    }
+    /*!
+     * \brief operator ->
+     * \return pointer to the view provider
+     */
+    T* operator->() const {
+        return ptr.get<T>();
+    }
+    /*!
+     * \brief operator ==
+     * \return true if both objects are equal, false otherwise
+     */
+    bool operator== (const WeakPtrT<T>& p) const {
+        return ptr == p.ptr;
+    }
+    /*!
+     * \brief operator !=
+     * \return true if both objects are inequal, false otherwise
+     */
+    bool operator!= (const WeakPtrT<T>& p) const {
+        return ptr != p.ptr;
+    }
+    /*! Get a pointer to the object or 0 if it doesn't exist any more. */
+    T* get() const noexcept
+    {
+        return ptr.get<T>();
+    }
+
+    // disable
+    WeakPtrT(const WeakPtrT&) = delete;
+    WeakPtrT& operator=(const WeakPtrT&) = delete;
+
+private:
+    ViewProviderWeakPtrT ptr;
 };
 
 /**
@@ -211,6 +319,7 @@ class GuiExport DocumentObserver
 public:
     /// Constructor
     DocumentObserver();
+    explicit DocumentObserver(Document*);
     virtual ~DocumentObserver();
 
     /** Attaches to another document, the old document
@@ -246,7 +355,7 @@ private:
     virtual void slotDeleteDocument(const Document& Doc);
 
 private:
-    typedef boost::signals2::scoped_connection Connection;
+    using Connection = boost::signals2::scoped_connection;
     Connection connectDocumentCreatedObject;
     Connection connectDocumentDeletedObject;
     Connection connectDocumentChangedObject;

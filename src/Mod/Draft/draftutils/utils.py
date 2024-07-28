@@ -39,9 +39,9 @@ import os
 import PySide.QtCore as QtCore
 
 import FreeCAD as App
-
-from draftutils.messages import _msg, _wrn, _err, _log
-from draftutils.translate import _tr
+from draftutils import params
+from draftutils.messages import  _wrn, _err, _log
+from draftutils.translate import translate
 
 # TODO: move the functions that require the graphical interface
 # This module should not import any graphical commands; those should be
@@ -53,28 +53,61 @@ if App.GuiUp:
     # The module is used to prevent complaints from code checkers (flake8)
     True if Draft_rc else False
 
-param = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
 
 ARROW_TYPES = ["Dot", "Circle", "Arrow", "Tick", "Tick-2"]
+DISPLAY_MODES = ["Flat Lines", "Shaded", "Wireframe", "Points"]
+DRAW_STYLES = ["Solid", "Dashed", "Dotted", "Dashdot"]
 arrowtypes = ARROW_TYPES
 
-ANNOTATION_STYLE = {
-    "FontName": ("font", param.GetString("textfont", "Sans")),
-    "FontSize": ("str", str(param.GetFloat("textheight", 100))),
-    "LineSpacing": ("float", 1),
-    "ScaleMultiplier": ("float", 1),
-    "ShowUnit": ("bool", False),
-    "UnitOverride": ("str", ""),
-    "Decimals": ("int", 2),
-    "ShowLines": ("bool", True),
-    "LineWidth": ("int", param.GetInt("linewidth", 1)),
-    "LineColor": ("color", param.GetInt("color", 255)),
-    "ArrowType": ("index", param.GetInt("dimsymbol", 0)),
-    "ArrowSize": ("str", str(param.GetFloat("arrowsize", 20))),
-    "DimensionOvershoot": ("str", str(param.GetFloat("dimovershoot", 20))),
-    "ExtensionLines": ("str", str(param.GetFloat("extlines", 300))),
-    "ExtensionOvershoot": ("str", str(param.GetFloat("extovershoot", 20))),
-}
+
+def get_default_annotation_style():
+    arrow_type_index = params.get_param("dimsymbol")
+    return {
+        "ArrowSize":       ("float", params.get_param("arrowsize")),
+        "ArrowType":       ("index", arrow_type_index, ARROW_TYPES[arrow_type_index]),
+        "Decimals":        ("int",   params.get_param("dimPrecision")),
+        "DimOvershoot":    ("float", params.get_param("dimovershoot")),
+        "ExtLines":        ("float", params.get_param("extlines")),
+        "ExtOvershoot":    ("float", params.get_param("extovershoot")),
+        "FontName":        ("font",  params.get_param("textfont")),
+        "FontSize":        ("float", params.get_param("textheight")),
+        "LineColor":       ("color", params.get_param("DefaultAnnoLineColor")),
+        "LineSpacing":     ("float", params.get_param("LineSpacing")),
+        "LineWidth":       ("int",   params.get_param("DefaultAnnoLineWidth")),
+        "ScaleMultiplier": ("float", params.get_param("DefaultAnnoScaleMultiplier")),
+        "ShowLine":        ("bool",  params.get_param("DimShowLine")),
+        "ShowUnit":        ("bool",  params.get_param("showUnit")),
+        "TextColor":       ("color", params.get_param("DefaultTextColor")),
+        "TextSpacing":     ("float", params.get_param("dimspacing")),
+        "UnitOverride":    ("str",   params.get_param("overrideUnit"))
+    }
+
+
+def get_default_shape_style():
+    # Uses the same format as get_default_annotation_style().
+    display_mode_index = params.get_param("DefaultDisplayMode")
+    draw_style_index = params.get_param("DefaultDrawStyle")
+    return {
+        "DisplayMode":     ("index",    display_mode_index, DISPLAY_MODES[display_mode_index]),
+        "DrawStyle":       ("index",    draw_style_index, DRAW_STYLES[draw_style_index]),
+        "LineColor":       ("color",    params.get_param_view("DefaultShapeLineColor")),
+        "LineWidth":       ("int",      params.get_param_view("DefaultShapeLineWidth")),
+        "PointColor":      ("color",    params.get_param_view("DefaultShapeVertexColor")),
+        "PointSize":       ("int",      params.get_param_view("DefaultShapePointSize")),
+        "ShapeAppearance": ("material", (get_view_material(), ))
+    }
+
+
+def get_view_material():
+    """Return a ShapeAppearance material with properties based on the preferences."""
+    material = App.Material()
+    material.AmbientColor  = params.get_param_view("DefaultAmbientColor") & 0xFFFFFF00
+    material.DiffuseColor  = params.get_param_view("DefaultShapeColor") & 0xFFFFFF00
+    material.EmissiveColor = params.get_param_view("DefaultEmissiveColor") & 0xFFFFFF00
+    material.Shininess     = params.get_param_view("DefaultShapeShininess") / 100
+    material.SpecularColor = params.get_param_view("DefaultSpecularColor") & 0xFFFFFF00
+    material.Transparency  = params.get_param_view("DefaultShapeTransparency") / 100
+    return material
 
 
 def string_encode_coin(ustr):
@@ -163,31 +196,33 @@ def get_param_type(param):
         `'bool'`, `'unsigned'`, depending on the parameter.
         It returns `None` for unhandled situations.
     """
-    if param in ("dimsymbol", "dimPrecision", "dimorientation",
+    if param in ("dimsymbol", "dimPrecision",
                  "precision", "defaultWP", "snapRange", "gridEvery",
-                 "linewidth", "UiMode", "modconstrain", "modsnap",
+                 "linewidth", "modconstrain", "modsnap",
                  "maxSnapEdges", "modalt", "HatchPatternResolution",
-                 "snapStyle", "dimstyle", "gridSize","gridTransparency"):
+                 "snapStyle", "DefaultAnnoDisplayMode", "DefaultAnnoLineWidth",
+                 "DefaultDrawStyle", "DefaultDisplayMode",
+                 "gridSize", "gridTransparency"):
         return "int"
     elif param in ("constructiongroupname", "textfont",
-                   "patternFile", "template", "snapModes",
-                   "FontFile", "ClonePrefix","overrideUnit",
-                   "labeltype") or "inCommandShortcut" in param:
+                   "patternFile", "snapModes",
+                   "FontFile", "ClonePrefix", "overrideUnit",
+                   "labeltype", "gridSpacing") or "inCommandShortcut" in param:
         return "string"
-    elif param in ("textheight", "tolerance", "gridSpacing",
-                   "arrowsize", "extlines", "dimspacing",
-                   "dimovershoot", "extovershoot","HatchPatternSize"):
+    elif param in ("textheight", "arrowsize", "extlines", "dimspacing",
+                   "dimovershoot", "extovershoot", "HatchPatternSize",
+                   "LineSpacing", "DefaultAnnoScaleMultiplier"):
         return "float"
     elif param in ("selectBaseObjects", "alwaysSnap", "grid",
-                   "fillmode", "saveonexit", "maxSnap",
-                   "SvgLinesBlack", "dxfStdSize", "showSnapBar",
-                   "hideSnapBar", "alwaysShowGrid", "renderPolylineWidth",
+                   "fillmode", "DimShowLine",
+                   "SvgLinesBlack", "dxfStdSize", "SnapBarShowOnlyDuringCommands",
+                   "alwaysShowGrid", "renderPolylineWidth",
                    "showPlaneTracker", "UsePartPrimitives",
-                   "DiscretizeEllipses", "showUnit","coloredGridAxes",
+                   "DiscretizeEllipses", "showUnit", "coloredGridAxes",
                    "Draft_array_fuse", "Draft_array_Link", "gridBorder"):
         return "bool"
-    elif param in ("color", "constructioncolor",
-                   "snapcolor", "gridColor"):
+    elif param in ("color", "constructioncolor", "snapcolor",
+                   "gridColor", "DefaultTextColor", "DefaultAnnoLineColor"):
         return "unsigned"
     else:
         return None
@@ -232,7 +267,7 @@ def get_param(param, default=None):
 
     p = App.ParamGet(draft_params)
     v = App.ParamGet(view_params)
-    t = getParamType(param)
+    t = get_param_type(param)
     # print("getting param ",param, " of type ",t, " default: ",str(default))
     if t == "int":
         if default is None:
@@ -295,7 +330,7 @@ def set_param(param, value):
 
     p = App.ParamGet(draft_params)
     v = App.ParamGet(view_params)
-    t = getParamType(param)
+    t = get_param_type(param)
 
     if t == "int":
         if param == "linewidth":
@@ -336,44 +371,20 @@ def precision():
     Returns
     -------
     int
-        get_param("precision", 6)
+        params.get_param("precision")
     """
-    return getParam("precision", 6)
+    return params.get_param("precision")
 
 
 def tolerance():
-    """Return the tolerance value from the parameter database.
-
-    This specifies a tolerance around a quantity.
-    ::
-        value + tolerance
-        value - tolerance
-
-    By default the tolerance is 0.05.
+    """Return a tolerance based on the precision() value
 
     Returns
     -------
     float
-        get_param("tolerance", 0.05)
+        10 ** -precision()
     """
-    return getParam("tolerance", 0.05)
-
-
-def epsilon():
-    """Return a small number based on the tolerance for use in comparisons.
-
-    The epsilon value is used in floating point comparisons. Use with caution.
-    ::
-        denom = 10**tolerance
-        num = 1
-        epsilon = num/denom
-
-    Returns
-    -------
-    float
-        1/(10**tolerance)
-    """
-    return 1.0/(10.0**tolerance())
+    return 10 ** -precision()
 
 
 def get_real_name(name):
@@ -391,9 +402,9 @@ def get_real_name(name):
         The returned string cannot be empty; it will have
         at least one letter.
     """
-    for i in range(1, len(name)):
+    for i in range(1, len(name) + 1):
         if name[-i] not in '1234567890':
-            return name[:len(name) - (i-1)]
+            return name[:len(name) - (i - 1)]
     return name
 
 
@@ -426,6 +437,8 @@ def get_type(obj):
         return None
     if isinstance(obj, Part.Shape):
         return "Shape"
+    if hasattr(obj, "Class") and "Ifc" in str(obj.Class):
+        return obj.Class
     if hasattr(obj, 'Proxy') and hasattr(obj.Proxy, "Type"):
         return obj.Proxy.Type
     if hasattr(obj, 'TypeId'):
@@ -463,7 +476,7 @@ def get_objects_of_type(objects, typ):
 getObjectsOfType = get_objects_of_type
 
 
-def is_clone(obj, objtype, recursive=False):
+def is_clone(obj, objtype=None, recursive=False):
     """Return True if the given object is a clone of a certain type.
 
     A clone is of type `'Clone'`, and has a reference
@@ -509,17 +522,21 @@ def is_clone(obj, objtype, recursive=False):
         if `obj` is not even a clone.
     """
     if isinstance(objtype, list):
-        return any([isClone(obj, t, recursive) for t in objtype])
-
+        return any([is_clone(obj, t, recursive) for t in objtype])
     if getType(obj) == "Clone":
         if len(obj.Objects) == 1:
-            if getType(obj.Objects[0]) == objtype:
-                return True
+            if objtype:
+                if getType(obj.Objects[0]) == objtype:
+                    return True
             elif recursive and (getType(obj.Objects[0]) == "Clone"):
-                return isClone(obj.Objects[0], objtype, recursive)
+                return is_clone(obj.Objects[0], objtype, recursive)
     elif hasattr(obj, "CloneOf"):
         if obj.CloneOf:
-            return True
+            if objtype:
+                if getType(obj.CloneOf) == objtype:
+                    return True
+            else:
+                return True
     return False
 
 
@@ -643,20 +660,20 @@ def print_shape(shape):
     shape : Part::TopoShape
         Any topological shape in an object, usually obtained from `obj.Shape`.
     """
-    _msg(_tr("Solids:") + " {}".format(len(shape.Solids)))
-    _msg(_tr("Faces:") + " {}".format(len(shape.Faces)))
-    _msg(_tr("Wires:") + " {}".format(len(shape.Wires)))
-    _msg(_tr("Edges:") + " {}".format(len(shape.Edges)))
-    _msg(_tr("Vertices:") + " {}".format(len(shape.Vertexes)))
+    _msg(translate("draft", "Solids:") + " {}".format(len(shape.Solids)))
+    _msg(translate("draft", "Faces:") + " {}".format(len(shape.Faces)))
+    _msg(translate("draft", "Wires:") + " {}".format(len(shape.Wires)))
+    _msg(translate("draft", "Edges:") + " {}".format(len(shape.Edges)))
+    _msg(translate("draft", "Vertices:") + " {}".format(len(shape.Vertexes)))
 
     if shape.Faces:
         for f in range(len(shape.Faces)):
-            _msg(_tr("Face") + " {}:".format(f))
+            _msg(translate("draft", "Face") + " {}:".format(f))
             for v in shape.Faces[f].Vertexes:
                 _msg("    {}".format(v.Point))
     elif shape.Wires:
         for w in range(len(shape.Wires)):
-            _msg(_tr("Wire") + " {}:".format(w))
+            _msg(translate("draft", "Wire") + " {}:".format(w))
             for v in shape.Wires[w].Vertexes:
                 _msg("    {}".format(v.Point))
     else:
@@ -688,11 +705,11 @@ def compare_objects(obj1, obj2):
     if obj1.TypeId != obj2.TypeId:
         _msg("'{0}' ({1}), '{2}' ({3}): ".format(obj1.Name, obj1.TypeId,
                                                  obj2.Name, obj2.TypeId)
-             + _tr("different types") + " (TypeId)")
+             + translate("draft", "different types") + " (TypeId)")
     elif getType(obj1) != getType(obj2):
         _msg("'{0}' ({1}), '{2}' ({3}): ".format(obj1.Name, get_type(obj1),
                                                  obj2.Name, get_type(obj2))
-             + _tr("different types") + " (Proxy.Type)")
+             + translate("draft", "different types") + " (Proxy.Type)")
     else:
         for p in obj1.PropertiesList:
             if p in obj2.PropertiesList:
@@ -700,15 +717,15 @@ def compare_objects(obj1, obj2):
                     pass
                 elif p == "Placement":
                     delta = obj1.Placement.Base.sub(obj2.Placement.Base)
-                    text = _tr("Objects have different placements. "
-                               "Distance between the two base points: ")
-                    _msg(text + str(delta.Length))
+                    text = translate("draft", "Objects have different placements. "
+                                              "Distance between the two base points:")
+                    _msg(text + " " + str(delta.Length))
                 else:
                     if getattr(obj1, p) != getattr(obj2, p):
-                        _msg("'{}' ".format(p) + _tr("has a different value"))
+                        _msg("'{}' ".format(p) + translate("draft", "has a different value"))
             else:
                 _msg("{} ".format(p)
-                     + _tr("doesn't exist in one of the objects"))
+                     + translate("draft", "doesn't exist in one of the objects"))
 
 
 compareObjects = compare_objects
@@ -736,7 +753,7 @@ def load_svg_patterns():
             App.svgpatterns.update(p)
 
     # Get patterns in a user defined file
-    altpat = getParam("patternFile", "")
+    altpat = params.get_param("patternFile")
     if os.path.isdir(altpat):
         for f in os.listdir(altpat):
             if f[-4:].upper() == ".SVG":
@@ -793,8 +810,10 @@ def get_rgb(color, testbw=True):
 
     Parameters
     ----------
+    color : list or tuple with RGB values
+        The values must be in the 0.0-1.0 range.
     testwb : bool (default = True)
-        pure white will be converted into pure black
+        Pure white will be converted into pure black.
     """
     r = str(hex(int(color[0]*255)))[2:].zfill(2)
     g = str(hex(int(color[1]*255)))[2:].zfill(2)
@@ -802,13 +821,67 @@ def get_rgb(color, testbw=True):
     col = "#"+r+g+b
     if testbw:
         if col == "#ffffff":
-            # print(getParam('SvgLinesBlack'))
-            if getParam('SvgLinesBlack', True):
+            # print(params.get_param("SvgLinesBlack"))
+            if params.get_param("SvgLinesBlack"):
                 col = "#000000"
     return col
 
 
 getrgb = get_rgb
+
+
+def argb_to_rgba(color):
+    """Change byte order of a 4 byte color int from ARGB (Qt) to RGBA (FreeCAD).
+
+    Alpha in both integers is always 255.
+    Alpha in color properties, although ignored, is always zero however.
+
+    Usage:
+
+        qt_int = self.form.ShapeColor.property("color").rgba() # Note: returns ARGB int
+        qt_int = self.form.ShapeColor.property("color").rgb()  # Note: returns ARGB int
+        fc_int = argb_to_rgba(qt_int)
+
+        FreeCAD.ParamGet("User parameter:BaseApp/Preferences/View")\
+            .SetUnsigned("DefaultShapeColor", fc_int)
+
+        obj.ViewObject.ShapeColor = fc_int & 0xFFFFFF00
+
+    Related:
+
+        getRgbF() returns an RGBA tuple. 4 floats in the range 0.0 - 1.0. Alpha is always 1.
+        Alpha should be set to zero or removed before using the tuple to change a color property:
+
+        obj.ViewObject.ShapeColor = self.form.ShapeColor.property("color").getRgbF()[:3]
+    """
+    return ((color & 0xFFFFFF) << 8) + ((color & 0xFF000000) >> 24)
+
+
+def rgba_to_argb(color):
+    """Change byte order of a 4 byte color int from RGBA (FreeCAD) to ARGB (Qt).
+    """
+    return ((color & 0xFFFFFF00) >> 8) + ((color & 0xFF) << 24)
+
+
+def get_rgba_tuple(color, typ=1.0):
+    """Return an RGBA tuple.
+
+    Parameters
+    ----------
+    color: int
+        RGBA integer.
+    typ: any float (default = 1.0) or int (use 255)
+        If float the values in the returned tuple are in the 0.0-1.0 range.
+        Else the values are in the 0-255 range.
+    """
+    color = ((color >> 24) & 0xFF,
+             (color >> 16) & 0xFF,
+             (color >> 8) & 0xFF,
+             color & 0xFF)
+    if type(typ) == float:
+        return tuple([x / 255.0 for x in color])
+    else:
+        return color
 
 
 def filter_objects_for_modifiers(objects, isCopied=False):
@@ -820,13 +893,13 @@ def filter_objects_for_modifiers(objects, isCopied=False):
                 if parent.isDerivedFrom("Part::Feature"):
                     parents.append(parent.Name)
             if len(parents) > 1:
-                warningMessage = _tr("%s shares a base with %d other objects. Please check if you want to modify this.") % (obj.Name,len(parents) - 1)
+                warningMessage = translate("draft", "%s shares a base with %d other objects. Please check if you want to modify this.") % (obj.Name,len(parents) - 1)
                 App.Console.PrintError(warningMessage)
                 if App.GuiUp:
                     Gui.getMainWindow().showMessage(warningMessage, 0)
             filteredObjects.append(obj.Base)
         elif hasattr(obj,"Placement") and obj.getEditorMode("Placement") == ["ReadOnly"] and not isCopied:
-            App.Console.PrintError(_tr("%s cannot be modified because its placement is readonly.") % obj.Name)
+            App.Console.PrintError(translate("draft", "%s cannot be modified because its placement is readonly.") % obj.Name)
             continue
         else:
             filteredObjects.append(obj)
@@ -969,8 +1042,7 @@ def find_doc(doc=None):
         try:
             doc = App.getDocument(doc)
         except NameError:
-            _msg("document: {}".format(doc))
-            _err(_tr("Wrong input: unknown document."))
+            _err(translate("draft", "Wrong input: unknown document {}").format(doc))
             return not FOUND, None
 
     return FOUND, doc
@@ -1007,7 +1079,7 @@ def find_object(obj, doc=None):
 
     found, doc = find_doc(doc)
     if not found:
-        _err(_tr("No active document. Aborting."))
+        _err(translate("draft", "No active document. Aborting."))
         return not FOUND, None
 
     if isinstance(obj, str):
@@ -1046,15 +1118,9 @@ def use_instead(function, version=""):
         If we don't know when this command will be deprecated
         then we should not give a version.
     """
-    text = "This function will be deprecated in "
-    text2 = "This function will be deprecated. "
-    text3 = "Please use "
-
     if version:
-        _wrn(_tr(text) + "{}. ".format(version)
-             + _tr(text3) + "'{}'.".format(function))
+        _wrn(translate("draft", "This function will be deprecated in {}. Please use '{}'.") .format(version, function))
     else:
-        _wrn(_tr(text2)
-             + _tr(text3) + "'{}'.".format(function))
+        _wrn(translate("draft", "This function will be deprecated. Please use '{}'.") .format(function))
 
 ## @}

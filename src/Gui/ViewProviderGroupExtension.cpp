@@ -20,39 +20,35 @@
  *                                                                         *
  ***************************************************************************/
 
-
 #include "PreCompiled.h"
 
 #ifndef _PreComp_
+# include <QMessageBox>
 #endif
 
-//#include "ViewProviderGroupExtensionPy.h"
-#include "ViewProviderGroupExtension.h"
-
-#include "Command.h"
-#include "Application.h"
-#include "Document.h"
-#include "MainWindow.h"
-#include <Base/Tools.h>
 #include <App/Document.h>
 #include <App/DocumentObject.h>
 #include <App/GroupExtension.h>
-#include <App/Expression.h>
 #include <Base/Console.h>
-#include <QMessageBox>
+#include <Base/Tools.h>
+
+#include "ViewProviderGroupExtension.h"
+#include "ViewProviderDocumentObject.h"
+#include "Command.h"
+#include "Document.h"
+#include "MainWindow.h"
+
 
 using namespace Gui;
 
 EXTENSION_PROPERTY_SOURCE(Gui::ViewProviderGroupExtension, Gui::ViewProviderExtension)
 
-ViewProviderGroupExtension::ViewProviderGroupExtension()  : guard(false)
+ViewProviderGroupExtension::ViewProviderGroupExtension()
 {
     initExtensionType(ViewProviderGroupExtension::getExtensionClassTypeId());
 }
 
-ViewProviderGroupExtension::~ViewProviderGroupExtension()
-{
-}
+ViewProviderGroupExtension::~ViewProviderGroupExtension() = default;
 
 bool ViewProviderGroupExtension::extensionCanDragObjects() const {
     return true;
@@ -84,8 +80,8 @@ bool ViewProviderGroupExtension::extensionCanDropObject(App::DocumentObject* obj
 
     auto* group = getExtendedViewProvider()->getObject()->getExtensionByType<App::GroupExtension>();
 
-    //we cannot drop thing of this group into it again
-    if (group->hasObject(obj))
+    //we cannot drop thing of this group into it again if it does not allow reorder
+    if (group->hasObject(obj) && !getExtendedViewProvider()->acceptReorderingObjects())
         return false;
 
     if (group->allowObject(obj))
@@ -96,7 +92,7 @@ bool ViewProviderGroupExtension::extensionCanDropObject(App::DocumentObject* obj
 
 void ViewProviderGroupExtension::extensionDropObject(App::DocumentObject* obj) {
 
-    App::DocumentObject* grp = static_cast<App::DocumentObject*>(getExtendedViewProvider()->getObject());
+    auto grp = static_cast<App::DocumentObject*>(getExtendedViewProvider()->getObject());
     App::Document* doc = grp->getDocument();
 
     // build Python command for execution
@@ -110,13 +106,18 @@ void ViewProviderGroupExtension::extensionDropObject(App::DocumentObject* obj) {
     Gui::Command::doCommand(Gui::Command::App, cmd.toUtf8());
 }
 
-std::vector< App::DocumentObject* > ViewProviderGroupExtension::extensionClaimChildren(void) const {
+std::vector< App::DocumentObject* > ViewProviderGroupExtension::extensionClaimChildren() const {
 
-    auto* group = getExtendedViewProvider()->getObject()->getExtensionByType<App::GroupExtension>();
-    return std::vector<App::DocumentObject*>(group->Group.getValues());
+    auto* obj = getExtendedViewProvider()->getObject();
+    if (!obj) {
+        return {};
+    }
+
+    auto* group = obj->getExtensionByType<App::GroupExtension>();
+    return group->Group.getValues();
 }
 
-void ViewProviderGroupExtension::extensionShow(void) {
+void ViewProviderGroupExtension::extensionShow() {
 
     // avoid possible infinite recursion
     if (guard)
@@ -125,7 +126,11 @@ void ViewProviderGroupExtension::extensionShow(void) {
 
     // when reading the Visibility property from file then do not hide the
     // objects of this group because they have stored their visibility status, too
-    if (!getExtendedViewProvider()->isRestoring() ) {
+    //
+    // Property::User1 is used by ViewProviderDocumentObject to mark for
+    // temporary visibility changes. Do not propagate the change to children.
+    if (!getExtendedViewProvider()->isRestoring()
+            && !getExtendedViewProvider()->Visibility.testStatus(App::Property::User1)) {
         auto* group = getExtendedViewProvider()->getObject()->getExtensionByType<App::GroupExtension>();
         for(auto obj : group->Group.getValues()) {
             if(obj && !obj->Visibility.getValue())
@@ -136,7 +141,7 @@ void ViewProviderGroupExtension::extensionShow(void) {
     ViewProviderExtension::extensionShow();
 }
 
-void ViewProviderGroupExtension::extensionHide(void) {
+void ViewProviderGroupExtension::extensionHide() {
 
     // avoid possible infinite recursion
     if (guard)
@@ -163,7 +168,7 @@ void ViewProviderGroupExtension::extensionHide(void) {
 bool ViewProviderGroupExtension::extensionOnDelete(const std::vector< std::string >& ) {
 
     auto* group = getExtendedViewProvider()->getObject()->getExtensionByType<App::GroupExtension>();
-    // If the group is nonempty ask the user if he wants to delete its content
+    // If the group is nonempty ask the user if they want to delete its content
     if (group->Group.getSize() > 0) {
         QMessageBox::StandardButton choice =
             QMessageBox::question(getMainWindow(), QObject::tr ( "Delete group content?" ),

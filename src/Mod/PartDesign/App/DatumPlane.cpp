@@ -37,7 +37,7 @@ using namespace Attacher;
 
 // ============================================================================
 
-const char* Plane::ResizeModeEnums[]= {"Automatic","Manual",NULL};
+const char* Plane::ResizeModeEnums[]= {"Automatic","Manual",nullptr};
 
 PROPERTY_SOURCE(PartDesign::Plane, Part::Datum)
 
@@ -66,9 +66,7 @@ Plane::Plane()
     Shape.setValue(myShape);
 }
 
-Plane::~Plane()
-{
-}
+Plane::~Plane() = default;
 
 Base::Vector3d Plane::getNormal()
 {
@@ -76,6 +74,15 @@ Base::Vector3d Plane::getNormal()
     Base::Vector3d normal;
     rot.multVec(Base::Vector3d(0,0,1), normal);
     return normal;
+}
+
+void Plane::Restore(Base::XMLReader& reader)
+{
+    // set it to Manual to avoid to automatically adjust
+    // Length because it will be read before ResizeMode
+    // See bug #0004540
+    ResizeMode.setValue("Manual");
+    Datum::Restore(reader);
 }
 
 void Plane::onChanged(const App::Property *prop)

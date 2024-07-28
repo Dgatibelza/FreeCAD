@@ -22,77 +22,95 @@
 
 #include "PreCompiled.h"
 
-#include <Base/Writer.h>
 #include <Base/Reader.h>
-
-#include <Mod/Sketcher/App/ExternalGeometryExtensionPy.h>
+#include <Base/Writer.h>
 
 #include "ExternalGeometryExtension.h"
+#include "ExternalGeometryExtensionPy.h"
+
 
 using namespace Sketcher;
 
 //---------- Geometry Extension
 
-constexpr std::array<const char *, ExternalGeometryExtension::NumFlags> ExternalGeometryExtension::flag2str;
+constexpr std::array<const char*, ExternalGeometryExtension::NumFlags>
+    ExternalGeometryExtension::flag2str;
 
-TYPESYSTEM_SOURCE(Sketcher::ExternalGeometryExtension,Part::GeometryPersistenceExtension)
+TYPESYSTEM_SOURCE(Sketcher::ExternalGeometryExtension, Part::GeometryMigrationPersistenceExtension)
 
-// Persistence implementer
-void ExternalGeometryExtension::Save(Base::Writer &writer) const
+void ExternalGeometryExtension::copyAttributes(Part::GeometryExtension* cpy) const
 {
-    writer.Stream() << writer.ind() << "<GeoExtension type=\"" << this->getTypeId().getName();
+    Part::GeometryPersistenceExtension::copyAttributes(cpy);
 
-    const std::string name = getName();
-
-    if(name.size() > 0)
-        writer.Stream() << "\" name=\"" << name;
-
-    writer.Stream() << "\" Ref=\"" << Ref << "\" Flags=\"" << Flags.to_string() << "\"/>" << std::endl;
+    static_cast<ExternalGeometryExtension*>(cpy)->Ref = this->Ref;
+    static_cast<ExternalGeometryExtension*>(cpy)->RefIndex = this->RefIndex;
+    static_cast<ExternalGeometryExtension*>(cpy)->Flags = this->Flags;
 }
 
-void ExternalGeometryExtension::Restore(Base::XMLReader &reader)
+void ExternalGeometryExtension::restoreAttributes(Base::XMLReader& reader)
 {
-    restoreNameAttribute(reader);
+    Part::GeometryPersistenceExtension::restoreAttributes(reader);
 
-    Ref = reader.getAttribute("Ref");
-    Flags = FlagType(reader.getAttribute("Flags"));
-
+    Ref = reader.getAttribute("Ref", "");
+    RefIndex = reader.getAttributeAsInteger("RefIndex", "-1");
+    Flags = FlagType(reader.getAttributeAsUnsigned("Flags", "0"));
 }
 
-std::unique_ptr<Part::GeometryExtension> ExternalGeometryExtension::copy(void) const
+void ExternalGeometryExtension::saveAttributes(Base::Writer& writer) const
+{
+    Part::GeometryPersistenceExtension::saveAttributes(writer);
+    writer.Stream() << "\" Ref=\"" << Base::Persistence::encodeAttribute(Ref);
+    writer.Stream() << "\" Flags=\"" << Flags.to_ulong();
+    if (RefIndex >= 0) {
+        writer.Stream() << "\" RefIndex=\"" << RefIndex;
+    }
+}
+
+void ExternalGeometryExtension::preSave(Base::Writer& writer) const
+{
+    if (Ref.size()) {
+        writer.Stream() << " ref=\"" << Base::Persistence::encodeAttribute(Ref) << "\"";
+    }
+    if (RefIndex >= 0) {
+        writer.Stream() << " refIndex=\"" << RefIndex << "\"";
+    }
+    if (Flags.any()) {
+        writer.Stream() << " flags=\"" << Flags.to_ulong() << "\"";
+    }
+}
+
+std::unique_ptr<Part::GeometryExtension> ExternalGeometryExtension::copy() const
 {
     auto cpy = std::make_unique<ExternalGeometryExtension>();
 
-    cpy->Ref = this->Ref;
-    cpy->Flags = this->Flags;
+    copyAttributes(cpy.get());
 
-    cpy->setName(this->getName()); // Base Class
-
-#if defined (__GNUC__) && (__GNUC__ <=4)
+#if defined(__GNUC__) && (__GNUC__ <= 4)
     return std::move(cpy);
 #else
     return cpy;
 #endif
 }
 
-PyObject * ExternalGeometryExtension::getPyObject(void)
+PyObject* ExternalGeometryExtension::getPyObject()
 {
     return new ExternalGeometryExtensionPy(new ExternalGeometryExtension(*this));
 }
 
-bool ExternalGeometryExtension::getFlagsFromName(std::string str, ExternalGeometryExtension::Flag &flag)
+bool ExternalGeometryExtension::getFlagsFromName(std::string str,
+                                                 ExternalGeometryExtension::Flag& flag)
 {
-    auto pos = std::find_if(    ExternalGeometryExtension::flag2str.begin(),
-                                ExternalGeometryExtension::flag2str.end(),
-                                [str](const char * val) {
-                                    return strcmp(val,str.c_str())==0;}
-                                );
+    auto pos = std::find_if(ExternalGeometryExtension::flag2str.begin(),
+                            ExternalGeometryExtension::flag2str.end(),
+                            [str](const char* val) {
+                                return strcmp(val, str.c_str()) == 0;
+                            });
 
-    if( pos != ExternalGeometryExtension::flag2str.end()) {
-            int index = std::distance( ExternalGeometryExtension::flag2str.begin(), pos );
+    if (pos != ExternalGeometryExtension::flag2str.end()) {
+        int index = std::distance(ExternalGeometryExtension::flag2str.begin(), pos);
 
-            flag = static_cast<ExternalGeometryExtension::Flag>(index);
-            return true;
+        flag = static_cast<ExternalGeometryExtension::Flag>(index);
+        return true;
     }
 
     return false;

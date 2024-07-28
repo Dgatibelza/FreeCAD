@@ -25,8 +25,8 @@
 #define APPLICATION_H
 
 #include <QPixmap>
+#include <map>
 #include <string>
-#include <vector>
 
 #define  putpix()
 
@@ -34,6 +34,7 @@
 
 class QCloseEvent;
 class SoNode;
+class NavlibInterface;
 
 namespace Gui{
 class BaseView;
@@ -43,6 +44,7 @@ class MacroManager;
 class MDIView;
 class MainWindow;
 class MenuItem;
+class PreferencePackManager;
 class ViewProvider;
 class ViewProviderDocumentObject;
 
@@ -53,8 +55,12 @@ class ViewProviderDocumentObject;
 class GuiExport Application
 {
 public:
+    enum Status {
+        UserInitiatedOpenDocument = 0
+    };
+
     /// construction
-    Application(bool GUIenabled);
+    explicit Application(bool GUIenabled);
     /// destruction
     ~Application();
 
@@ -74,11 +80,11 @@ public:
     /** @name methods for View handling */
     //@{
     /// send Messages to the active view
-    bool sendMsgToActiveView(const char* pMsg, const char** ppReturn=0);
+    bool sendMsgToActiveView(const char* pMsg, const char** ppReturn=nullptr);
     /// send Messages test to the active view
     bool sendHasMsgToActiveView(const char* pMsg);
     /// send Messages to the focused view
-    bool sendMsgToFocusView(const char* pMsg, const char** ppReturn=0);
+    bool sendMsgToFocusView(const char* pMsg, const char** ppReturn=nullptr);
     /// send Messages test to the focused view
     bool sendHasMsgToFocusView(const char* pMsg);
     /// Attach a view (get called by the FCView constructor)
@@ -88,9 +94,11 @@ public:
     /// get called if a view gets activated, this manage the whole activation scheme
     void viewActivated(Gui::MDIView* pcView);
     /// call update to all documents and all views (costly!)
-    void onUpdate(void);
+    void onUpdate();
     /// call update to all views of the active document
-    void updateActive(void);
+    void updateActive();
+    /// call update to all command actions
+    void updateActions(bool delay = false);
     //@}
 
     /** @name Signals of the Application */
@@ -119,10 +127,8 @@ public:
     boost::signals2::signal<void (const Gui::ViewProvider&)> signalActivatedObject;
     /// signal on activated workbench
     boost::signals2::signal<void (const char*)> signalActivateWorkbench;
-    /// signal on added workbench
-    boost::signals2::signal<void (const char*)> signalAddWorkbench;
-    /// signal on removed workbench
-    boost::signals2::signal<void (const char*)> signalRemoveWorkbench;
+    /// signal on added/removed workbench
+    boost::signals2::signal<void ()> signalRefreshWorkbenches;
     /// signal on show hidden items
     boost::signals2::signal<void (const Gui::Document&)> signalShowHidden;
     /// signal on activating view
@@ -131,6 +137,8 @@ public:
     boost::signals2::signal<void (const Gui::ViewProviderDocumentObject&)> signalInEdit;
     /// signal on leaving edit mode
     boost::signals2::signal<void (const Gui::ViewProviderDocumentObject&)> signalResetEdit;
+    /// signal on changing user edit mode
+    boost::signals2::signal<void (int)> signalUserEditModeChanged;
     //@}
 
     /** @name methods for Document handling */
@@ -155,11 +163,11 @@ public:
     /// message when a GuiDocument is about to vanish
     void onLastWindowClosed(Gui::Document* pcDoc);
     /// Getter for the active document
-    Gui::Document* activeDocument(void) const;
+    Gui::Document* activeDocument() const;
     /// Set the active document
     void setActiveDocument(Gui::Document* pcDocument);
     /// Getter for the editing document
-    Gui::Document* editDocument(void) const;
+    Gui::Document* editDocument() const;
     Gui::MDIView* editViewOfNode(SoNode *node) const;
     /// Set editing document, which will reset editing of all other document
     void setEditDocument(Gui::Document* pcDocument);
@@ -172,7 +180,7 @@ public:
     */
     Gui::Document* getDocument(const App::Document* pDoc) const;
     /// Getter for the active view of the active document or null
-    Gui::MDIView* activeView(void) const;
+    Gui::MDIView* activeView() const;
     /// Activate a view of the given type of the active document
     void activateView(const Base::Type&, bool create=false);
     /// Shows the associated view provider of the given object
@@ -184,7 +192,9 @@ public:
     //@}
 
     /// true when the application shutting down
-    bool isClosing(void);
+    bool isClosing();
+
+    void checkForDeprecatedSettings();
     void checkForPreviousCrashes();
 
     /** @name workbench handling */
@@ -194,36 +204,83 @@ public:
     QPixmap workbenchIcon(const QString&) const;
     QString workbenchToolTip(const QString&) const;
     QString workbenchMenuText(const QString&) const;
-    QStringList workbenches(void) const;
+    QStringList workbenches() const;
     void setupContextMenu(const char* recipient, MenuItem*) const;
     //@}
 
     /** @name Appearance */
     //@{
-    /// Activate a named workbench
+    /// Activate a stylesheet
     void setStyleSheet(const QString& qssFile, bool tiledBackground);
+    QString replaceVariablesInQss(QString qssText);
     //@}
 
     /** @name User Commands */
     //@{
     /// Get macro manager
-    Gui::MacroManager *macroManager(void);
+    Gui::MacroManager *macroManager();
     /// Reference to the command manager
-    Gui::CommandManager &commandManager(void);
+    Gui::CommandManager &commandManager();
     /// helper which create the commands
     void createStandardOperations();
     //@}
 
+    Gui::PreferencePackManager* prefPackManager();
+
     /** @name Init, Destruct an Access methods */
     //@{
-    /// some kind of singelton
+    /// some kind of singleton
     static Application* Instance;
-    static void initApplication(void);
-    static void initTypes(void);
-    static void initOpenInventor(void);
-    static void runInitGuiScript(void);
-    static void runApplication(void);
+    static void initApplication();
+    static void initTypes();
+    static void initOpenInventor();
+    static void runInitGuiScript();
+    static void runApplication();
     void tryClose( QCloseEvent * e );
+    //@}
+
+    /// return the status bits
+    bool testStatus(Status pos) const;
+    /// set the status bits
+    void setStatus(Status pos, bool on);
+
+    /** @name User edit mode */
+    //@{
+protected:
+    // the below std::map is a translation of 'EditMode' enum in ViewProvider.h
+    // to add a new edit mode, it should first be added there
+    // this is only used for GUI user interaction (menu, toolbar, Python API)
+    const std::map<int, std::pair<std::string, std::string>> userEditModes {
+        {0,
+         std::make_pair(
+             QT_TRANSLATE_NOOP("EditMode", "Default"),
+             QT_TRANSLATE_NOOP("EditMode",
+                               "The object will be edited using the mode defined internally to be "
+                               "the most appropriate for the object type"))},
+        {1,
+         std::make_pair(QT_TRANSLATE_NOOP("EditMode", "Transform"),
+                        QT_TRANSLATE_NOOP("EditMode",
+                                          "The object will have its placement editable with the "
+                                          "Std TransformManip command"))},
+        {2,
+         std::make_pair(QT_TRANSLATE_NOOP("EditMode", "Cutting"),
+                        QT_TRANSLATE_NOOP("EditMode",
+                                          "This edit mode is implemented as available but "
+                                          "currently does not seem to be used by any object"))},
+        {3,
+         std::make_pair(QT_TRANSLATE_NOOP("EditMode", "Color"),
+                        QT_TRANSLATE_NOOP("EditMode",
+                                          "The object will have the color of its individual faces "
+                                          "editable with the Part FaceAppearances command"))},
+    };
+    int userEditMode = userEditModes.begin()->first;
+
+public:
+    std::map <int, std::pair<std::string,std::string>> listUserEditModes() const { return userEditModes; }
+    int getUserEditMode(const std::string &mode = "") const;
+    std::pair<std::string,std::string> getUserEditModeUIStrings(int mode = -1) const;
+    bool setUserEditMode(int mode);
+    bool setUserEditMode(const std::string &mode);
     //@}
 
 public:
@@ -292,12 +349,20 @@ public:
     static PyObject* sAddDocObserver           (PyObject *self,PyObject *args);
     static PyObject* sRemoveDocObserver        (PyObject *self,PyObject *args);
 
+    static PyObject* sAddWbManipulator         (PyObject *self,PyObject *args);
+    static PyObject* sRemoveWbManipulator      (PyObject *self,PyObject *args);
+
+    static PyObject* sListUserEditModes        (PyObject *self,PyObject *args);
+    static PyObject* sGetUserEditMode          (PyObject *self,PyObject *args);
+    static PyObject* sSetUserEditMode          (PyObject *self,PyObject *args);
+
     static PyMethodDef    Methods[];
 
 private:
     struct ApplicationP* d;
     /// workbench python dictionary
     PyObject*             _pcWorkbenchDictionary;
+    NavlibInterface* pNavlibInterface;
 };
 
 } //namespace Gui

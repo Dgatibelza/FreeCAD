@@ -2488,13 +2488,11 @@ Efaces
 
 ***********************************************************
 ** Element sets for materials and FEM element type (solid, shell, beam, fluid)
-** written by write_element_sets_material_and_femelement_type function
 *ELSET,ELSET=FemMaterialShellThickness
 Efaces
 
 ***********************************************************
 ** constraints fixed node sets
-** written by write_node_sets_constraints_fixed function
 ** ConstraintFixed
 *NSET,NSET=ConstraintFixed
 3,
@@ -2546,32 +2544,31 @@ Efaces
 1402,
 1407,
 
+** Physical constants for SI(mm) unit system with Kelvins
+*PHYSICAL CONSTANTS, ABSOLUTE ZERO=0, STEFAN BOLTZMANN=5.670374419e-11
+
 ***********************************************************
 ** Materials
-** written by write_materials function
-** Young's modulus unit is MPa = N/mm2
+** see information about units at file end
 ** FreeCAD material name: Steel-Generic
 ** FemMaterial
 *MATERIAL, NAME=FemMaterial
 *ELASTIC
-200000, 0.300
+200000,0.3
 
 ***********************************************************
 ** Sections
-** written by write_femelementsets function
 *SHELL SECTION, ELSET=FemMaterialShellThickness, MATERIAL=FemMaterial
-15.0
+15
 
 ***********************************************************
 ** At least one step is needed to run an CalculiX analysis of FreeCAD
-** written by write_step_begin function
-*STEP
+*STEP, INC=2000
 *STATIC
 
 
 ***********************************************************
 ** Fixed Constraints
-** written by write_constraints_fixed function
 ** ConstraintFixed
 *BOUNDARY
 ConstraintFixed,1
@@ -2584,81 +2581,79 @@ ConstraintFixed,6
 
 ***********************************************************
 ** constraints force node loads
-** written by write_constraints_force function
 *CLOAD
 ** ConstraintForce1
 ** node loads on shape: SquareTube:Edge9
-1,1,2.7777777777778E+03
-236,1,2.7777777777778E+03
-343,1,5.5555555555556E+03
-344,1,5.5555555555556E+03
-345,1,5.5555555555556E+03
-346,1,5.5555555555556E+03
-347,1,5.5555555555556E+03
-1376,1,1.1111111111111E+04
-1378,1,1.1111111111111E+04
-1380,1,1.1111111111111E+04
-1383,1,1.1111111111111E+04
-1386,1,1.1111111111111E+04
-1390,1,1.1111111111111E+04
+1,1,2777.777777778
+236,1,2777.777777778
+343,1,5555.555555556
+344,1,5555.555555556
+345,1,5555.555555556
+346,1,5555.555555556
+347,1,5555.555555556
+1376,1,11111.11111111
+1378,1,11111.11111111
+1380,1,11111.11111111
+1383,1,11111.11111111
+1386,1,11111.11111111
+1390,1,11111.11111111
 
 
 ** ConstraintForce2
 ** node loads on shape: SquareTube:Edge3
-2,1,-2.7777777777778E+03
-129,1,-2.7777777777778E+03
-131,1,-5.5555555555556E+03
-132,1,-5.5555555555556E+03
-133,1,-5.5555555555556E+03
-134,1,-5.5555555555556E+03
-135,1,-5.5555555555556E+03
-758,1,-1.1111111111111E+04
-762,1,-1.1111111111111E+04
-764,1,-1.1111111111111E+04
-766,1,-1.1111111111111E+04
-769,1,-1.1111111111111E+04
-772,1,-1.1111111111111E+04
+2,1,-2777.777777778
+129,1,-2777.777777778
+131,1,-5555.555555556
+132,1,-5555.555555556
+133,1,-5555.555555556
+134,1,-5555.555555556
+135,1,-5555.555555556
+758,1,-11111.11111111
+762,1,-11111.11111111
+764,1,-11111.11111111
+766,1,-11111.11111111
+769,1,-11111.11111111
+772,1,-11111.11111111
 
 
 ** ConstraintForce3
 ** node loads on shape: SquareTube:Edge11
-1,2,2.7777777777778E+03
-2,2,2.7777777777778E+03
-5,2,5.5555555555556E+03
-6,2,5.5555555555556E+03
-7,2,5.5555555555556E+03
-8,2,5.5555555555556E+03
-9,2,5.5555555555556E+03
-429,2,1.1111111111111E+04
-431,2,1.1111111111111E+04
-437,2,1.1111111111111E+04
-440,2,1.1111111111111E+04
-443,2,1.1111111111111E+04
-446,2,1.1111111111111E+04
+1,2,2777.777777778
+2,2,2777.777777778
+5,2,5555.555555556
+6,2,5555.555555556
+7,2,5555.555555556
+8,2,5555.555555556
+9,2,5555.555555556
+429,2,11111.11111111
+431,2,11111.11111111
+437,2,11111.11111111
+440,2,11111.11111111
+443,2,11111.11111111
+446,2,11111.11111111
 
 
 ** ConstraintForce4
 ** node loads on shape: SquareTube:Edge6
-129,2,-2.7777777777778E+03
-236,2,-2.7777777777778E+03
-238,2,-5.5555555555556E+03
-239,2,-5.5555555555556E+03
-240,2,-5.5555555555556E+03
-241,2,-5.5555555555556E+03
-242,2,-5.5555555555556E+03
-1067,2,-1.1111111111111E+04
-1071,2,-1.1111111111111E+04
-1073,2,-1.1111111111111E+04
-1075,2,-1.1111111111111E+04
-1078,2,-1.1111111111111E+04
-1081,2,-1.1111111111111E+04
+129,2,-2777.777777778
+236,2,-2777.777777778
+238,2,-5555.555555556
+239,2,-5555.555555556
+240,2,-5555.555555556
+241,2,-5555.555555556
+242,2,-5555.555555556
+1067,2,-11111.11111111
+1071,2,-11111.11111111
+1073,2,-11111.11111111
+1075,2,-11111.11111111
+1078,2,-11111.11111111
+1081,2,-11111.11111111
 
 
 
 ***********************************************************
 ** Outputs --> frd file
-** written by write_outputs_types function
-*NODE FILE, OUTPUT=2d
+*NODE FILE, OUTPUT=3d
 U
 *EL FILE
 S, E
@@ -2667,27 +2662,25 @@ S, E
 *NODE PRINT, NSET=ConstraintFixed, TOTALS=ONLY
 RF
 
-
+*OUTPUT, FREQUENCY=1
 ***********************************************************
-** written by write_step_end function
-*END STEP 
+*END STEP
 
 ***********************************************************
 ** CalculiX Input file
-** written by write_footer function
-**   written by    --> FreeCAD 0.19.21972 +18 (Git)
-**   written on    --> Fri Jul 17 22:12:38 2020
-**   file name     --> 
+**   written by    --> FreeCAD 0.21.0
+**   written on    --> Tue Mar 28 05:35:14 2023
+**   file name     --> square_pipe_end_twisted_edgeforces.FCStd
 **   analysis name --> Analysis
 **
 **
 ***********************************************************
 **  About units:
 **  See ccx manual, ccx does not know about any unit.
-**  Golden rule: The user must make sure that the numbers he provides have consistent units.
+**  Golden rule: The user must make sure that the numbers they provide have consistent units.
 **  The user is the FreeCAD calculix writer module ;-)
 **
-**  The unit system which is used at Guido Dhodts company: mm, N, s, K
+**  The unit system which is used at Guido Dhondt's company: mm, N, s, K
 **  Since Length and Mass are connected by Force, if Length is mm the Mass is in t to get N
 **  The following units are used to write to inp file:
 **
@@ -2698,9 +2691,9 @@ RF
 **
 **  This leads to:
 **  Force: N
-**  Pressure: N/mm^2
-**  Density: t/mm^2
+**  Pressure: N/mm^2 == MPa (Young's Modulus has unit Pressure)
+**  Density: t/mm^3
 **  Gravity: mm/s^2
-**  Thermal conductivity: t*mm/K*s^3
-**  Specific Heat: kJ/t/K = mm^2/s^2/K
+**  Thermal conductivity: t*mm/K/s^3 == as W/m/K == kW/mm/K
+**  Specific Heat: mm^2/s^2/K = J/kg/K == kJ/t/K
 **

@@ -22,20 +22,20 @@
 
 
 #include "PreCompiled.h"
-
 #ifndef _PreComp_
-# include <boost_bind_bind.hpp>
+#include <functional>
 #endif
 
+#include <CXX/Objects.hxx>
 #include "Application.h"
 #include "Document.h"
 #include "DocumentObject.h"
 #include "DocumentObserverPython.h"
 #include <Base/Interpreter.h>
-#include <Base/Console.h>
+
 
 using namespace App;
-namespace bp = boost::placeholders;
+namespace sp = std::placeholders;
 
 std::vector<DocumentObserverPython*> DocumentObserverPython::_instances;
 
@@ -46,7 +46,7 @@ void DocumentObserverPython::addObserver(const Py::Object& obj)
 
 void DocumentObserverPython::removeObserver(const Py::Object& obj)
 {
-    DocumentObserverPython* obs=0;
+    DocumentObserverPython* obs=nullptr;
     for (std::vector<DocumentObserverPython*>::iterator it =
         _instances.begin(); it != _instances.end(); ++it) {
         if ((*it)->inst == obj) {
@@ -65,7 +65,7 @@ DocumentObserverPython::DocumentObserverPython(const Py::Object& obj) : inst(obj
         FC_PY_GetCallable(obj.ptr(), "slot" #_name1, py##_name1.py);\
         if (!py##_name1.py.isNone())\
             py##_name1.slot = App::GetApplication().signal##_name2.connect(\
-                    boost::bind(&DocumentObserverPython::slot##_name1, this));\
+                    std::bind(&DocumentObserverPython::slot##_name1, this));\
     }\
     while(0);
 
@@ -74,15 +74,16 @@ DocumentObserverPython::DocumentObserverPython(const Py::Object& obj) : inst(obj
         FC_PY_GetCallable(obj.ptr(), "slot" #_name1, py##_name1.py);\
         if (!py##_name1.py.isNone())\
             py##_name1.slot = App::GetApplication().signal##_name2.connect(\
-                    boost::bind(&DocumentObserverPython::slot##_name1, this, bp::_1));\
+                    std::bind(&DocumentObserverPython::slot##_name1, this, sp::_1));\
     }\
     while(0);
 
+    //NOLINTBEGIN
 #define FC_PY_ELEMENT_ARG2(_name1, _name2) do {\
         FC_PY_GetCallable(obj.ptr(), "slot" #_name1, py##_name1.py);\
         if (!py##_name1.py.isNone())\
             py##_name1.slot = App::GetApplication().signal##_name2.connect(\
-                    boost::bind(&DocumentObserverPython::slot##_name1, this, bp::_1, bp::_2));\
+                    std::bind(&DocumentObserverPython::slot##_name1, this, sp::_1, sp::_2));\
     }\
     while(0);
 
@@ -115,18 +116,17 @@ DocumentObserverPython::DocumentObserverPython(const Py::Object& obj) : inst(obj
     FC_PY_ELEMENT_ARG2(ChangePropertyEditor, ChangePropertyEditor)
     FC_PY_ELEMENT_ARG2(BeforeAddingDynamicExtension, BeforeAddingDynamicExtension)
     FC_PY_ELEMENT_ARG2(AddedDynamicExtension, AddedDynamicExtension)
+    //NOLINTEND
 }
 
-DocumentObserverPython::~DocumentObserverPython()
-{
-}
+DocumentObserverPython::~DocumentObserverPython() = default;
 
 void DocumentObserverPython::slotCreatedDocument(const App::Document& Doc)
 {
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(Doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(Doc).getPyObject()));
         Base::pyCall(pyCreatedDocument.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -140,7 +140,7 @@ void DocumentObserverPython::slotDeletedDocument(const App::Document& Doc)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(Doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(Doc).getPyObject()));
         Base::pyCall(pyDeletedDocument.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -154,7 +154,7 @@ void DocumentObserverPython::slotRelabelDocument(const App::Document& Doc)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(Doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(Doc).getPyObject()));
         Base::pyCall(pyRelabelDocument.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -168,7 +168,7 @@ void DocumentObserverPython::slotActivateDocument(const App::Document& Doc)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(Doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(Doc).getPyObject()));
         Base::pyCall(pyActivateDocument.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -182,7 +182,7 @@ void DocumentObserverPython::slotUndoDocument(const App::Document& Doc)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(Doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(Doc).getPyObject()));
         Base::pyCall(pyUndoDocument.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -197,7 +197,7 @@ void DocumentObserverPython::slotRedoDocument(const App::Document& Doc)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(Doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(Doc).getPyObject()));
         Base::pyCall(pyRedoDocument.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -258,12 +258,12 @@ void DocumentObserverPython::slotCloseTransaction(bool abort)
     }
 }
 
-void DocumentObserverPython::slotBeforeChangeDocument(const App::Document& Doc, const App::Property& Prop) 
-{   
+void DocumentObserverPython::slotBeforeChangeDocument(const App::Document& Doc, const App::Property& Prop)
+{
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(Doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(Doc).getPyObject()));
         // If a property is touched but not part of a document object then its name is null.
         // In this case the slot function must not be called.
         const char* prop_name = Doc.getPropertyName(&Prop);
@@ -278,12 +278,12 @@ void DocumentObserverPython::slotBeforeChangeDocument(const App::Document& Doc, 
     }
 }
 
-void DocumentObserverPython::slotChangedDocument(const App::Document& Doc, const App::Property& Prop) 
+void DocumentObserverPython::slotChangedDocument(const App::Document& Doc, const App::Property& Prop)
 {
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(Doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(Doc).getPyObject()));
         // If a property is touched but not part of a document object then its name is null.
         // In this case the slot function must not be called.
         const char* prop_name = Doc.getPropertyName(&Prop);
@@ -303,7 +303,7 @@ void DocumentObserverPython::slotCreatedObject(const App::DocumentObject& Obj)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::DocumentObject&>(Obj).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::DocumentObject&>(Obj).getPyObject()));
         Base::pyCall(pyCreatedObject.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -317,7 +317,7 @@ void DocumentObserverPython::slotDeletedObject(const App::DocumentObject& Obj)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::DocumentObject&>(Obj).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::DocumentObject&>(Obj).getPyObject()));
         Base::pyCall(pyDeletedObject.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -332,7 +332,7 @@ void DocumentObserverPython::slotBeforeChangeObject(const App::DocumentObject& O
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::DocumentObject&>(Obj).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::DocumentObject&>(Obj).getPyObject()));
         // If a property is touched but not part of a document object then its name is null.
         // In this case the slot function must not be called.
         const char* prop_name = Obj.getPropertyName(&Prop);
@@ -353,7 +353,7 @@ void DocumentObserverPython::slotChangedObject(const App::DocumentObject& Obj,
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::DocumentObject&>(Obj).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::DocumentObject&>(Obj).getPyObject()));
         // If a property is touched but not part of a document object then its name is null.
         // In this case the slot function must not be called.
         const char* prop_name = Obj.getPropertyName(&Prop);
@@ -373,7 +373,7 @@ void DocumentObserverPython::slotRecomputedObject(const App::DocumentObject& Obj
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::DocumentObject&>(Obj).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::DocumentObject&>(Obj).getPyObject()));
         Base::pyCall(pyRecomputedObject.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -387,7 +387,7 @@ void DocumentObserverPython::slotRecomputedDocument(const App::Document& doc)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(doc).getPyObject()));
         Base::pyCall(pyRecomputedDocument.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -401,7 +401,7 @@ void DocumentObserverPython::slotBeforeRecomputeDocument(const App::Document& do
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(doc).getPyObject()));
         Base::pyCall(pyBeforeRecomputeDocument.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -415,7 +415,7 @@ void DocumentObserverPython::slotOpenTransaction(const App::Document& doc, std::
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(doc).getPyObject()));
         args.setItem(1, Py::String(str));
         Base::pyCall(pyOpenTransaction.ptr(),args.ptr());
     }
@@ -430,7 +430,7 @@ void DocumentObserverPython::slotCommitTransaction(const App::Document& doc)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(doc).getPyObject()));
         Base::pyCall(pyCommitTransaction.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -444,7 +444,7 @@ void DocumentObserverPython::slotAbortTransaction(const App::Document& doc)
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(1);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(doc).getPyObject()));
         Base::pyCall(pyAbortTransaction.ptr(),args.ptr());
     }
     catch (Py::Exception&) {
@@ -459,7 +459,7 @@ void DocumentObserverPython::slotAppendDynamicProperty(const App::Property& Prop
     try {
         auto container = Prop.getContainer();
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(container->getPyObject(), true));
+        args.setItem(0, Py::asObject(container->getPyObject()));
         // If a property is touched but not part of a document object then its name is null.
         // In this case the slot function must not be called.
         const char* prop_name = container->getPropertyName(&Prop);
@@ -480,7 +480,7 @@ void DocumentObserverPython::slotRemoveDynamicProperty(const App::Property& Prop
     try {
         auto container = Prop.getContainer();
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(container->getPyObject(), true));
+        args.setItem(0, Py::asObject(container->getPyObject()));
         // If a property is touched but not part of a document object then its name is null.
         // In this case the slot function must not be called.
         const char* prop_name = container->getPropertyName(&Prop);
@@ -492,7 +492,7 @@ void DocumentObserverPython::slotRemoveDynamicProperty(const App::Property& Prop
     catch (Py::Exception&) {
         Base::PyException e; // extract the Python error text
         e.ReportException();
-    }    
+    }
 }
 
 void DocumentObserverPython::slotChangePropertyEditor(const App::Document &, const App::Property& Prop)
@@ -501,7 +501,7 @@ void DocumentObserverPython::slotChangePropertyEditor(const App::Document &, con
     try {
         auto container = Prop.getContainer();
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(container->getPyObject(), true));
+        args.setItem(0, Py::asObject(container->getPyObject()));
         // If a property is touched but not part of a document object then its name is null.
         // In this case the slot function must not be called.
         const char* prop_name = container->getPropertyName(&Prop);
@@ -521,7 +521,7 @@ void DocumentObserverPython::slotStartSaveDocument(const App::Document& doc, con
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(doc).getPyObject()));
         args.setItem(1, Py::String(file));
         Base::pyCall(pyStartSaveDocument.ptr(),args.ptr());
     }
@@ -536,7 +536,7 @@ void DocumentObserverPython::slotFinishSaveDocument(const App::Document& doc, co
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::Document&>(doc).getPyObject(), true));
+        args.setItem(0, Py::asObject(const_cast<App::Document&>(doc).getPyObject()));
         args.setItem(1, Py::String(file));
         Base::pyCall(pyFinishSaveDocument.ptr(),args.ptr());
     }
@@ -551,7 +551,7 @@ void DocumentObserverPython::slotBeforeAddingDynamicExtension(const App::Extensi
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::ExtensionContainer&>(extcont).getPyObject()));
+        args.setItem(0, Py::asObject(const_cast<App::ExtensionContainer&>(extcont).getPyObject()));
         args.setItem(1, Py::String(extension));
         Base::pyCall(pyBeforeAddingDynamicExtension.ptr(),args.ptr());
     }
@@ -566,7 +566,7 @@ void DocumentObserverPython::slotAddedDynamicExtension(const App::ExtensionConta
     Base::PyGILStateLocker lock;
     try {
         Py::Tuple args(2);
-        args.setItem(0, Py::Object(const_cast<App::ExtensionContainer&>(extcont).getPyObject()));
+        args.setItem(0, Py::asObject(const_cast<App::ExtensionContainer&>(extcont).getPyObject()));
         args.setItem(1, Py::String(extension));
         Base::pyCall(pyAddedDynamicExtension.ptr(),args.ptr());
     }

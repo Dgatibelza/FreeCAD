@@ -35,7 +35,7 @@ import draftutils.utils as utils
 import draftutils.gui_utils as gui_utils
 
 from draftutils.messages import _wrn, _err
-from draftutils.translate import _tr
+from draftutils.translate import translate
 from draftobjects.array import Array
 
 if App.GuiUp:
@@ -51,8 +51,8 @@ def make_array(base_object,
 
     Rectangular array
     -----------------
-    make_array(object,xvector,yvector,xnum,ynum,[name])
-    makeArray(object,xvector,yvector,zvector,xnum,ynum,znum,[name])
+    make_array(object, xvector, yvector, xnum, ynum)
+    make_array(object, xvector, yvector, zvector, xnum, ynum, znum)
 
     xnum of iterations in the x direction
     at xvector distance between iterations, same for y direction
@@ -60,14 +60,14 @@ def make_array(base_object,
 
     Polar array
     -----------
-    makeArray(object,center,totalangle,totalnum,[name]) for polar array, or
+    make_array(object, center, totalangle, totalnum) for polar array, or
 
     center is a vector, totalangle is the angle to cover (in degrees)
     and totalnum is the number of objects, including the original.
 
     Circular array
     --------------
-    makeArray(object,rdistance,tdistance,axis,center,ncircles,symmetry,[name])
+    make_array(object, rdistance, tdistance, axis, center, ncircles, symmetry)
 
     In case of a circular array, rdistance is the distance of the
     circles, tdistance is the distance within circles, axis the rotation-axis,
@@ -82,7 +82,7 @@ def make_array(base_object,
     """
     found, doc = utils.find_doc(App.activeDocument())
     if not found:
-        _err(_tr("No active document. Aborting."))
+        _err(translate("draft","No active document. Aborting."))
         return None
 
     if use_link:
@@ -128,13 +128,11 @@ def make_array(base_object,
         if use_link:
             ViewProviderDraftLink(new_obj.ViewObject)
         else:
+            if new_obj.ArrayType == "circular":
+                new_obj.Proxy.execute(new_obj) # Updates Count which is required for correct DiffuseColor.
             ViewProviderDraftArray(new_obj.ViewObject)
             gui_utils.format_object(new_obj, new_obj.Base)
-
-            if hasattr(new_obj.Base.ViewObject, "DiffuseColor"):
-                if len(new_obj.Base.ViewObject.DiffuseColor) > 1:
-                    new_obj.ViewObject.Proxy.resetColors(new_obj.ViewObject)
-
+            new_obj.ViewObject.Proxy.resetColors(new_obj.ViewObject)
         new_obj.Base.ViewObject.hide()
         gui_utils.select(new_obj)
 
